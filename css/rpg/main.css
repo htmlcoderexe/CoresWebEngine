@@ -1,0 +1,73 @@
+#countercontainer
+{
+	position: absolute;
+	top: 0;
+	left: 0;
+	padding: 0.5em;
+	width: 90%;
+}
+
+.counter
+{
+	float: left;
+	display: inline-block;
+	font-size: 2em;
+	color: #C99000;
+	text-shadow: 
+   -1px -1px 0 #000,  
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+     1px 1px 0 #000;
+	margin-left: 0.5em;
+	font-weight: bold;
+	margin-top: -0.25em;
+}
+
+.counter:before
+{
+	content: "";
+	display: inline-block;
+	width: 32px;
+	height: 32px;	
+	top: 0.25em;
+	position:relative;
+}
+
+#counter-megacoins:before
+{
+	background: transparent url(/images-site/rpg/interface/smallicons.png) 0 0 no-repeat;
+}
+#counter-emeralds:before
+{
+	background: transparent url(/images-site/rpg/interface/smallicons.png) -32px 0 no-repeat;
+}
+
+#exitlink
+{
+	float:right;
+	display:inline-block;
+}
+
+#portrait
+{
+	float: left;
+	margin-left: 3px;
+}
+#statusbar_container
+{
+	float: left;
+
+}
+.bar_bg
+{
+	width: 15em;
+	border: 1px solid black;
+	padding: 2px;
+	display: block;
+	margin:1px;
+}
+
+.bar_slider
+{
+	display:inline-block;
+}

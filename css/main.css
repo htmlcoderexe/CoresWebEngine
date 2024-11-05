@@ -1,0 +1,277 @@
+@font-face {
+  font-family: "Droid Sans";
+  font-style: normal;
+  font-weight: 700;
+  src: local("Droid Sans Bold"), local("DroidSans-Bold") format("woff2");
+  /**/
+  src: local("Droid Sans Bold"), local("DroidSans-Bold"), url("http://fonts.gstatic.com/s/droidsans/v6/EFpQQyG9GqCrobXxL-KRMYWiMMZ7xLd792ULpGE4W_Y.woff2") format("woff2");
+  /**/
+  unicode-range: U+0-FF, U+131, U+152-153, U+2C6, U+2DA, U+2DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+
+a
+{
+	text-decoration:none;
+	color:inherit;
+}
+body
+{
+	background-color: #101010;
+	color:#00C000;
+	font-family: 'Play', sans-serif;
+	font-family: Tahoma;
+	margin:0;
+}
+#wrapper
+{
+	background-color: #101010;
+	margin: 0 auto;
+	width: 100%;
+	position:relative;
+	border-bottom: 5px #00C000 solid;
+}
+#rightcolumn
+{
+	width: 30%;
+	float: right;
+	
+}
+
+h2
+{
+	font-family: 'Kaushan Script', cursive;
+}
+.box
+{
+	width: 77%;
+	margin-top: 1em;
+	margin-left: auto;
+	margin-right: auto;
+	/*
+	border-left: 2px solid #201000;
+	border-right: 2px solid #201000;
+	border-top: 1px solid transparent;
+	border-bottom: 1px solid transparent;
+	/*padding: 0.6em 0 0.6em 0;*/
+}
+
+#leftcolumn
+{
+	overflow:hidden;
+	background-color:#202020;
+	padding-left:1em;
+	margin-left:1em;
+	right:1em;
+	position:relative;
+	border: 0px solid #00A000;
+	border-top:none;
+	border-radius:16px;
+	margin: 0 0 0 auto;
+	padding-top:36px;
+	padding-left:24px;
+	padding-right:24px;
+	width:60%;
+	z-index:0;
+	/*
+	/
+	box-shadow: 5px 2px 5px 0px #7f7f7f,-5px 2px 5px 0px #7f7f7f;
+	/**/
+}
+
+/* begin menu styling */
+#menubar
+{
+	margin:0 auto;
+	width:100%;
+	position:relative;
+	background-color:#202020;
+	background: linear-gradient(to top, #00C000 5%, #202020 10%, #202020 50%, #202020 90%, #00C000 95%);
+}
+#menubar li
+{
+	display:inline-block;
+	/*background-color:#FF3333;*/
+	padding-left: 1.5em;
+	padding-top: 1.0em;
+	padding-bottom: 1.0em;
+	padding-right:1.5em;
+	/* too good of a font stack to remove
+	/*/
+	font-family: "Bitstream Vera Sans Mono", Consolas, "Lucida Console", "Courier New", Courier, monospace;
+	/**
+	font-family: 'Kaushan Script', cursive;/**/
+	font-family: "Droid Sans";
+	font-size: 1em;
+	color:#00F000;
+	text-transform:lowercase;
+	font-variant: small-caps;
+	/*
+	/*/
+	text-shadow: 0 2px 3px #000, 0 0 0px #201000, 0 0 0px #201000, 0 0 0px #201000;
+	box-shadow: 0 4px 5px -2px #7f7f7f;
+	border-radius:3px;
+	/**
+	text-shadow: #208020 -1px -1px 0px,#00FF00 1px 1px 0px;
+        /**/
+}
+#menubar li:active, #menubar li:hover
+{
+	border-bottom: 3px solid #00C000;
+	padding-bottom:0.36em;
+}
+#menubar li:first-child
+{
+	margin-left:15%;
+}
+li a:active, .boxheader a:active
+{
+	color:inherit;
+	text-decoration:none;
+	position:relative;
+	top:1px;
+}
+li a
+{
+	display:block;
+	color:inherit;
+	text-decoration:none;
+}
+.boxheader a
+{
+	display:block;
+	width:100%;
+	color:inherit;
+	text-decoration:none;
+}
+.boxheader
+{
+	padding-left: 1.5em;
+	padding-top: 0.5em;
+	/*
+	font-size: 1em;
+	font-family: "Bitstream Vera Sans Mono", Consolas, "Lucida Console", "Courier New", Courier, monospace;
+	font-family: Exo;
+	padding-bottom:0.5em;
+	background-color: #FFFFAE;
+	color:#201000;
+	text-shadow: 0 0 1px #201000;
+	border-radius:0px;
+	box-shadow: 0 -4px 2px -2px #007F00;
+	border: 1px solid #201000;
+	*/
+}
+
+/* end menu styling */
+
+/* begin sidebar box styling */
+.box:hover .boxbody
+{
+	height:inherit;
+}
+.boxbody
+{
+	overflow:hidden;
+	font-size: 0.75em;
+	padding-left: 1.225em;
+	padding-top: 0.25em;
+	padding-bottom:0.25em;
+	transition:height 2s;
+	/*
+	background-color: #FFFFAE;
+	color: #201000;
+	border-bottom:	1px solid #201000;
+	border-left:	1px solid #201000;
+	border-right:	1px solid #201000;
+	box-shadow: 0 4px 2px -2px #ef0000;*/
+}
+
+/* end sidebar box styling */
+
+
+input
+{
+	border-radius:2px;
+	border: 1px solid #00C000;
+	padding:6px;
+	background-color:#101010;
+	color:#00C000;
+}input:focus, input:active
+{
+	border-radius:2px;
+	border: 1px solid #00C000;
+	padding:6px;
+	box-shadow: 0 0 4px 2px #00C000;
+}
+
+input[type=button], button
+{
+	border-radius:2px;
+	border: 1px solid #00C000;
+	padding:5px;
+	margin:1px;
+	background-color:#101010;
+	color:#00C000;
+}
+
+
+
+
+input[readonly]
+{
+	background-color:transparent;
+	border-color:transparent;
+}textarea[readonly]
+{
+	border-color:#201000;
+	border-width:1px;
+	border-style:solid;
+	background-color:transparent;
+}
+input[readonly]:hover, textarea[readonly]:hover
+{
+	border: 1px #7F7F7F solid;
+	background:url("/images-site/icons/edit.png") no-repeat scroll ;
+	background-position: right 4px top 6px;
+}
+form.formset
+{
+	margin-left:5em;
+	line-height:2em;
+}
+a.smalllink
+{
+	font-size: 0.7em;
+}
+
+#chatbox
+{
+	height:300px;
+	overflow:auto;
+	background: url('/images-site/chatbg.jpg');
+	background-attachment: local;
+	border: 2px inset #F5F5F5;
+	border-radius:5px;
+}
+
+#chatform #test
+{
+	width: 87%;
+}
+
+#chatform #send
+{
+	width:9%;
+}
+
+/* end chat */
+
+/* begin kb */
+.kbpage a
+{
+	text-decoration:underline;
+}
+
+/* end kb */
+
+
+

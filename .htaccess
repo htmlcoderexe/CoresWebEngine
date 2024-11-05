@@ -1,0 +1,2 @@
+RewriteEngine On
+RewriteRule ^/?([a-zA-Z_/0-9]+)$ index.php?route=$1 [L]

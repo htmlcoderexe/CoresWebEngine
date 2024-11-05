@@ -1,0 +1,49 @@
+.panel
+{
+	border: 0.5em solid #402000;
+	padding: 1em;
+	background-color: #9E9E70;
+	-background-color: #4E4E40;
+	color: black;
+}
+#inventory
+{
+	afloat: left;
+	max-width: 39em;
+}
+#hintbox
+{
+
+	afloat: left;
+}
+.item
+{
+	display: inline-block;
+	border-radius: 0.25em;
+	margin: 0.2em;
+}
+.quality-common
+{
+	border: 0.5em solid #C0C0C0;
+}
+.quality-uncommon
+{
+	border: 0.5em solid #00e020;
+	box-shadow: 0 0px 2px 5px #007f00;
+}
+.quality-rare
+{
+	border: 0.5em solid #2020F0;
+	box-shadow: 0 0px 2px 5px #0000ff;
+}
+.quality-epic
+{
+	border: 0.5em solid #FF00ff;
+	box-shadow: 0 0px 2px 5px #C020F0;
+}
+
+.quality-legendary
+{
+	border: 0.5em solid #FF8000;
+	box-shadow: 0 0px 2px 5px #F06000;
+}

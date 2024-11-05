@@ -1,0 +1,1 @@
+<textarea  name="{%param|%}" class="profile" readonly="readonly" onfocus="this.readOnly=false;" onclick="this.readOnly=false;" onblur="this.readOnly='readonly';PingPongTheDingDong(this);" >{#userinfo|{%param|%}#}</textarea><img src="/images-site/null.png">

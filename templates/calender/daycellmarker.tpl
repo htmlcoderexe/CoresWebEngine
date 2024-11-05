@@ -1,0 +1,1 @@
+                    <span class="cal-event-{%marker|generic%}">&nbsp;</span>

@@ -1,0 +1,20 @@
+<?php
+
+class File
+{
+	public $id;
+	public $fname;
+	public $fname_full;
+	public $filext;
+	public $created;
+	public $prev;
+	public function __construct($id)
+	{
+	
+	}
+
+
+
+
+
+} 

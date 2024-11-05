@@ -1,0 +1,2 @@
+projectlink=<li><a href="?module=kb&action=viewproject&projectid=%s">%s</a></li>
+projectlist=<ul class="project-list">%s</ul> 

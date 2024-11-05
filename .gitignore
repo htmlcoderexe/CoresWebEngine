@@ -1,0 +1,8 @@
+# config file with stuff like passwords
+config.php
+# not needed as it's a dropin
+/ckeditor
+# will get filled with random stuff during testing
+/images-user/*
+# editor files
+/nbproject
