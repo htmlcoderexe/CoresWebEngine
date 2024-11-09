@@ -36,7 +36,7 @@
 	{
 		$uid=$user->userid;
 		$propid=UserExtendedProps::GetPropertyId($key);
-		EVA::CreateProperty($uid, $propid, $value);
+		EVA::AppendProperty($uid, $propid, $value);
 	}
 	
 	

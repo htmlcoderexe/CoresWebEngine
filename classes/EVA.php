@@ -46,7 +46,21 @@ class EVA
             }
             return $object;
 	}
+        
+        
+        public static function CreateProperty($name,$dname,$desc)
+        {
+            
+            DBHelper::Insert('eva_properties',[null,$name,$dname,$desc]);
+        }
+        
 	
+        public static function FindProperty($name)
+        {
+            $q="SELECT name FROM eva_properties WHERE name = ?";
+            return DBHelper::RunScalar($q, [$name]);
+        }
+        
 	//gets
 	public static function GetPropList($id)
 	{
@@ -103,7 +117,7 @@ class EVA
                 $propid = self::GetPropertyId($propname);
                 if($propid)
                 {
-                    self::CreateProperty($objid, $propid, $value);
+                    self::AppendProperty($objid, $propid, $value);
                 }
             }
         }
@@ -152,7 +166,7 @@ class EVA
                 $stmt->execute();
 	}
 	
-	public static function CreateProperty($objId, $id,$value)
+	public static function AppendProperty($objId, $id,$value)
 	{
 		$row=Array(
 			null,
@@ -251,7 +265,7 @@ class EVA
 			if($id==-1)
 			{
 				
-				$id=EVA::CreateProperty($this->id,$this->proplist[$i]['propertyId'],$value);
+				$id=EVA::AppendProperty($this->id,$this->proplist[$i]['propertyId'],$value);
 				$this->proplist[$i]['pid']=$id;
 			}
 			else

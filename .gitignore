@@ -4,5 +4,6 @@ config.php
 /ckeditor
 # will get filled with random stuff during testing
 /images-user/*
+/filestore
 # editor files
 /nbproject

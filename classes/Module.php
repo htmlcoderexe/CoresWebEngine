@@ -5,6 +5,15 @@ class Module
     public $name;
     public $funcprefix="ModuleAction";
     private $immafaultyshit=false;
+    
+    public static function DemandProperty($propname,$dname="",$desc="")
+    {
+        if(!EVA::FindProperty($propname))
+        {
+            EVA::CreateProperty($propname,$dname,$desc);
+        }
+    }
+    
     function __construct($name)
     {
         $filename=MODULE_DIR.basename($name)."/main.php";
@@ -17,6 +26,7 @@ class Module
         $this->name=$name;
         require_once $filename;
     }
+    
     function PerformAction($actionstring,$params)
     {
         if($this->immafaultyshit)

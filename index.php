@@ -41,6 +41,7 @@ require_once CLASS_DIR."KB_page.php";
 require_once CLASS_DIR."EVA.php";
 require_once CLASS_DIR."CalendarScheduler.php";
 require_once CLASS_DIR."CalendarEvent.php";
+require_once CLASS_DIR."File.php";
 
 
 session_start();

@@ -1,6 +1,11 @@
 <?php
+
 class Utility
 {
+    const RANDOM_CHR_UPPER =0;
+    const RANDOM_CHR_LOWER =1;
+    const RANDOM_CHR_MIX =2;
+    
 	static function POST($var,$default="")
 	{
 		return isset($_POST[$var])?$_POST[$var]:$default;
@@ -113,4 +118,35 @@ class Utility
 	{
                 return DBHelper::RunScalar("SELECT setting_value FROM system_settings WHERE setting_name=?", [$setting], 0);
 	}
+        
+       
+        
+        public static function CreateRandomChar($mode)
+        {
+            $upper = false;
+            if ($mode == self::RANDOM_CHR_UPPER)
+            {
+                $upper = true;
+            }
+            if($mode == self::RANDOM_CHR_MIX)
+            {
+                $upper = random_int(0,1) == 1;
+            }
+            $r=random_int(0,25);
+            $c=$r+0x41;
+            if(!$upper)
+            {
+                $c = $c | 0x20;
+            }
+            return chr($c);
+        }
+        public static function CreateRandomString($len,$mode)
+        {
+            $s="";
+            for($i=0;$i<$len;$i++)
+            {
+                    $s.=self::CreateRandomChar($mode);
+            }
+            return $s;
+        }
 }
