@@ -53,3 +53,37 @@ function ModuleAction_debug_file($params)
         die;
     }
 }
+
+function ModuleAction_debug_dlfile($params)
+{
+    $fid=$params[0];
+    
+    if(isset($_SERVER['HTTP_RANGE']))
+    {
+        $parsed_range = HTTPHeaders::ParseRangeRequest($_SERVER['HTTP_RANGE']);
+        if(!$parsed_range)
+        {
+            // bad range
+            HTTPHeaders::Status(416);
+            File::ServeByBlobID($fid);
+            Logger::log("Bad range: ".$_SERVER['HTTP_RANGE']);
+        }
+        else
+        {
+            list($start,$end)=$parsed_range;
+            File::ServeByBlobID($fid,$start,$end);
+            Logger::log("Good range: ".$_SERVER['HTTP_RANGE']);
+        }
+    }
+    else
+    {
+        File::ServeByBlobID($fid);
+    }
+    
+    
+}
+
+function ModuleAction_debug_streaming($params)
+{
+    ?><video src="http://homeserver-dev/debug/dlfile/CWzTZqIsEfgXSiGizSOxlZzsPNDuzfhVUcpbWxTm"></video><?php die();
+}

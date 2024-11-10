@@ -1,2 +1,4 @@
 RewriteEngine On
 RewriteRule ^/?([a-zA-Z_/0-9]+)$ index.php?route=$1 [L]
+php_value upload_max_filesize 140M
+php_value post_max_size 142M

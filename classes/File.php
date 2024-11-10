@@ -9,6 +9,8 @@ class File
     public $timestamp;
     public $comment;
     public $prev;
+    public $type;
+    public $filesize;
     
     public static $last_error;
     
@@ -21,7 +23,9 @@ class File
         "mp3"=>"audio/mpeg",
         "mp4"=>"video/mp4"
         ];
-
+    
+    public const BUFFER_SIZE = 8192;
+    
     public function __construct($fileid)
     {
         $id = (int) $fileid;
@@ -29,7 +33,19 @@ class File
         $this->fname = $f->attributes['filename'];
         $this->filext=$f->attributes['file.extension'];
         $this->timestamp=$f->attributes['timestamp'];
+        $this->type=$f->attributes['mimetype'];
+        $this->filesize=$f->attributes['filesize'];
     }
+    
+    public static function GetFilePath($blobname)
+    {
+        $dir1=$blobname[0].$blobname[1];
+        $dir2=$blobname[2].$blobname[3];
+        
+        $path2=FILESTORE_PATH.DIRECTORY_SEPARATOR.$dir1.DIRECTORY_SEPARATOR.$dir2;
+        return $path2;
+    }
+    
     /**
      * 
      * @param an array from $_FILE $uploadArray
@@ -44,11 +60,8 @@ class File
         $ext=pathinfo($filename)['extension'];
         $mime = array_key_exists($ext,self::MIME_TYPES) ? self::MIME_TYPES[$ext] : "UNKNOWN";
         $blobname = Utility::CreateRandomString(40,Utility::RANDOM_CHR_MIX);
-        $dir1=$blobname[0].$blobname[1];
-        $dir2=$blobname[2].$blobname[3];
-        
-        $path2=FILESTORE_PATH.DIRECTORY_SEPARATOR.$dir1.DIRECTORY_SEPARATOR.$dir2;
-        $fullname =$path2.DIRECTORY_SEPARATOR.$blobname;
+        $path2=self::GetFilePath($blobname);
+        $fullname = $path2.DIRECTORY_SEPARATOR.$blobname;
         self::$last_error=$fullname;
         if(is_dir($path2))
         {
@@ -85,9 +98,79 @@ class File
         return $fileobj->id;
     }
     
-    public function Serve()
+    public static function ServeByBlobID($blobid,$from=-1,$to=-1)
     {
-        
+        // find relevant file
+        $fileids=EVA::GetByProperty("blobid", $blobid, "file");
+        // 404 if not found
+        if(!$fileids)
+        {
+            HTTPHeaders::Status(404);
+            die();
+        }
+        $filename = self::GetFilePath($blobid).DIRECTORY_SEPARATOR.$blobid;
+        // 404 if no file
+        if(!file_exists($filename))
+        {
+            Logger::log("File <".$filename."> was not found",Logger::TYPE_ERROR,"Missing file");
+            HTTPHeaders::Status(404);
+            die();
+        }
+        //open the file and get info from the database
+        $file=fopen($filename,"r");
+        $fileinfo=new File($fileids[0]);
+        // set content-type
+        HTTPHeaders::ContentType($fileinfo->type);
+        $size = $fileinfo->filesize;
+        // check the actual file's size and log a warning if there's a mismatch
+        $realsize= filesize($filename);
+        if($size!=$realsize)
+        {
+            Logger::log("File <$filename> has wrong size in metadata. Recorded size: $size. Real size: $realsize.",Logger::TYPE_WARNING,"Filesize Mismatch");
+            $size = $realsize;
+        }
+        if($from==-1) // whole file requested
+        {
+            HTTPHeaders::EnableBytes();
+            HTTPHeaders::Range($size);
+            HTTPHeaders::Length($size);
+            fpassthru($file);
+        }
+        else
+        {
+            // if no end specified, set to last byte of the file
+            if($to === -1 || $to >= $size)
+            {
+                $to = $size-1;
+            }
+            // partial content
+            HTTPHeaders::Status(206);
+            HTTPHeaders::EnableBytes();
+            HTTPHeaders::Range($size,$from,$to);
+            // go to start of requested range
+            fseek($file,$from);
+            // set chunk size for reading
+            $nextread=self::BUFFER_SIZE;
+            // keep reading until flag is set or EOF
+            $complete = false;
+            while(!feof($file) && !$complete)
+            {
+                // find current position
+                $pointer = ftell($file);
+                // check if there's less left to read than a full chunk and adjust last round of reading
+                if($pointer+$nextread > ($to+1))
+                {
+                    $nextread=$to - $pointer + 1;
+                    // no more reading rounds
+                    $complete = true;
+                }
+                set_time_limit(0);
+                echo fread($file,$nextread);
+                flush();
+            }
+        }
+        fclose($file);
+        die;
     }
     
 }

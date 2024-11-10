@@ -166,6 +166,13 @@ class EVA
                 $stmt->execute();
 	}
 	
+        /**
+         * Add a property assigned to a specific EVA object
+         * @param int $objId EVA object ID
+         * @param id $id property ID in eva_properties
+         * @param string $value value to be written
+         * @return int ID of the new property entry in eva_property_map
+         */
 	public static function AppendProperty($objId, $id,$value)
 	{
 		$row=Array(
@@ -179,6 +186,13 @@ class EVA
 		return DBHelper::GetLastId();
 	}
 	
+        /**
+         * Get EVA objects that have a specific property set to a specific value, filtered by object type.
+         * @param string $property Name of the target property
+         * @param string $value Value to be searched for
+         * @param string $type Object type to filter by
+         * @return array of matching EVA IDs if any found
+         */
 	public static function GetByProperty($property,$value,$type)
 	{
             $query ="
