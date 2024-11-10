@@ -1,5 +1,12 @@
 <?php
 define("FILESTORE_PATH","filestore");
+
+        Module::DemandProperty("filename","Filename","Name of a file");
+        Module::DemandProperty("mimetype","MIME Type","Indicates the media type of associated content.");
+        Module::DemandProperty("file.extension","File Extension","The last part of a file name used by some operating systems to quickly determine the type of the file without examining its contents.");
+        Module::DemandProperty("filesize","File size");
+        Module::DemandProperty("blobid","BLOB ID","Identifies the name given to the BLOB file");
+        Module::DemandProperty("timestamp","Timestamp","A Unix timestamp to uniquiely identify a point in time.");
 class File
 {
     public $id;

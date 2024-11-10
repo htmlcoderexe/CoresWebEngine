@@ -5,7 +5,7 @@ $time = $time[1] + $time[0];
 $start = $time;
 global $_DEBUG;
 $_DEBUG=true;
-
+ini_set("display_errors", "1");
 error_reporting(E_ALL & ~E_NOTICE);
 
 global $_CURRENT_USER;
@@ -28,11 +28,11 @@ require_once CLASS_DIR."DBHelper.php";
 require_once CLASS_DIR."Logger.php";
 require_once CLASS_DIR."TemplateProcessor.php";
 require_once CLASS_DIR."User.php";
-require_once CLASS_DIR."User/userExtendedProps.php";
+require_once CLASS_DIR."User/UserExtendedProps.php";
 require_once CLASS_DIR."Module.php";
 require_once CLASS_DIR."AuthHelper.php";
 require_once CLASS_DIR."KB.php";
-require_once CLASS_DIR."KB_page.php";
+require_once CLASS_DIR."KB_Page.php";
 //require_once CLASS_DIR."Datacore/DataPoint.php";
 //require_once CLASS_DIR."Datacore/DataSeries.php";
 //require_once CLASS_DIR."Datacore/Study.php";
