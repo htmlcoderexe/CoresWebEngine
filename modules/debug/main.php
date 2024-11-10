@@ -64,15 +64,15 @@ function ModuleAction_debug_dlfile($params)
         if(!$parsed_range)
         {
             // bad range
+            Logger::log("Bad range: ".$_SERVER['HTTP_RANGE']);
             HTTPHeaders::Status(416);
             File::ServeByBlobID($fid);
-            Logger::log("Bad range: ".$_SERVER['HTTP_RANGE']);
         }
         else
         {
+            Logger::log("Good range: ".$_SERVER['HTTP_RANGE']);
             list($start,$end)=$parsed_range;
             File::ServeByBlobID($fid,$start,$end);
-            Logger::log("Good range: ".$_SERVER['HTTP_RANGE']);
         }
     }
     else
