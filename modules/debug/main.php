@@ -83,7 +83,32 @@ function ModuleAction_debug_dlfile($params)
     
 }
 
-function ModuleAction_debug_streaming($params)
+function ModuleAction_debug_tag($params)
 {
-    ?><video src="http://homeserver-dev/debug/dlfile/CWzTZqIsEfgXSiGizSOxlZzsPNDuzfhVUcpbWxTm"></video><?php die();
+    $action=$params[0];
+    $tag=$params[1];
+    $target=$params[2];
+    
+    switch($action)
+    {
+        case "add":
+            Tag::Attach($target, $tag);
+
+            break;
+        case "remove":
+            Tag::Remove($target, $tag);
+
+            break;
+        case "find":
+            $results=Tag::Find($target, $tag);
+            $objects=[];
+            foreach($results as $obj)
+                $objects[]=new EVA($obj);
+            var_dump($objects);
+            die();
+            break;
+
+        default:
+            break;
+    }
 }

@@ -5,6 +5,12 @@ class EVA
 	public $type;
 	public $attributes;
 	public $proplist;
+        
+        /**
+         * Loads an EVA object from ID
+         * @param int $id EVAID of the object
+         * @return \EVA The object found by ID if exists
+         */
 	function __construct($id)
 	{
             $stmt = "
@@ -24,6 +30,13 @@ class EVA
             $this->attributes=EVA::GetFullObject($this->proplist);
 	}
 	
+        /**
+         * Creates a new EVA object of a specified type
+         * @param string $type Object typename
+         * @param int $owner Sets the owner of the created object. -1 uses current uid and 0 uses nobody.
+         * @param array $blueprint List of attributes to preload on the object.
+         * @return \EVA
+         */
 	public static function CreateObject($type,$owner = 0,$blueprint=Array())
 	{
             if($owner === -1)
@@ -47,7 +60,12 @@ class EVA
             return $object;
 	}
         
-        
+        /**
+         * Creates a new EVA property
+         * @param type $name
+         * @param type $dname
+         * @param type $desc
+         */
         public static function CreateProperty($name,$dname,$desc)
         {
             
@@ -55,11 +73,18 @@ class EVA
         }
         
 	
-        public static function FindProperty($name)
-        {
-            $q="SELECT name FROM eva_properties WHERE name = ?";
-            return DBHelper::RunScalar($q, [$name]);
-        }
+        /**
+         * Find a property ID
+         * @param string $propname
+         * @return int|bool ID of the property if it exists or false otherwise
+         */
+        public static function GetPropertyId($propname)
+	{
+		$query="SELECT id
+		FROM eva_properties
+		WHERE name=?";
+		return DBHelper::RunScalar($query, [$propname]);
+	}
         
 	//gets
 	public static function GetPropList($id)
@@ -81,13 +106,6 @@ class EVA
 	}
 	
         
-        public static function GetPropertyId($propname)
-	{
-		$query="SELECT id
-		FROM eva_properties
-		WHERE name=?";
-		return DBHelper::RunScalar($query, [$propname]);
-	}
         
         public static function LoadPropFromDB($objid,$propname)
         {
@@ -185,6 +203,13 @@ class EVA
 		DBHelper::Insert('eva_property_values',$row);
 		return DBHelper::GetLastId();
 	}
+        
+        
+        public static function DeleteAttribute($entryId)
+        {
+            DBHelper::Delete("eva_property_values",['id'=>$entryId]);
+        }
+        
 	
         /**
          * Get EVA objects that have a specific property set to a specific value, filtered by object type.
@@ -239,6 +264,8 @@ class EVA
             return $this->proplist[$this->FindAttribute($name)[0]]['value'];
 	}
 	
+        
+        
 	public function SetSingleAttribute($name,$value,$nocreate=false)
 	{
 		//$this->proplist[$name]=$value;
@@ -256,11 +283,53 @@ class EVA
 		return true;
 	}
 	
+        public function EraseAttribute($name,$value=false)
+        {
+            $props=$this->FindAttribute($name);
+            foreach($props as $prop)
+            {
+                if(($value!==false) && $value!==$this->proplist[$prop]['value'])
+                {
+                    continue;
+                }
+                $entryId=$this->proplist[$prop]['pid'];
+                //var_dump($this);
+                self::DeleteAttribute($entryId);
+                unset($this->proplist[$prop]);
+                if(isset($this->attributes[$name]))
+                {
+                    if(is_array($this->attributes[$name]))
+                    {
+                        $indices=array_keys($this->attributes[$name],$value);
+                        foreach($indices as $index)
+                        {
+                            unset($this->attributes[$name][$index]);
+                        }
+                        if(count($this->attributes[$name])===0)
+                        {
+                            unset($this->attributes[$name]);
+                        }
+                    }
+                    else
+                    {
+                        unset($this->attributes[$name]);
+                    }
+                }
+                //var_dump($this);
+                //die();
+            }
+            $this->proplist=array_values($this->proplist);
+        }
+        
+        
+        /**
+         * Explicitly append a volatile attribute
+         * @param type $name
+         * @param type $value
+         */
 	public function AddAttribute($name,$value)
 	{
-                $stmt = DBHelper::$DBLink->prepare("SELECT id FROM eva_properties WHERE name =?");
-                $stmt->bindParam(1, $name);
-		$propertyId=DBHelper::GetList($stmt)[0];
+		$propertyId=self::GetPropertyId($name);
 		$attr= Array(
                     'name'=>$name,
                     'value'=>$value,

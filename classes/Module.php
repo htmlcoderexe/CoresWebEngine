@@ -8,10 +8,15 @@ class Module
     
     public static function DemandProperty($propname,$dname="",$desc="")
     {
-        if(!EVA::FindProperty($propname))
+        if(!EVA::GetPropertyId($propname))
         {
             EVA::CreateProperty($propname,$dname,$desc);
         }
+    }
+    
+    public static function DemandTable($table,$structure,$useIdColumn=true)
+    {
+        
     }
     
     function __construct($name)

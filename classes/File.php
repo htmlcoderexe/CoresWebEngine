@@ -32,6 +32,7 @@ class File
         ];
     
     public const BUFFER_SIZE = 8192;
+    public const BLOBID_LENGTH = 16;
     
     public function __construct($fileid)
     {
@@ -66,7 +67,7 @@ class File
         $filesize = $index == -1 ? $uploadArray['size'] : $uploadArray['size'][$index];
         $ext=pathinfo($filename)['extension'];
         $mime = array_key_exists($ext,self::MIME_TYPES) ? self::MIME_TYPES[$ext] : "UNKNOWN";
-        $blobname = Utility::CreateRandomString(40,Utility::RANDOM_CHR_MIX);
+        $blobname = Utility::CreateRandomString(self::BLOBID_LENGTH,Utility::RANDOM_CHR_MIX);
         $path2=self::GetFilePath($blobname);
         $fullname = $path2.DIRECTORY_SEPARATOR.$blobname;
         self::$last_error=$fullname;
