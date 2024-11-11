@@ -149,4 +149,19 @@ class Utility
             }
             return $s;
         }
+        public static function hfilesize($size)
+        {
+            $prefixes=array("","k","M","G","T");
+            $pidx=0;
+            while($size>1024)
+            {
+                if($pidx==4)
+                {
+                    break;
+                }
+                $size/=1024;
+                $pidx++;
+            }
+            return number_format($size,2,"."," ")." ".$prefixes[$pidx];
+        }
 }

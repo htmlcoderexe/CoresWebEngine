@@ -129,27 +129,45 @@ class DBHelper
      * Run a query and get the results
      * @param string $query The query to prepare and run
      * @param array $params Array of params to bind
-     * @return array An array of rows (each an assoc array of column-value)
+     * @return array An array of rows (each an assoc array of column=>value)
      */
     public static function RunTable($query, $params)
     {
         $stmt = self::RunStmt($query,$params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
+    /**
+     * Run a query and get a single row
+     * @param string $query The query to prepare and run
+     * @param array $params Array of params to bind
+     * @return array An assoc array of column=>value
+     */
     public static function RunRow($query,$params)
     {
         
         $stmt = self::RunStmt($query,$params);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
-    
+    /**
+     * Run a query and get a single column as a list
+     * @param string $query The query to prepare and run
+     * @param array $params Array of params to bind
+     * @param int the column to return
+     * @return array An array of values from the selected column
+     */
     public static function RunList($query,$params,$column=0)
     {
         $stmt = self::RunStmt($query,$params);
         return $stmt->fetchAll(PDO::FETCH_COLUMN, $column);
     }
     
+    /**
+     * Run a query and get a single value
+     * @param string $query The query to prepare and run
+     * @param array $params Array of params to bind
+     * @param int the column to return
+     * @return mixed a value from the selected column in the returned row
+     */
     public static function RunScalar($query,$params,$column=0)
     {
         $stmt = self::RunStmt($query,$params);

@@ -44,9 +44,9 @@ function ModuleAction_debug_file($params)
     else
     {
         $fileid=File::Upload($_FILES['fileup']);
-        if($fileid!=-1)
+        if($fileid)
         {
-            var_dump(new EVA($fileid));
+            var_dump($fileid);
         }
         echo FILE::$last_error;
         

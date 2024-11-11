@@ -11,13 +11,9 @@ class Tag
     public static function Attach($EVAID,$tag)
     {
         $e=new EVA($EVAID);
-        //var_dump($e);
         $e->EraseAttribute("tag",$tag);
-        //var_dump($e);
         $e->AddAttribute("tag",$tag);
-        //var_dump($e);
         $e->Save();
-        //var_dump($e);
     }
     
     public static function Remove($EVAID,$tag)
@@ -30,5 +26,10 @@ class Tag
     public static function Find($EVAType,$tag)
     {
         return EVA::GetByProperty("tag", $tag, $EVAType);
+    }
+    
+    public static function GetTags($EVAID)
+    {
+        return EVA::LoadPropFromDB($EVAID,"tag");
     }
 }

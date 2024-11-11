@@ -1,0 +1,1 @@
+<a href="/debug/dlfile/{%blobid|%}">{%filename|%}</a>, {%size|%} <br />

@@ -6,6 +6,9 @@ class EVA
 	public $attributes;
 	public $proplist;
         
+        public const OWNER_NOBODY = 0;
+        public const OWNER_CURRENT = -1;
+        
         /**
          * Loads an EVA object from ID
          * @param int $id EVAID of the object
@@ -37,14 +40,14 @@ class EVA
          * @param array $blueprint List of attributes to preload on the object.
          * @return \EVA
          */
-	public static function CreateObject($type,$owner = 0,$blueprint=Array())
+	public static function CreateObject($type,$owner = self::OWNER_NOBODY,$blueprint=Array())
 	{
-            if($owner === -1)
+            if($owner === self::OWNER_CURRENT)
             {
                 $currentuid = User::GetCurrentUser()->userid;
                 if(User::GetCurrentUser()->IsGuest())
                 {
-                    $currentuid=0;
+                    $currentuid=self::OWNER_NOBODY;
                 }
                 $owner = $currentuid;
             }
@@ -106,7 +109,12 @@ class EVA
 	}
 	
         
-        
+        /**
+         * Returns an array of values of a specific property of a specific EVA object.
+         * @param int $objid The object to search
+         * @param string $propname Property name to search for
+         * @return array An array containing any values found
+         */
         public static function LoadPropFromDB($objid,$propname)
         {
             $query="SELECT map.value

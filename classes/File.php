@@ -10,6 +10,7 @@ define("FILESTORE_PATH","filestore");
 class File
 {
     public $id;
+    public $blobid;
     public $fname;
     public $fullname;
     public $filext;
@@ -43,6 +44,16 @@ class File
         $this->timestamp=$f->attributes['timestamp'];
         $this->type=$f->attributes['mimetype'];
         $this->filesize=$f->attributes['filesize'];
+        $this->blobid=$f->attributes['blobid'];
+    }
+    
+    public static function GetByBlobID($blobid)
+    {
+        $results=EVA::GetByProperty("blobid", $blobid, "file");
+        if($results)
+        {
+            return new File($results[0]);
+        }
     }
     
     public static function GetFilePath($blobname)
@@ -58,7 +69,7 @@ class File
      * 
      * @param an array from $_FILE $uploadArray
      * @param int $index - if specified, $uploadArray contains multiple files and this is an index
-     * @return int ID of the associated EVA "file" object, -1 on failure (check File::$last_error)
+     * @return \File EVA "file" object, null on failure (check File::$last_error)
      */
     public static function Upload($uploadArray,$index = -1)
     {
@@ -76,7 +87,7 @@ class File
             if(!move_uploaded_file($tempname,$fullname))
             {
                 self::$last_error="Couldn't write file.";
-                return -1;
+                return null;
             }
         }
         else
@@ -86,13 +97,13 @@ class File
                 if(!move_uploaded_file($tempname,$fullname))
                 {
                     self::$last_error="Couldn't write file.";
-                    return -1;
+                    return null;
                 }
             }
             else
             {
                 self::$last_error="Couldn't create directory";
-                return -1;
+                return null;
             }
         }
         $fileobj=EVA::CreateObject("file");
@@ -103,7 +114,7 @@ class File
         $fileobj->AddAttribute("blobid",$blobname);
         $fileobj->AddAttribute("timestamp",time());
         $fileobj->Save();
-        return $fileobj->id;
+        return new File($fileobj->id);
     }
     
     public static function ServeByBlobID($blobid,$from=-1,$to=-1)
