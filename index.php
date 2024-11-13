@@ -45,8 +45,7 @@ require_once CLASS_DIR."File.php";
 require_once CLASS_DIR."HTTPHeaders.php";
 require_once CLASS_DIR."Tag.php";
 require_once CLASS_DIR."Document.php";
-
-
+header("Content-Security-Policy:  frame-ancestors 'self' ".BASE_URI);
 session_start();
 $_CURRENT_USER=User::GetCurrentUser();
 $_PAGE_SIDEBAR=Array();
