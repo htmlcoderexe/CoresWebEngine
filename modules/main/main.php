@@ -15,3 +15,11 @@ function ModuleAction_main_default()
 	Utility::SetPageTitle("Cores main module");
 }
 
+function ModuleAction_main_iframe()
+{
+    global $_DEBUG;
+    $_DEBUG = false;
+    Utility::RawModeOn();
+    (new TemplateProcessor("fullscreenframe"))->process();
+    die();
+}
