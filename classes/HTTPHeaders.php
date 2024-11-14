@@ -54,6 +54,10 @@ class HTTPHeaders
         }
         
     }
+    public static function Location($url)
+    {
+        header("Location: $url");
+    }
     
     /**
      * 
@@ -84,5 +88,11 @@ class HTTPHeaders
             }
         }
         return [$start,$end];
+    }
+    
+    public static function GetReferer()
+    {
+        // netbeans pls
+        return $_SERVER['HTTP_REFERER'];
     }
 }

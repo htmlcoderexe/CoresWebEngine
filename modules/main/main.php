@@ -2,7 +2,7 @@
 
 function ModuleAction_main_default()
 {
-	$id=(int)Utility::GetSetting('mainpage');
+	$id=(int) EngineCore::GetSetting('mainpage');
         $revision=KB_Page::GetLastRevision($id);
         $content = "<span style=\"font-size:200px\">:(</span><br />Oopsie woopsie, the index page's gone";
         if($revision !== false)
