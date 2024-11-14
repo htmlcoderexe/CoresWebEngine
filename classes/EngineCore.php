@@ -48,6 +48,11 @@ class EngineCore
      * @var string
      */
     static $DebugInfo;
+    /**
+     * If the page got rendered, caches it here okay?
+     * @var string
+     */
+    static $Rendered = "";
     
     //------------------------------+
     // Page operation and rendering |
@@ -86,6 +91,25 @@ class EngineCore
         self::$MainContent .= $content; //the dot makes all the difference
     }
     /**
+     * Adds a new block to the sidebar
+     * @param string $header block header 
+     * @param string $content block contents
+     * @param string $headlink header link
+     */
+    static function AddSideBar($header,$content,$headlink=null)
+    {
+        // TODO: bring this to the layout standard
+        // additional template file? called sidecar? lol
+        $box=new TemplateProcessor("sidebarbox");
+        $box->tokens['header']=$header;
+        $box->tokens['content']=$content;
+        if($headlink!=null)
+        {
+            $box->tokens['headlink']=$headlink;
+        }
+        self::$SideBar[]=$box->process(true);
+    }
+    /**
      * Shortcut to quickly insert a specific template into the page
      * the template name string is parsed for params so this doesn't
      * only work for parameterless templates which is really cool
@@ -98,10 +122,35 @@ class EngineCore
         self::AddPageContent((new TemplateProcessor($template))->process(true));
     }
     /**
+     * Process all the layouts and templates and return the final result,
+     * ready for the user, cache it in case users dare ask again
+     * @return string The results of our hard work
+     */
+    public static function RenderPage()
+    {
+        // do we really have to?
+        if(self::$Rendered==="")
+        {
+            // apparently
+            $tpl = new TemplateProcessor(self::$Layout);
+            if(self::DEBUG)
+            {
+                self::AddSideBar("Debug info", self::$DebugInfo);
+            }
+            $tpl->tokens['title'] = self::$PageTitle;
+            $tpl->tokens['content'] = self::$MainContent;
+            // TODO: something more dignified than this
+            $tpl->tokens['sidebar'] = implode("\r\n\n",self::$SideBar);
+            self::$Rendered=$tpl->proces(true);
+        }     
+        return self::$Rendered;
+        
+    }
+    /**
      * Write anything to the #DEBUG channel
      * @param string $content Whatever they wish to scream about.
      */
-    public static function WriteDebug($content)
+    public static function Write2Debug($content)
     {
         self::$DebugInfo.=$content;
     }
@@ -109,7 +158,7 @@ class EngineCore
      * Take a nice dump right under the developer's nose
      * (basically var_dump redirected to $DebugInfo)
      * @param idk $whatever something smelly
-     */
+     *///                   3dump5me
     public static function Dump2Debug($whatever)
     {
         self::WriteDebug(self::VarDumpString($whatever));

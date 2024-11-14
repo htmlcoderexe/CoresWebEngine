@@ -29,7 +29,7 @@ function ModuleAction_auth_signup($params)
 					$t->tokens['error']="<strong>Error: </strong>".$_SESSION['signuperror'];
 					$t->tokens['s'.$_SESSION['signupdata']['sign']]=' selected="selected"';
 					$t->tokens['g'.$_SESSION['signupdata']['sex']]=' selected="selected"';
-					Utility::SetPageTitle("Sign up");
+					EngineCore::SetPageTitle("Sign up");
 					Utility::SetPageContent($t->process(true));
 				}
 				//Utility::AddPageContent(Utility::var_dump_ob($_POST));
@@ -39,7 +39,7 @@ function ModuleAction_auth_signup($params)
 	}
 	else
 	{
-		Utility::SetPageTitle("Sign up");
+		EngineCore::SetPageTitle("Sign up");
 		Utility::SetPageContent((new TemplateProcessor("newuser"))->process(true));
 	}
 }
@@ -86,7 +86,7 @@ function ModuleAction_auth_activate($params)
 
 function ModuleAction_auth_created($params)
 {
-	Utility::SetPageTitle("Signup successful");
+	EngineCore::SetPageTitle("Signup successful");
 	Utility::SetPageContent((new TemplateProcessor("UserCreateWelcomeMessage"))->process(true));
 }
 

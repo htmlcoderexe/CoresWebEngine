@@ -3,13 +3,13 @@ require "Userpanel.php";
 
 function ModuleAction_userpanel_default($params)
 {
-	Utility::SetPageTitle("User panel");
+	EngineCore::SetPageTitle("User panel");
 	Userpanel::DisplayUser();
 }
 
 function ModuleAction_userpanel_view($params)
 {
-	Utility::SetPageTitle("View user");
+	EngineCore::SetPageTitle("View user");
 	$id=$params[0];
 	Userpanel::DisplayUser(new User(User::GetUsername($id)));
 }
@@ -17,7 +17,7 @@ function ModuleAction_userpanel_view($params)
 function ModuleAction_userpanel_edit($params)
 {
 	//yo yo yo, testing, 1-2-3!
-	Utility::SetPageTitle("Change details");
+	EngineCore::SetPageTitle("Change details");
 	$id=$params[0];
 	$SelectedUser=new User(User::GetUsername($id));
 	$e=new TemplateProcessor("userprops");

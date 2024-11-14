@@ -5,6 +5,7 @@ $time = $time[1] + $time[0];
 $start = $time;
 global $_DEBUG;
 $_DEBUG=true;
+EngineCore::$DEBUG = true;
 ini_set("display_errors", "1");
 error_reporting(E_ALL & ~E_NOTICE);
 
@@ -45,6 +46,7 @@ require_once CLASS_DIR."File.php";
 require_once CLASS_DIR."HTTPHeaders.php";
 require_once CLASS_DIR."Tag.php";
 require_once CLASS_DIR."Document.php";
+require_once CLASS_DIR."EngineCore.php";
 header("Content-Security-Policy:  frame-ancestors 'self' ".BASE_URI);
 session_start();
 $_CURRENT_USER=User::GetCurrentUser();
@@ -52,12 +54,8 @@ $_PAGE_SIDEBAR=Array();
 require_once CLASS_DIR."Router.php";
 Router::Dispatch();
 
-Utility::debug("<strong>Route:</strong>".Utility::GET("route"));
+EngineCore::Write2Debug("<strong>Route:</strong>".Utility::GET("route"));
 
-if($_DEBUG)
-{
-    Utility::PageSidebarAdd("Debug info", $_DEBUG_INFO);
-}
 
 //sidebar
 $aerr="";
@@ -66,7 +64,7 @@ if(isset($_SESSION['autherror']))
 	$aerr=",aerr=Incorrect username/password";
 	unset($_SESSION['autherror']);
 }
-Utility::PageSidebarAdd("&nbsp;", (new TemplateProcessor("membercard".$aerr))->process(true),"/userpanel");
+EngineCore::AddSideBar("&nbsp;", (new TemplateProcessor("membercard".$aerr))->process(true),"/userpanel");
 
 
 
@@ -78,14 +76,12 @@ if($_PAGE_RAW)
     die($_PAGE_CONTENT);
 }
 $tpl=new TemplateProcessor("mainpage");
-$tpl->tokens['title']=$_PAGE_TITLE;
-$tpl->tokens['content']=$_PAGE_CONTENT;
-$tpl->tokens['sidebar']=implode("\r\n\n",$_PAGE_SIDEBAR);
+EngineCore::UseLayout("mainpage");
+$data=EngineCore::RenderPage();
 $time = microtime();
 $time = explode(' ', $time);
 $time = $time[1] + $time[0];
 $finish = $time;
 $total_time = round(($finish - $start), 4);
-$data=$tpl->process(true);
 echo str_replace("||||generatedtime||||",$total_time,$data);
 //$tpl->dump();

@@ -12,7 +12,7 @@ function ModuleAction_main_default()
         $t=new TemplateProcessor("kbpage");
 	$t->tokens['text']=$content;
 	Utility::AddPageContent($t->process(true));
-	Utility::SetPageTitle("Cores main module");
+	EngineCore::SetPageTitle("Cores main module");
 }
 
 function ModuleAction_main_iframe()

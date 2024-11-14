@@ -113,12 +113,7 @@ class Utility
 		$t=new TemplateProcessor($template);
 		Utility::AddPageContent($t->process(true));
 	}
-	
-	static function GetSetting($setting)
-	{
-                return DBHelper::RunScalar("SELECT setting_value FROM system_settings WHERE setting_name=?", [$setting], 0);
-	}
-        
+
        
         
         public static function CreateRandomChar($mode)

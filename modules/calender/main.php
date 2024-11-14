@@ -170,7 +170,7 @@ function ModuleAction_calender_create($params)
             $t=new TemplateProcessor("calender/createevent");
             $t->tokens['error']="Invalid input.";       
             Utility::AddPageContent($t->process(true));
-            Utility::SetPageTitle("Create event");
+            EngineCore::SetPageTitle("Create event");
             return;
         }
         case "date":
@@ -182,13 +182,13 @@ function ModuleAction_calender_create($params)
                 $t->tokens['date']=$datestring;      
             }
             Utility::AddPageContent($t->process(true));
-            Utility::SetPageTitle("Create event");
+            EngineCore::SetPageTitle("Create event");
             return;
         }
         default:
         {
             $t=new TemplateProcessor("calender/createevent");
-            Utility::SetPageTitle("Create event");
+            EngineCore::SetPageTitle("Create event");
             return;
         }
     }
@@ -219,7 +219,7 @@ function ModuleFunction_calender_ShowDay($day)
     $t = new TemplateProcessor("calender/eventsondate");
     $t->tokens['events']=$output;
     Utility::AddPageContent($t->process(true));
-    Utility::SetPageTitle("Events on ".$e->attributes['calendar.date']);
+    EngineCore::SetPageTitle("Events on ".$e->attributes['calendar.date']);
 }
 
 function ModuleAction_calender_view($params)
