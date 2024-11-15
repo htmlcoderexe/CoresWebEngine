@@ -21,14 +21,14 @@ function ModuleAction_userpanel_edit($params)
 	$id=$params[0];
 	$SelectedUser=new User(User::GetUsername($id));
 	$e=new TemplateProcessor("userprops");
-	Utility::AddPageContent($e->process(true));
+	EngineCore::AddPageContent($e->process(true));
 	
 }
  
 function ModuleAction_userpanel_property($params)
 {
-	$property=Utility::POST('property','____invalid');
-	$value=Utility::POST('value','____invalid');
+	$property=EngineCore::POST('property','____invalid');
+	$value=EngineCore::POST('value','____invalid');
 	$user=User::GetCurrentUser();
 	UserExtendedProps::SetOneProperty($user,$property,$value);
 	echo UserExtendedProps::GetOneProperty($user,$property);
@@ -37,11 +37,11 @@ function ModuleAction_userpanel_property($params)
 
 function ModuleAction_userpanel_signup($params)
 {
-	Utility::SetPageContent("Pool is open!");
+	EngineCore::SetPageContent("Pool is open!");
 }
 
 function ModuleAction_userpanel_recover($params)
 {
-	Utility::SetPageContent("Pool is open!");
+	EngineCore::SetPageContent("Pool is open!");
 }
 

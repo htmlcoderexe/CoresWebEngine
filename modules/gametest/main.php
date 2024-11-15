@@ -87,7 +87,7 @@ function generate_map()
 
 function ModuleAction_gametest_default($params)
 {
-	Utility::AddPageContent(generate_map());
+	EngineCore::AddPageContent(generate_map());
 }
 
 function ModuleAction_gametest_go($params)
@@ -97,8 +97,8 @@ function ModuleAction_gametest_go($params)
 	$_SESSION['player']->X=$X;
 	$_SESSION['player']->Y=$Y;
 	$_SESSION['enemies'][0]->Tick($_SESSION['player']);
-	Utility::AddPageContent(generate_map());
-	Utility::AddPageContent(Utility::var_dump_ob($_SESSION));
+	EngineCore::AddPageContent(generate_map());
+	EngineCore::AddPageContent(EngineCore::VarDumpString($_SESSION));
 }
 
 function ModuleAction_gametest_board($params)

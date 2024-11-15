@@ -125,14 +125,14 @@ function ModuleAction_calender_default($params)
     $t_month= new TemplateProcessor("calender/calendarmonth");
     $t_month->tokens['header']=$header;
     $t_month->tokens['days']=$output;
-    Utility::SetPageContent($t_month->process(true));
+    EngineCore::SetPageContent($t_month->process(true));
 }
 
 function ModuleFunction_CreateEvent($title,$date,$time,$description)
 {
     if(!$title || !$date)
     {
-        Utility::GTFO("/calender/create/error");
+        EngineCore::GTFO("/calender/create/error");
         return;
     }
     $event = EVA::CreateObject("calendar.event");
@@ -145,17 +145,17 @@ function ModuleFunction_CreateEvent($title,$date,$time,$description)
     $event->AddAttribute("calendar.time",$time);
     $event->AddAttribute("description",$description);
     $event->Save();
-    Utility::GTFO("/calender");
+    EngineCore::GTFO("/calender");
     return;
 }
 
 function ModuleAction_calender_create($params)
 {
-    $title = Utility::POST("title","");
-    $date = Utility::POST("date","");
-    $time = Utility::POST("time","");
-    $description = Utility::POST("description","");
-    $submitted=Utility::POST("create","");
+    $title = EngineCore::POST("title","");
+    $date = EngineCore::POST("date","");
+    $time = EngineCore::POST("time","");
+    $description = EngineCore::POST("description","");
+    $submitted=EngineCore::POST("create","");
     if($submitted)
     {
         ModuleFunction_CreateEvent($title,$date,$time,$description);
@@ -169,7 +169,7 @@ function ModuleAction_calender_create($params)
         {
             $t=new TemplateProcessor("calender/createevent");
             $t->tokens['error']="Invalid input.";       
-            Utility::AddPageContent($t->process(true));
+            EngineCore::AddPageContent($t->process(true));
             EngineCore::SetPageTitle("Create event");
             return;
         }
@@ -181,7 +181,7 @@ function ModuleAction_calender_create($params)
                 $datestring= ModuleFunction_calender_ParseYYYYMMDD($params[1]);
                 $t->tokens['date']=$datestring;      
             }
-            Utility::AddPageContent($t->process(true));
+            EngineCore::AddPageContent($t->process(true));
             EngineCore::SetPageTitle("Create event");
             return;
         }
@@ -218,7 +218,7 @@ function ModuleFunction_calender_ShowDay($day)
     }
     $t = new TemplateProcessor("calender/eventsondate");
     $t->tokens['events']=$output;
-    Utility::AddPageContent($t->process(true));
+    EngineCore::AddPageContent($t->process(true));
     EngineCore::SetPageTitle("Events on ".$e->attributes['calendar.date']);
 }
 

@@ -20,7 +20,11 @@ class EngineCore
      * @var bool
      */
     public static $RawMode;
-    
+    /**
+     * Current logged-in user
+     * @var User
+     */
+    public static $CurrentUser;
     // not going to instance any of this, everyone shits in the same bucket
     /**
      * Layout template selected
@@ -122,18 +126,40 @@ class EngineCore
         self::AddPageContent((new TemplateProcessor($template))->process(true));
     }
     /**
+     * Enables raw mode, which only outputs the main page content without 
+     * any surrounding layouts - useful if outputting something other than
+     * pages, especially binary data.
+     */
+    public static function RawModeOn()
+    {
+        self::$RawMode = true;
+    }
+    /**
+     * Check if raw mode is enabled.
+     * @return bool
+     */
+    public static function RawMode()
+    {
+        return self::$RawMode;
+    }
+    /**
      * Process all the layouts and templates and return the final result,
      * ready for the user, cache it in case users dare ask again
      * @return string The results of our hard work
      */
     public static function RenderPage()
     {
+        // if raw output is selected, just output the contents without layouts
+        if(self::$RawMode)
+        {
+            return self::$MainContent;
+        }
         // do we really have to?
         if(self::$Rendered==="")
         {
             // apparently
             $tpl = new TemplateProcessor(self::$Layout);
-            if(self::DEBUG)
+            if(self::$DEBUG)
             {
                 self::AddSideBar("Debug info", self::$DebugInfo);
             }
@@ -141,7 +167,7 @@ class EngineCore
             $tpl->tokens['content'] = self::$MainContent;
             // TODO: something more dignified than this
             $tpl->tokens['sidebar'] = implode("\r\n\n",self::$SideBar);
-            self::$Rendered=$tpl->proces(true);
+            self::$Rendered=$tpl->process(true);
         }     
         return self::$Rendered;
         

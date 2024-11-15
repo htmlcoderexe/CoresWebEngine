@@ -41,7 +41,6 @@ class KB_Page
         //Utility::Debug(mysql_error());
         $id=DBHelper::GetLastId();
         DBHelper::$DBLink->commit();
-        Utility::Debug("AAAAAAAAAAAAA");
         return $id;
     }
     public function ProcessHTML()

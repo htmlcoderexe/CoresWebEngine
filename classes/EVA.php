@@ -248,7 +248,7 @@ class EVA
 	public function HasAttribute($name)
 	{
 		$result=$this->FindAttribute($name);
-		Utility::ddump($result);
+		EngineCore::Dump2Debug($result);
 		return count($result)>0;
 		//return isset($this->attributes[$name]);
 	}

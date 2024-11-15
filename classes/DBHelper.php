@@ -222,7 +222,7 @@ class DBHelper
         if($err !== "   ")
         {
             //    Utility::debug($query);
-            Utility::debug($err);
+            EngineCore::Write2Debug($err);
         }
         return $data;
     }

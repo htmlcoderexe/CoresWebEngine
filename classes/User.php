@@ -19,7 +19,7 @@ class User
         }
         if($this->userid == -1)
         {
-            Utility::debug("Warning: invalid user '$username'");
+            EngineCore::Write2Debug("Warning: invalid user '$username'");
         }
     }
 
@@ -72,7 +72,7 @@ class User
 		ON user_property_map.user_property_id = user_properties.id
 		WHERE user_id=?
 		",[$this->userid]);
-        echo Utility::var_dump_ob($prop);
+        echo EngineCore::VarDumpString($prop);
     }
 
     public function GetBasicInfo()

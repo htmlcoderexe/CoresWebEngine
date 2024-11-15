@@ -2,6 +2,6 @@
 
 function ModuleActionkbindex($params)
 {
-	Utility::SetPageContent("Kb index page");
+	EngineCore::SetPageContent("Kb index page");
 	echo "asdasdas"; 
 }

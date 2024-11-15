@@ -55,7 +55,7 @@ class AuthHelper
 		}
 		User::Create($u,$p,$n,$e);
 		AuthHelper::CreateActivationCode($u,$e);
-		Utility::GTFO("/auth/created");
+		EngineCore::GTFO("/auth/created");
 		return true;
 		//Utility::FromWhenceYouCame();
 	}
@@ -132,7 +132,7 @@ class AuthHelper
                         $stmt->bindParam(2,$uid);
 			DBHelper::GetArray($stmt);
 			$autpl=new TemplateProcessor("resetSuccess");
-			Utility::AddPageContent($autpl->process(true));
+			EngineCore::AddPageContent($autpl->process(true));
 			return true;
 		}
 		else

@@ -11,15 +11,14 @@ function ModuleAction_main_default()
         }
         $t=new TemplateProcessor("kbpage");
 	$t->tokens['text']=$content;
-	Utility::AddPageContent($t->process(true));
+	EngineCore::AddPageContent($t->process(true));
 	EngineCore::SetPageTitle("Cores main module");
 }
 
 function ModuleAction_main_iframe()
 {
-    global $_DEBUG;
-    $_DEBUG = false;
-    Utility::RawModeOn();
+    // won't be needed once layouts become a thing
+    EngineCore::RawModeOn();
     (new TemplateProcessor("fullscreenframe"))->process();
     die();
 }

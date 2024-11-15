@@ -36,6 +36,6 @@ class Userpanel
             $t->tokens=$contax;
             $content.=$t->process(true);	
 	}
-    Utility::SetPageContent($content);
+        EngineCore::SetPageContent($content);
     }
 }

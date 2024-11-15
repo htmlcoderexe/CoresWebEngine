@@ -12,23 +12,23 @@ function ModuleFunction_rpg_IsOwner($charid,$userid=-1)
 {
 	$cu=User::GetCurrentUser();
 	$userid=$userid==-1?$cu->userid:$userid;
-	Utility::ddump($userid);
+	EngineCore::Dump2Debug($userid);
 	if($userid==-1) //guest
-		Utility::GTFO("/");
+		EngineCore::GTFO("/");
 	return (ModuleFunction_rpg_GetCharParam('owner',$charid)==$userid);
 }
 
 function ModuleAction_rpg_default()
 {
-	Utility::SetPageContent(file_get_contents(__DIR__."\\itemtest.html"));
-	Utility::debug(__DIR__);
+	EngineCore::SetPageContent(file_get_contents(__DIR__."\\itemtest.html"));
+	EngineCore::Write2Debug(__DIR__);
 }
 
 function ModuleAction_rpg_game()
 {
 	if(!isset($_SESSION['rpg.current_char']))
-		Utility::GTFO("/rpg/selectcharacter");
-	Utility::RawModeOn();
+		EngineCore::GTFO("/rpg/selectcharacter");
+	EngineCore::RawModeOn();
 	$screen=new TemplateProcessor("rpg\\gamescreen");
 	$emeraldcount=ModuleFunction_rpg_GetCharParam('rpg.emeralds');
 	$megacoincount=ModuleFunction_rpg_GetCharParam('rpg.megacoins');
@@ -38,7 +38,7 @@ function ModuleAction_rpg_game()
 	
 	
 	);
-	Utility::SetPageContent($screen->process(true));
+	EngineCore::SetPageContent($screen->process(true));
 }
 
 function ModuleAction_rpg_selectcharacter($params)
@@ -54,7 +54,7 @@ function ModuleAction_rpg_selectcharacter($params)
 			//set current character
 			$_SESSION['rpg.current_char']=$id;
 			//redirect to the game
-			Utility::GTFO("/rpg/game");die();
+			EngineCore::GTFO("/rpg/game");die();
 		}
 	}
 	$cu=User::GetCurrentUser();
@@ -74,17 +74,17 @@ function ModuleAction_rpg_selectcharacter($params)
 		$selector_item->reset();
 	}
 	$selector->tokens['characters']=$listbuffer;
-	Utility::SetPageContent($selector->process(true));
+	EngineCore::SetPageContent($selector->process(true));
 }
 
 function ModuleAction_rpg_setcharparam()
 {
-	Utility::RawModeOn();
+	EngineCore::RawModeOn();
 	if(!isset($_SESSION['rpg.current_char']))
 		die("hi there");
 	$charid=(int)$_SESSION['rpg.current_char'];
-	$property=Utility::POST('property','____invalid');
-	$value=Utility::POST('value','____invalid');
+	$property=EngineCore::POST('property','____invalid');
+	$value=EngineCore::POST('value','____invalid');
 	//echo $property." was set to ".$value;die;
 	$character=new EVA($charid);
 	$user=User::GetCurrentUser();
@@ -100,11 +100,11 @@ function ModuleAction_rpg_setcharparam()
 
 function ModuleAction_rpg_getcharparam()
 {
-	Utility::RawModeOn();
+	EngineCore::RawModeOn();
 	if(!isset($_SESSION['rpg.current_char']))
 		die("hi there");
 	$charid=(int)$_SESSION['rpg.current_char'];
-	$property=Utility::POST('property','____invalid');
+	$property=EngineCore::POST('property','____invalid');
 	$character=new EVA($charid);
 	$user=User::GetCurrentUser();
 	if($character->GetSingleAttribute('owner')==$user->userid)
@@ -118,19 +118,18 @@ function ModuleAction_rpg_getcharparam()
 
 function ModuleAction_rpg_createcharacter()
 {
-	global $_CURRENT_USER;
 	if(!isset($_POST['charname']) || !isset($_POST['charclass']))
 	{
 		//display character creation form
 		$charform=new TemplateProcessor("rpg\\character.creator");
 		
-		Utility::SetPageContent($charform->process(true));
+		EngineCore::SetPageContent($charform->process(true));
 	}
 	else
 	{
 		$name=$_POST['charname'];
 		$class=$_POST['charclass'];
-		$gender=Utility::POST('chargender',0);
+		$gender=EngineCore::POST('chargender',0);
 		//check if character exists
 		$matches=EVA::GetByProperty('rpg.character_name',$name,'rpg.character');
 		if(count($matches)==0)
@@ -147,7 +146,7 @@ function ModuleAction_rpg_createcharacter()
 			$character->SetSingleAttribute('rpg.megacoins',$initbux);
 			$character->SetSingleAttribute('rpg.emeralds',$initemeralds);
 			$character->SetSingleAttribute('rpg.location',$initloc);
-			$character->SetSingleAttribute('owner',$_CURRENT_USER->userid);
+			$character->SetSingleAttribute('owner',EngineCore::$CurrentUser->userid);
 			$character->SetSingleAttribute('rpg.character_exp',0);
 			$character->SetSingleAttribute('rpg.character_level',1);
 			$character->Save();
@@ -155,14 +154,14 @@ function ModuleAction_rpg_createcharacter()
 			//set current character
 			$_SESSION['rpg.current_char']=$character->id;
 			//redirect to the game
-			Utility::GTFO("/rpg/game");die();
+			EngineCore::GTFO("/rpg/game");die();
 		}
 		else
 		{
 			//display form + error
 			$charform=new TemplateProcessor("rpg\\character.creator");
 			$charform->tokens=Array('errormessage'=>'Character with this name already exists');	
-			Utility::SetPageContent($charform->process(true));
+			EngineCore::SetPageContent($charform->process(true));
 		}
 	}
 }
@@ -170,7 +169,7 @@ function ModuleAction_rpg_createcharacter()
 
 function ModuleAction_rpg_icontest($params)
 {
-	Utility::RawModeOn();
+	EngineCore::RawModeOn();
 	header("Content-Type: image/svg+xml");
 //	header("Cache-Control: no-store ");
 	header("Expires: Wed, 21 Oct 2015 07:28:00 GMT");
@@ -181,7 +180,7 @@ function ModuleAction_rpg_icontest($params)
 	srand((int)$_SESSION['srand']);
 	if(count($params)<=0)
 	{
-		Utility::GTFO("/rpg/icontest/".rand(10000,99999));
+		EngineCore::GTFO("/rpg/icontest/".rand(10000,99999));
 	}
 	$_SESSION['srand']+=rand(2,10);
 			$icon=new TemplateProcessor("rpg\\svg\\people\\generic_female.svg");
@@ -201,5 +200,5 @@ function ModuleAction_rpg_icontest($params)
 function ModuleAction_rpg_icontest2()
 {
 	$container=new TemplateProcessor("\\rpg\\icontest");
-	Utility::SetPageContent($container->process(true));
+	EngineCore::SetPageContent($container->process(true));
 } 

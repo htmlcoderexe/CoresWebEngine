@@ -3,13 +3,13 @@
 function ModuleAction_auth_logout($params)
 {
 	User::LogOut();
-	Utility::FromWhenceYouCame();
+	EngineCore::FromWhenceYouCame();
 }
 
 function ModuleAction_auth_login($params)
 {
-	User::LogIn(Utility::POST('username'),Utility::POST('password'));
-	Utility::FromWhenceYouCame();
+	User::LogIn(EngineCore::POST('username'),EngineCore::POST('password'));
+	EngineCore::FromWhenceYouCame();
 	die();
 }
 
@@ -30,7 +30,7 @@ function ModuleAction_auth_signup($params)
 					$t->tokens['s'.$_SESSION['signupdata']['sign']]=' selected="selected"';
 					$t->tokens['g'.$_SESSION['signupdata']['sex']]=' selected="selected"';
 					EngineCore::SetPageTitle("Sign up");
-					Utility::SetPageContent($t->process(true));
+					EngineCore::SetPageContent($t->process(true));
 				}
 				//Utility::AddPageContent(Utility::var_dump_ob($_POST));
 				break;
@@ -40,7 +40,7 @@ function ModuleAction_auth_signup($params)
 	else
 	{
 		EngineCore::SetPageTitle("Sign up");
-		Utility::SetPageContent((new TemplateProcessor("newuser"))->process(true));
+		EngineCore::SetPageContent((new TemplateProcessor("newuser"))->process(true));
 	}
 }
 
@@ -55,30 +55,30 @@ function ModuleAction_auth_activate($params)
 			$user=new User(User::GetUsername($results[0]));
 			$autpl=new TemplateProcessor("activation_confirm");
 			$autpl->tokens['username']=$user->username;
-			Utility::SetPageContent($autpl->process(true));
+			EngineCore::SetPageContent($autpl->process(true));
 			$_SESSION['acode']=$code;
 		}
 		else
 		{
-			Utility::SetPageContent("Invalid activation code.");
+			EngineCore::SetPageContent("Invalid activation code.");
 		}
 	}
 	else
 	{
 		if(isset($_POST['username']) && isset($_POST['password']))
 		{
-			if(User::LogIn(Utility::POST('username'),Utility::POST('password'),true) && isset($_SESSION['acode']))
+			if(User::LogIn(EngineCore::POST('username'),EngineCore::POST('password'),true) && isset($_SESSION['acode']))
 			{
 				$code=mysql_real_escape_string($_SESSION['acode']);
 				unset($_SESSION['acode']);
 				DBHelper::GetArray("DELETE FROM user_activation WHERE code='$code'");
-				(new User(Utility::POST('username')))->Enable();
-				Utility::GTFO("/");
+				(new User(EngineCore::POST('username')))->Enable();
+				EngineCore::GTFO("/");
 				
 			}
 			else
 			{
-				Utility::FromWhenceYouCame(); //back to login
+				EngineCore::FromWhenceYouCame(); //back to login
 			}
 		}
 	}
@@ -87,14 +87,14 @@ function ModuleAction_auth_activate($params)
 function ModuleAction_auth_created($params)
 {
 	EngineCore::SetPageTitle("Signup successful");
-	Utility::SetPageContent((new TemplateProcessor("UserCreateWelcomeMessage"))->process(true));
+	EngineCore::SetPageContent((new TemplateProcessor("UserCreateWelcomeMessage"))->process(true));
 }
 
 function ModuleAction_auth_recover($params)
 {
 	if(!isset($_POST['email']))
 	{
-		Utility::AddTemplate("UserRecoverScreen");
+		EngineCore::AppendTemplate("UserRecoverScreen");
 		return;
 	}
 	$eml=mysql_real_escape_string($_POST['email']);
@@ -117,7 +117,7 @@ function ModuleAction_auth_recover($params)
 	}
 	//$t=new TemplateProcessor("");
 	//$t->tokens['email']=$eml;
-	Utility::AddTemplate("resetrequested,email=$eml");
+	EngineCore::AppendTemplate("resetrequested,email=$eml");
 	
 }
 
@@ -130,23 +130,23 @@ function ModuleAction_auth_reset($params)
 		$results=AuthHelper::ResetUser($_POST['code'],$_POST['password1'],$_POST['password2']);
 		if($results)
 		{
-			Utility::AddTemplate("resetSuccess");
+			EngineCore::AppendTemplate("resetSuccess");
 		}
 		else
 		{
-			Utility::FromWhenceYouCame();
+			EngineCore::FromWhenceYouCame();
 		}
 	}
 	else
 	{
 		if($code!="")
 		{
-			Utility::AddTemplate("resetform,code=$code");
+			EngineCore::AppendTemplate("resetform,code=$code");
 		}
 		else
 		{
 			//yeah, whatcha gonna do? Not supposed to reach this during normal usage.
-			Utility::GTFO("/");
+			EngineCore::GTFO("/");
 		}
 	}
 }
@@ -155,7 +155,7 @@ function ModuleAction_auth_newpassword($params)
 {
 	if(isset($_SESSION['newpasswordset']))
 	{
-		Utility::AddTemplate("newpasswordsuccess");
+		EngineCore::AppendTemplate("newpasswordsuccess");
 		unset($_SESSION['newpasswordset']);
 		
 		return;
@@ -165,7 +165,7 @@ function ModuleAction_auth_newpassword($params)
 		$cu=User::GetCurrentUser();
 		if(!User::LogIn($cu->username,$_POST['password']))
 		{
-			Utility::AddTemplate("newpassword");
+			EngineCore::AppendTemplate("newpassword");
 			return;
 		}
 		if($_POST['password1']==$_POST['password2'])
@@ -179,11 +179,11 @@ function ModuleAction_auth_newpassword($params)
 			//set the new password
                         DBHelper::Update("users", ["passwordhash"=>$hash], ["id"=>$uid]);
 			
-			Utility::GTFO('/auth/newpassword');
+			EngineCore::GTFO('/auth/newpassword');
 			return;
 		}
-		Utility::AddTemplate("newpassword");
+		EngineCore::AppendTemplate("newpassword");
 			return;
 	}
-	Utility::AddTemplate("newpassword");
+	EngineCore::AppendTemplate("newpassword");
 }

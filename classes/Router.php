@@ -9,7 +9,7 @@ class Router
         //  URL rewriting converts requests of the form "(example.net)/path/to/something"
         //  to "(example.net)/index.php?route=path/to/something"
         // "route" gets populated with the path component
-        $query=Utility::GET("route");
+        $query=EngineCore::GET("route");
         //split route into individual segments
         $pieces=explode("/",$query);//Utility::ddump($pieces);
         //first segment should be module name, shift it off

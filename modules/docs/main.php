@@ -2,21 +2,21 @@
 
 function ModuleAction_docs_new($params)
 {
-    if(Utility::POST("up")!="yes")
+    if(EngineCore::POST("up")!="yes")
     {
-        Utility::SetPageContent((new TemplateProcessor("docs/upload"))->process(true));
+        EngineCore::SetPageContent((new TemplateProcessor("docs/upload"))->process(true));
     }
     else
     {
         $file=File::Upload($_FILES['fileup']);
         if($file)
         {
-            $title=Utility::POST("title","<Untitled>");
-            $desc = Utility::POST("description",$title);
-            $sensitivity= Utility::POST("sensitivity","0");
-            $owner=Utility::POST("noshare","")===""?EVA::OWNER_NOBODY : EVA::OWNER_CURRENT;
+            $title=EngineCore::POST("title","<Untitled>");
+            $desc = EngineCore::POST("description",$title);
+            $sensitivity= EngineCore::POST("sensitivity","0");
+            $owner=EngineCore::POST("noshare","")===""?EVA::OWNER_NOBODY : EVA::OWNER_CURRENT;
             $doc = Document::Create($title, [$file->blobid],$desc,$owner,$sensitivity);
-            Utility::GTFO("/docs/view/".$doc->id);
+            EngineCore::GTFO("/docs/view/".$doc->id);
         }
         else
         {
@@ -45,7 +45,7 @@ function ModuleAction_docs_view($params)
         $docview->tokens['title']=$doc->title;
         $docview->tokens['description']=$doc->description;
         $docview->tokens['files']=$links;
-        Utility::SetPageContent($docview->process(true));
+        EngineCore::SetPageContent($docview->process(true));
     }
 }
 

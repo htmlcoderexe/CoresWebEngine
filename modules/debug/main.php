@@ -5,7 +5,7 @@ function ModuleAction_debug_template($params)
     $user=User::GetCurrentUser();
     if(!$user->HasPermission("super"))
     {
-        Utility::FromWhenceYouCame();
+        EngineCore::FromWhenceYouCame();
         die;
     }
     if(isset($params[1]))
@@ -13,7 +13,7 @@ function ModuleAction_debug_template($params)
         $params[0].="/".$params[1];
     }
     $tpl=new TemplateProcessor($params[0]);
-    Utility::SetPageContent($tpl->process(true));
+    EngineCore::SetPageContent($tpl->process(true));
 }
 
 function ModuleAction_debug_info()
@@ -21,7 +21,7 @@ function ModuleAction_debug_info()
     $user=User::GetCurrentUser();
     if(!$user->HasPermission("super"))
     {
-        Utility::FromWhenceYouCame();
+        EngineCore::FromWhenceYouCame();
         die;
     }
     phpinfo();
@@ -30,7 +30,7 @@ function ModuleAction_debug_info()
 
 function ModuleAction_debug_file($params)
 {
-    if(Utility::POST("up","")=="")
+    if(EngineCore::POST("up","")=="")
     {
         ?>
 <form action="/debug/file" method="post" enctype="multipart/form-data">

@@ -24,7 +24,7 @@ class Module
         $filename=MODULE_DIR.basename($name)."/main.php";
         if(!file_exists($filename))
         {
-            Utility::debug("<strong>Module failed to load:</strong> Module <em>'$name'</em> was not found.");
+            EngineCore::Write2Debug("<strong>Module failed to load:</strong> Module <em>'$name'</em> was not found.");
             $this->immafaultyshit=true;
             return;
         }
@@ -42,7 +42,7 @@ class Module
         $funcname=$this->funcprefix."_".$this->name."_".$action;
         if(!function_exists($funcname))
         {
-                Utility::debug("<strong>Failed to perform action:</strong> Action <em>$action</em> not found in module <em>{$this->name}</em>");
+                EngineCore::Write2Debug("<strong>Failed to perform action:</strong> Action <em>$action</em> not found in module <em>{$this->name}</em>");
                 $this->immafaultyshit=true;
                 return;
         }
