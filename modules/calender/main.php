@@ -12,15 +12,17 @@ function ModuleFunction_calender_ParseYYYYMMDD($params,$split=false)
 
 function ModuleAction_calender_default($params)
 {
-    $output="";
     $now= new DateTime();
+    $thismonth = $now->format("Ym");
+    ModuleFunction_calender_ShowMonth($thismonth);
+    return;
     $today = $now->format("j");
     $weeknow= $now->format("w");
     $weeknow = $weeknow === 0 ? 6 : $weeknow -1;
     
     $header=$now->format("M Y");
     $y=$now->format("Y");
-    $m=$now->format("n");
+    $m=$now->format("m");
     
     
     $nowfirst= date_create_from_format("j m Y", "1 ".$now->format("m Y"));
@@ -222,6 +224,111 @@ function ModuleFunction_calender_ShowDay($day)
     EngineCore::SetPageTitle("Events on ".$e->attributes['calendar.date']);
 }
 
+
+function ModuleFunction_calender_ShowMonth($month)
+{
+    list($y,$m,$d) = ModuleFunction_calender_ParseYYYYMMDD($month."01",true);
+    $output="";
+    
+    $currentmonth = date_create_from_format("Ymd",$y.$m.$d);
+    
+    $now= new DateTime();
+    $today = $now->format("j");
+    $isthismonth = $now->format("Ym") == $month;
+    //$weeknow= $now->format("w");
+    //$weeknow = $weeknow === 0 ? 6 : $weeknow -1;
+    
+    $header=$currentmonth->format("M Y");
+    
+    
+    //$nowfirst= date_create_from_format("j m Y", "1 ".$now->format("m Y"));
+    //find out how many days of the previous month to show
+    
+    $weekfirst=$currentmonth->format("w");
+    $weekfirst=intval($weekfirst);
+    $weekfirst = $weekfirst === 0 ? 6 : $weekfirst-1;
+    $weekfirst=intval($weekfirst);
+    EngineCore::Write2Debug($weekfirst);
+    $daysthismont =$currentmonth->format("t");
+    $onemonthago=new DateInterval("P1M");
+    $onemonthago->invert=true;
+    $prev_month = date_create_from_format("Ymd",$y.$m.$d);
+    $prev_month->add($onemonthago);
+    $daysprevmont =$prev_month->format("t");
+    
+    $t_prev=new TemplateProcessor("calender/daycellprev");
+    for($i = 0; $i<$weekfirst;$i++)
+    {
+        $t_prev->tokens['number']=($daysprevmont-$weekfirst+$i+1);
+        $output.=($t_prev->process(true));
+    }
+    
+    //-----
+    
+    ///////////actual month
+    $t_day = new TemplateProcessor("calender/daycell");
+    $t_marker = new TemplateProcessor("calender/daycellmarker");
+    
+    
+    for($i=0;$i<$daysthismont;$i++)
+    {
+        if($isthismonth && $today == $i+1)
+        {
+            $t_today= new TemplateProcessor("calender/daycelltoday");
+            $t_today->tokens['number']=$today;
+            $output.=$t_today->process(true);
+        }
+        else
+        {
+            $actives = [];
+            $divstring="";
+            $thisdate=date_create_from_format("j m Y", ($i+1)." ".$now->format("m Y"));
+            $datestring = $thisdate->format("Ymd");
+            $dates = CalendarScheduler::CheckDate($y,$m,str_pad($i+1,2,"0",STR_PAD_LEFT));
+            if($dates)
+            {
+                $actives[]="";
+                $actives[]="adm";
+            }
+            foreach($actives as $line)
+            {
+                $t_marker->tokens['marker']=$line;
+                $divstring.=$t_marker->process(true);
+            }
+            $t_day->tokens['date']=$datestring;
+            $t_day->tokens['number']=($i+1);
+            $t_day->tokens['markers']=$divstring;
+            if($actives)
+            {
+                $t_day->tokens['verb']="view";
+            }
+            $output.=$t_day->process(true);
+        }
+    }
+    
+    
+    /////////end month
+    $next_month_start=($daysthismont-28)+($weekfirst);
+    $next_month_start%=7;
+    $fifthrowcount=7-$next_month_start;
+    
+    $fifthrowcount%=7;
+    $t_next = new TemplateProcessor("calender/daycellnext");
+    for($i=0;$i<$fifthrowcount;$i++)
+    {
+        $t_next->tokens['number']=$i+1;
+        $output.=($t_next->process(true));
+    }
+    
+    $t_month= new TemplateProcessor("calender/calendarmonth");
+    $t_month->tokens['header']=$header;
+    $t_month->tokens['days']=$output;
+    EngineCore::SetPageContent($t_month->process(true));
+}
+
+
+
+
 function ModuleAction_calender_view($params)
 {
     if(!isset($params[0]))
@@ -230,6 +337,11 @@ function ModuleAction_calender_view($params)
     }
     switch ($params[0])
     {
+        case "month":
+        {
+            ModuleFunction_calender_ShowMonth($params[1]);
+            return;
+        }
         case "date":
         {
             ModuleFunction_calender_ShowDay($params[1]);
