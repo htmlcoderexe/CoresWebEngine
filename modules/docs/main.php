@@ -39,7 +39,7 @@ function ModuleAction_docs_view($params)
             $file = File::GetByBlobID($fileid);
             $link->tokens['blobid']=$file->blobid;
             $link->tokens['filename']=$file->fname;
-            $link->tokens['size']=Utility::hfilesize($file->filesize);
+            $link->tokens['size']=Utility::FormatUnit($file->filesize);
             $links.=$link->process(true);
         }
         $docview->tokens['title']=$doc->title;

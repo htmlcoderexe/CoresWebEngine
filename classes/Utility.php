@@ -6,6 +6,12 @@ class Utility
     const RANDOM_CHR_LOWER =1;
     const RANDOM_CHR_MIX =2;
     
+    const PREFIXES_METRIC = ["","k","M","G","T","P","E"];
+    const PREFIXES_BINARY = ["","Ki","Mi","Gi","Ti","Pi","Ei"];
+    
+    const MULTIPLIER_METRIC = 1000;
+    const MULTIPLIER_BINARY = 1024;
+    
     /**
      * Gets a random single character
      * Uses PHP's CSPRNG
@@ -77,21 +83,25 @@ class Utility
         $r= DateTime::createFromFormat($format,$hread);
         return $r->getTimestamp();
     }
-    
-    public static function hfilesize($size)
+    /**
+     * Divides a large number into smaller units for nice display.
+     * Default values correspond to abbreviated metric prefixes.
+     * @param int $size The number to format
+     * @param string[] $prefixes unit prefixes to use (metric prefixes)
+     * @param int $multiplier The multiplier between each prefix (1000)
+     * @param int $decimals Number of decimals to use (2)
+     * @param char $separator Character to use as a decimal point (.)
+     * @return type
+     */
+    public static function FormatUnit($size,$prefixes = self::PREFIXES_METRIC,$multiplier = self::MULTIPLIER_METRIC,$decimals = 2, $separator =".")
     {
-        $prefixes=array("","k","M","G","T");
-        $pidx=0;
-        while($size>1024)
+        $current_prefix=0;
+        while($size>$multiplier && $current_prefix < count($prefixes)-1)
         {
-            if($pidx==4)
-            {
-                break;
-            }
-            $size/=1024;
-            $pidx++;
+            $size/=$multiplier;
+            $current_prefix++;
         }
-        return number_format($size,2,"."," ")." ".$prefixes[$pidx];
+        return number_format($size,$decimals,$separator," ")." ".$prefixes[$current_prefix];
     }
     
 }
