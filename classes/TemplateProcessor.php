@@ -3,6 +3,7 @@ require_once("TemplateProcessor.functions.php");
 class TemplateProcessor
 {
 	private $tplprefix="templates/";
+        private $layoutsdir="layouts/";
 	private $tplpostfix=".tpl";
 	private $tplfpostfix=".f";
 	private $tplfuncprefix="tpl";
@@ -16,9 +17,11 @@ class TemplateProcessor
 	private $contents;
 	private $fname;
 	private $cb;
+        private $isLayout;
 	protected $symbols=array('{','}','%');
-	function __construct($file)
+	function __construct($file,$useLayout=false)
 	{
+            $this->isLayout=$useLayout;
 		$this->tokens=Array();
 		if(strpos($file,",")!==false)
 		{
@@ -33,9 +36,9 @@ class TemplateProcessor
 			
 		}
 		
-		$this->contents=file_get_contents($this->tplprefix.$file.$this->tplpostfix) or die("File not found: $file");
+		$this->contents=file_get_contents(($this->isLayout?$this->layoutsdir:$this->tplprefix).$file.$this->tplpostfix) or die("File not found: $file");
 		$this->cb=$this->contents;
-		$this->fname=$file;
+                $this->fname=$file;
 		//var_dump($this);
 	}
 	
@@ -112,10 +115,14 @@ class TemplateProcessor
 	
 	 function process_template_functions()
 	{
-		$ffname=$this->tplprefix.$this->fname.$this->tplfpostfix;
+		$ffname=($this->isLayout?$this->layoutsdir:$this->tplprefix).$this->fname.$this->tplfpostfix;
 		if(!file_exists($ffname)) //if it ain't there, what's the point anyway
-			return;
-		require_once($ffname);
+                {
+                    EngineCore::Write2Debug("couldn't load \"$ffname\"<br />");
+                    return;
+                }
+                require_once($ffname);
+		$this->fname=basename($this->fname);
 		//echo "required $ffname";
 		preg_match_all('/(*UTF8){\$[^\$}]{2,}\$}/u',$this->contents,$this->functioncalls);
 		$this->functioncalls=$this->functioncalls[0];

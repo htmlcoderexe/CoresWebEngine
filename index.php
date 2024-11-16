@@ -72,8 +72,6 @@ EngineCore::AddSideBar("&nbsp;", (new TemplateProcessor("membercard".$aerr))->pr
 
     
 
-$tpl=new TemplateProcessor("mainpage");
-EngineCore::UseLayout("mainpage");
 $data=EngineCore::RenderPage();
 $time = microtime();
 $time = explode(' ', $time);

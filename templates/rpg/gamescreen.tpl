@@ -5,8 +5,8 @@
 		<span class="counter" id="counter-emeralds" title="Emeralds">{%emeralds|NaN%}</span>
 		<a id="exitlink" href="/rpg/selectcharacter">Exit</a>
 	</div>
-	{{clear}}
-	{{clear}}
+	{{system/clear}}
+	{{system/clear}}
 	<div id="charstatus">
 		<span id="portrait"><img src="/images-site/rpg/portraits/{%class|0%}-{%face|0%}.png" width="128" height="128" /></span>
 		<span id="statusbar_container">

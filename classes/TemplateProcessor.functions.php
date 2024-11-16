@@ -121,3 +121,12 @@ function TemplateProcessorBuiltin_date($date,$format="d-F-Y H:i:s")
 		$date=time();
 	return date($format,$date);
 }
+
+function TemplateProcessorBuiltin_debuginfo()
+{
+    if(EngineCore::$DEBUG)
+    {
+        return EngineCore::$DebugInfo;
+    }
+    return "";
+}

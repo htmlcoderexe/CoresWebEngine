@@ -1,7 +1,5 @@
 <?php
 
-
-
 /**
  * Main class to service all page-related needs
  *
@@ -10,66 +8,77 @@
 class EngineCore
 {
     // should be globally accessible
+
     /**
      * Determines whether debug mode is on
      * @var bool
      */
     public static $DEBUG;
+
     /**
      * Raw mode outputs directly instead of buffering
      * @var bool
      */
     public static $RawMode;
+
     /**
      * Current logged-in user
      * @var User
      */
     public static $CurrentUser;
     // not going to instance any of this, everyone shits in the same bucket
+
     /**
      * Layout template selected
      * @var string
      */
-    static $Layout;
+    static $Layout = "default";
+
     /**
      * Page title (usually goes in the title tag)
      * @var string
      */
     static $PageTitle;
+
     /**
      * Sidebar items go here 
      * @var string[]
      */
     static $SideBar;
+
     /**
      * Page's main content, whatever the database dragged in
      * @var string
      */
     static $MainContent;
+
     /**
      * A separate text field that can be written to for debugging purposes,
      * not intended to be displayed to the end user in production.
      * @var string
      */
     static $DebugInfo;
+
     /**
      * If the page got rendered, caches it here okay?
      * @var string
      */
     static $Rendered = "";
-    
+
     //------------------------------+
     // Page operation and rendering |
     //------------------------------+
     //
+
     /**
      * Set the engine to use the specified layout.
      * @param string $layout
      */
     public static function UseLayout($layout)
     {
-        self::$Layout=$layout;
+        self::$Layout = $layout;
     }
+
     /**
      * Set the page title to a new value.
      * @param string $title New title.
@@ -78,6 +87,7 @@ class EngineCore
     {
         self::$PageTitle = $title;
     }
+
     /**
      * Replace the current page's contents.
      * @param string $content Replacement contents.
@@ -86,6 +96,7 @@ class EngineCore
     {
         self::$MainContent = $content;
     }
+
     /**
      * Append content to the page.
      * @param string $content Content to be appended.
@@ -94,25 +105,24 @@ class EngineCore
     {
         self::$MainContent .= $content; //the dot makes all the difference
     }
+
     /**
      * Adds a new block to the sidebar
      * @param string $header block header 
      * @param string $content block contents
      * @param string $headlink header link
+     * @param bool $unshift If true, puts the new block at the beginning
      */
-    static function AddSideBar($header,$content,$headlink=null)
+    static function AddSideBar($header, $content, $headlink = "", $unshift = false)
     {
-        // TODO: bring this to the layout standard
-        // additional template file? called sidecar? lol
-        $box=new TemplateProcessor("sidebarbox");
-        $box->tokens['header']=$header;
-        $box->tokens['content']=$content;
-        if($headlink!=null)
-        {
-            $box->tokens['headlink']=$headlink;
-        }
-        self::$SideBar[]=$box->process(true);
+        $sidecar = [
+            "header" => $header,
+            "content" => $content,
+            "headlink" => $headlink
+        ];
+        $unshift ? array_unshift(self::$SideBar, $sidecar) : self::$SideBar[] = $sidecar;
     }
+
     /**
      * Shortcut to quickly insert a specific template into the page
      * the template name string is parsed for params so this doesn't
@@ -125,6 +135,7 @@ class EngineCore
     {
         self::AddPageContent((new TemplateProcessor($template))->process(true));
     }
+
     /**
      * Enables raw mode, which only outputs the main page content without 
      * any surrounding layouts - useful if outputting something other than
@@ -134,6 +145,7 @@ class EngineCore
     {
         self::$RawMode = true;
     }
+
     /**
      * Check if raw mode is enabled.
      * @return bool
@@ -142,6 +154,7 @@ class EngineCore
     {
         return self::$RawMode;
     }
+
     /**
      * Process all the layouts and templates and return the final result,
      * ready for the user, cache it in case users dare ask again
@@ -155,22 +168,39 @@ class EngineCore
             return self::$MainContent;
         }
         // do we really have to?
-        if(self::$Rendered==="")
+        if(self::$Rendered === "")
         {
             // apparently
-            $tpl = new TemplateProcessor(self::$Layout);
-            if(self::$DEBUG)
-            {
-                self::AddSideBar("Debug info", self::$DebugInfo);
-            }
+            $tpl = self::LayoutComponent("layout");
+            // assign basics
             $tpl->tokens['title'] = self::$PageTitle;
             $tpl->tokens['content'] = self::$MainContent;
-            // TODO: something more dignified than this
-            $tpl->tokens['sidebar'] = implode("\r\n\n",self::$SideBar);
-            self::$Rendered=$tpl->process(true);
-        }     
+            // sidebar
+            $renderedSideBar = "";
+            // add a debug box
+            if(self::$DEBUG)
+            {
+                self::AddSideBar("Debug info", self::$DebugInfo, "", true);
+            }
+            // load sidecar template
+            $box = self::LayoutComponent("sidecar");
+            foreach(self::$SideBar as $sidecar)
+            {
+                $box->tokens = $sidecar;
+                $renderedSideBar .= $box->process(true);
+            }
+            $tpl->tokens['sidebar'] = $renderedSideBar;
+            // menu
+            $menu = self::LayoutComponent("menu");
+            $tpl->tokens['menu'] = $menu->process(true);
+            self::$Rendered = $tpl->process(true);
+        }
         return self::$Rendered;
-        
+    }
+    
+    public static function LayoutComponent($name)
+    {
+        return new TemplateProcessor(self::$Layout . DIRECTORY_SEPARATOR . $name , true);
     }
     /**
      * Write anything to the #DEBUG channel
@@ -178,8 +208,9 @@ class EngineCore
      */
     public static function Write2Debug($content)
     {
-        self::$DebugInfo.=$content;
+        self::$DebugInfo .= $content;
     }
+
     /**
      * Take a nice dump right under the developer's nose
      * (basically var_dump redirected to $DebugInfo)
@@ -189,24 +220,26 @@ class EngineCore
     {
         self::WriteDebug(self::VarDumpString($whatever));
     }
-    
+
     //-----------------------------+
     // operation utility functions |
     //-----------------------------+
     //
     // the first 2 are mostly to be used as shortcuts, also to confine netbeans'
     // complaining about me rawdogging the superglobals to just like 3 places
+
     /**
      * Get a specific POST variable, with an optional default
      * @param string $var POST variable name
      * @param string $default default value. Defaults (haha!) to ""
      * @return string maybe not the value we need
      */
-    public static function POST($var,$default="")
+    public static function POST($var, $default = "")
     {
         // dear netbeans I promise it'll be fine
-        return isset($_POST[$var])?$_POST[$var]:$default;
+        return isset($_POST[$var]) ? $_POST[$var] : $default;
     }
+
     /**
      * Get (haha!!) a specific GET (get it? GET IT?) variable,
      * with an optional default
@@ -215,11 +248,12 @@ class EngineCore
      * to ""
      * @return string the value we deserve
      */
-    public static function GET($var,$default="")
+    public static function GET($var, $default = "")
     {
         // sssh it's like using a condom okay?
-        return isset($_GET[$var])?$_GET[$var]:$default;
+        return isset($_GET[$var]) ? $_GET[$var] : $default;
     }
+
     /**
      * Gently and politely send the user and their browser on their merry way
      * of your own choosing
@@ -233,23 +267,25 @@ class EngineCore
         }
         echo "<a href=\"$url\">Go to $url</a>";
     }
+
     /**
      * Send the user back to the previous page
      * Original comments kept, code slightly updated
      */
     static function FromWhenceYouCame()
     {
-            //you shall remain
-            $r=HTTPHeaders::GetReferer();
-            //until you are
-            if(!headers_sent())
-            {
-                    //complete again!
-                    HTTPHeaders::Location($r);
-            }
-            //NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
-            echo "<a href=\"$r\">The redirect seems to fail. Go there yourself?</a>";	
+        //you shall remain
+        $r = HTTPHeaders::GetReferer();
+        //until you are
+        if(!headers_sent())
+        {
+            //complete again!
+            HTTPHeaders::Location($r);
+        }
+        //NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+        echo "<a href=\"$r\">The redirect seems to fail. Go there yourself?</a>";
     }
+
     /**
      * Retrieves a system setting.
      * @param string $setting setting name
@@ -257,13 +293,14 @@ class EngineCore
      */
     static function GetSetting($setting)
     {
-            return DBHelper::RunScalar("SELECT setting_value FROM system_settings WHERE setting_name=?", [$setting], 0);
+        return DBHelper::RunScalar("SELECT setting_value FROM system_settings WHERE setting_name=?", [$setting], 0);
     }
-        
+
     //---------------------------------------------+
     // More random crap and ostensibly useful code |
     //---------------------------------------------+
     //
+
     /**
      * Yep, another condom function, this one's when you gotta take a var_dump
      * but gotta keep it from going all over your page
