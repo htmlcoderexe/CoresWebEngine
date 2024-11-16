@@ -15,119 +15,7 @@ function ModuleAction_calender_default($params)
     $now= new DateTime();
     $thismonth = $now->format("Ym");
     ModuleFunction_calender_ShowMonth($thismonth);
-    return;
-    $today = $now->format("j");
-    $weeknow= $now->format("w");
-    $weeknow = $weeknow === 0 ? 6 : $weeknow -1;
     
-    $header=$now->format("M Y");
-    $y=$now->format("Y");
-    $m=$now->format("m");
-    
-    
-    $nowfirst= date_create_from_format("j m Y", "1 ".$now->format("m Y"));
-    $weekfirst=$nowfirst->format("w");
-    $weekfirst = $weekfirst === 0 ? 6 : $weekfirst-1;
-    $weekfirst=intval($weekfirst);
-    $daysthismont =$now->format("t");
-    $onemonthago=new DateInterval("P1M");
-    $onemonthago->invert=true;
-    $now->add($onemonthago);
-    $daysprevmont =$now->format("t");
-    
-    $t_prev=new TemplateProcessor("calender/daycellprev");
-    for($i = 0; $i<$weekfirst;$i++)
-    {
-        $t_prev->tokens['number']=($daysprevmont-$weekfirst+$i+1);
-        $output.=($t_prev->process(true));
-    }
-    
-    ///////////actual month
-    $now= new DateTime();
-    $t_day = new TemplateProcessor("calender/daycell");
-    $t_marker = new TemplateProcessor("calender/daycellmarker");
-    for($i=0;$i<$today-1;$i++)
-    {
-        $actives = [];
-        $divstring="";
-        $thisdate=date_create_from_format("j m Y", ($i+1)." ".$now->format("m Y"));
-        $datestring = $thisdate->format("Ymd");
-        $dates = CalendarScheduler::CheckDate($y,$m,str_pad($i+1,2,"0",STR_PAD_LEFT));
-        if($dates)
-        {
-            $actives[]="";
-            $actives[]="adm";
-        }
-        foreach($actives as $line)
-        {
-            $t_marker->tokens['marker']=$line;
-            $divstring.=$t_marker->process(true);
-        }
-        $t_day->tokens['date']=$datestring;
-        $t_day->tokens['number']=($i+1);
-        $t_day->tokens['markers']=$divstring;
-        if($actives)
-        {
-            $t_day->tokens['verb']="view";
-        }
-        $output.=$t_day->process(true);
-        
-    }
-    
-    //today
-    
-    $t_today= new TemplateProcessor("calender/daycelltoday");
-    $t_today->tokens['number']=$today;
-    $output.=$t_today->process(true);
-    
-    //rest
-    
-    for($i=$today;$i<$daysthismont;$i++)
-    {
-        $actives = [];
-        $divstring="";
-        $thisdate=date_create_from_format("j m Y", ($i+1)." ".$now->format("m Y"));
-        $datestring = $thisdate->format("Ymd");
-        $dates = CalendarScheduler::CheckDate($y,$m,str_pad($i+1,2,"0",STR_PAD_LEFT));
-        if($dates)
-        {
-            $actives[]="";
-            $actives[]="adm";
-        }
-        foreach($actives as $line)
-        {
-            $t_marker->tokens['marker']=$line;
-            $divstring.=$t_marker->process(true);
-        }
-        $t_day->tokens['date']=$datestring;
-        $t_day->tokens['number']=($i+1);
-        $t_day->tokens['markers']=$divstring;
-        if(count($actives)>0)
-        {
-            $t_day->tokens['verb']="view";
-        }
-        else
-        {
-            $t_day->tokens['verb']="create";
-        }
-        $output.=$t_day->process(true);}
-    
-    
-    /////////end month
-    $fifthrowcount=7-($daysthismont-28)+($weekfirst)-1;
-    
-    $fifthrowcount%=7;
-    $t_next = new TemplateProcessor("calender/daycellnext");
-    for($i=0;$i<$fifthrowcount;$i++)
-    {
-        $t_next->tokens['number']=$i;
-        $output.=($t_next->process(true));
-    }
-    
-    $t_month= new TemplateProcessor("calender/calendarmonth");
-    $t_month->tokens['header']=$header;
-    $t_month->tokens['days']=$output;
-    EngineCore::SetPageContent($t_month->process(true));
 }
 
 function ModuleFunction_CreateEvent($title,$date,$time,$description)
@@ -235,27 +123,32 @@ function ModuleFunction_calender_ShowMonth($month)
     $now= new DateTime();
     $today = $now->format("j");
     $isthismonth = $now->format("Ym") == $month;
-    //$weeknow= $now->format("w");
-    //$weeknow = $weeknow === 0 ? 6 : $weeknow -1;
-    
-    $header=$currentmonth->format("M Y");
     
     
-    //$nowfirst= date_create_from_format("j m Y", "1 ".$now->format("m Y"));
-    //find out how many days of the previous month to show
     
-    $weekfirst=$currentmonth->format("w");
-    $weekfirst=intval($weekfirst);
-    $weekfirst = $weekfirst === 0 ? 6 : $weekfirst-1;
-    $weekfirst=intval($weekfirst);
-    EngineCore::Write2Debug($weekfirst);
-    $daysthismont =$currentmonth->format("t");
+    // find out the first day of the week 
+    $weekfirst=$currentmonth->format("w")== 0 ? 6 : $currentmonth->format("w")-1;
+    
+    // create objects for previous and next months for display
     $onemonthago=new DateInterval("P1M");
+    
+    $next_month = date_create_from_format("Ymd",$y.$m.$d);
+    $next_month->add($onemonthago);
+    
     $onemonthago->invert=true;
     $prev_month = date_create_from_format("Ymd",$y.$m.$d);
     $prev_month->add($onemonthago);
+    
+    //find out how many days of the previous month to show and which numbers
     $daysprevmont =$prev_month->format("t");
     
+    $headerprev=$prev_month->format("M Y");
+    $headercurrent=$currentmonth->format("M Y");
+    $headernext=$next_month->format("M Y");
+    $headerlinkprev=$prev_month->format("Ym");
+    $headerlinknext=$next_month->format("Ym");
+    
+    // insert grayed out previous month's days to fill the week
     $t_prev=new TemplateProcessor("calender/daycellprev");
     for($i = 0; $i<$weekfirst;$i++)
     {
@@ -269,6 +162,8 @@ function ModuleFunction_calender_ShowMonth($month)
     $t_day = new TemplateProcessor("calender/daycell");
     $t_marker = new TemplateProcessor("calender/daycellmarker");
     
+    // find out current month's day
+    $daysthismont =$currentmonth->format("t");
     
     for($i=0;$i<$daysthismont;$i++)
     {
@@ -282,7 +177,7 @@ function ModuleFunction_calender_ShowMonth($month)
         {
             $actives = [];
             $divstring="";
-            $thisdate=date_create_from_format("j m Y", ($i+1)." ".$now->format("m Y"));
+            $thisdate=date_create_from_format("j m Y", ($i+1)." ".$currentmonth->format("m Y"));
             $datestring = $thisdate->format("Ymd");
             $dates = CalendarScheduler::CheckDate($y,$m,str_pad($i+1,2,"0",STR_PAD_LEFT));
             if($dates)
@@ -319,9 +214,16 @@ function ModuleFunction_calender_ShowMonth($month)
         $t_next->tokens['number']=$i+1;
         $output.=($t_next->process(true));
     }
-    
+    $t_header= new TemplateProcessor("calender/monthheader");
+    $t_header->tokens =[
+        "prevYYYYMM" => $headerlinkprev,
+        "prev" => $headerprev,
+        "current" => $headercurrent,
+        "next" => $headernext,
+        "nextYYYYMM" => $headerlinknext
+    ];
     $t_month= new TemplateProcessor("calender/calendarmonth");
-    $t_month->tokens['header']=$header;
+    $t_month->tokens['header']=$t_header->process(true);
     $t_month->tokens['days']=$output;
     EngineCore::SetPageContent($t_month->process(true));
 }

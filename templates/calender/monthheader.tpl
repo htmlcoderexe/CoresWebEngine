@@ -1,0 +1,1 @@
+<a href="/calender/view/month/{%prevYYYYMM|%}">{%prev|%}</a> <strong>{%current|%}</strong> <a href="/calender/view/month/{%nextYYYYMM|%}">{%next|%}</a>
