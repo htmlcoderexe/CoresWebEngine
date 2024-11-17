@@ -13,7 +13,8 @@ function ModuleAction_debug_template($params)
         $params[0].="/".$params[1];
     }
     $tpl=new TemplateProcessor($params[0]);
-    EngineCore::SetPageContent($tpl->process(true));
+    $tpl->do_new_parser();
+    //EngineCore::SetPageContent($tpl->process(true));
 }
 
 function ModuleAction_debug_info()
