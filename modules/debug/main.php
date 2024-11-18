@@ -12,6 +12,7 @@ function ModuleAction_debug_template($params)
     {
         $params[0].="/".$params[1];
     }
+    EngineCore::AppendTemplate($params[0]);
     $tpl=new TemplateProcessor($params[0]);
     $tpl->do_new_parser();
     //EngineCore::SetPageContent($tpl->process(true));
