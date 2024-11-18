@@ -158,7 +158,10 @@ class TemplateProcessor
                 $value=$this->tokens[$name];
                 
             }
-            
+            if(!is_scalar($value))
+            {
+                return $this->wrap_datatype($value);
+            }
             return ["type"=>"literal","stringval"=>$value];
             
         }
@@ -261,7 +264,7 @@ class TemplateProcessor
             }
             if($func_name == "if")
             {
-                return $this->builtin_ifset($node);
+                return $this->builtin_if($node);
             }
             
             
@@ -285,7 +288,7 @@ class TemplateProcessor
         private function builtin_ifset($node)
         {
             $input = $this->process_nodelist($node['params'][0]);
-            if($input!="")
+            if(isset($this->tokens[$input]) && $this->tokens[$input])
             {
                 $output = $this->process_nodelist($node['params'][1]);
             }
@@ -298,6 +301,7 @@ class TemplateProcessor
         private function builtin_if($node)
         {
             $input = $this->process_nodelist($node['params'][0]);
+            //EngineCore::Dump2Debug($input);
             if($input=="true")
             {
                 $output = $this->process_nodelist($node['params'][1]);

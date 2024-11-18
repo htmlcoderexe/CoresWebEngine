@@ -250,12 +250,9 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     if($doupcoming)
     {
         $t_upcoming = new TemplateProcessor("calender/upcoming");
-        $t_upcoming->push_data($events_upcoming);
-        if(count($events_today)>0)
-        {
-            $t_upcoming->tokens['today']="true";
-            $t_upcoming->push_data($events_today);
-        }
+        $t_upcoming->tokens['upcoming']=$events_upcoming;
+        $t_upcoming->tokens['today']=$events_today;
+        
        
         EngineCore::AddPageContent($t_upcoming->process(true));
         
