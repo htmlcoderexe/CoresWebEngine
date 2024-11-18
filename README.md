@@ -28,6 +28,6 @@ Still reading this? This is techincally docoumentation, too, but I digress.
 
 Not really much else. Some empty files in a documentation folder have been added to remind me to add later.
 
-[templates](documentation/templates.md]
+[templates](documentation/templates.md)
 
-[EVA](documentation/EVA.md]
+[EVA](documentation/EVA.md)
