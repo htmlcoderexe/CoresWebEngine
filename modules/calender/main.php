@@ -14,7 +14,7 @@ function ModuleAction_calender_default($params)
 {
     $now= new DateTime();
     $thismonth = $now->format("Ym");
-    ModuleFunction_calender_ShowMonth($thismonth);
+    ModuleFunction_calender_ShowMonth($thismonth,true);
     
 }
 
@@ -113,7 +113,7 @@ function ModuleFunction_calender_ShowDay($day)
 }
 
 
-function ModuleFunction_calender_ShowMonth($month)
+function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
 {
     list($y,$m,$d) = ModuleFunction_calender_ParseYYYYMMDD($month."01",true);
     $output="";
@@ -164,27 +164,44 @@ function ModuleFunction_calender_ShowMonth($month)
     
     // find out current month's day
     $daysthismont =$currentmonth->format("t");
-    
+    $events_upcoming=[];
+    $events_today=[];
     for($i=0;$i<$daysthismont;$i++)
     {
+        
+        $actives = [];
+        $dates = CalendarScheduler::CheckDate($y,$m,str_pad($i+1,2,"0",STR_PAD_LEFT));
+        if($dates)
+        {
+            $actives[]="";
+            $actives[]="adm";
+
+            
+        }
         if($isthismonth && $today == $i+1)
         {
             $t_today= new TemplateProcessor("calender/daycelltoday");
             $t_today->tokens['number']=$today;
             $output.=$t_today->process(true);
+            foreach($dates as $date)
+            {
+                $events_today[]= new CalendarEvent($date);
+            }
         }
         else
         {
-            $actives = [];
             $divstring="";
             $thisdate=date_create_from_format("j m Y", ($i+1)." ".$currentmonth->format("m Y"));
             $datestring = $thisdate->format("Ymd");
-            $dates = CalendarScheduler::CheckDate($y,$m,str_pad($i+1,2,"0",STR_PAD_LEFT));
-            if($dates)
+            
+            if($i+1>$today)
             {
-                $actives[]="";
-                $actives[]="adm";
+                foreach($dates as $date)
+                {
+                    $events_upcoming[]= new CalendarEvent($date);
+                }
             }
+            
             foreach($actives as $line)
             {
                 $t_marker->tokens['marker']=$line;
@@ -203,8 +220,8 @@ function ModuleFunction_calender_ShowMonth($month)
             }
             $output.=$t_day->process(true);
         }
+        
     }
-    
     
     /////////end month
     $next_month_start=($daysthismont-28)+($weekfirst);
@@ -230,6 +247,19 @@ function ModuleFunction_calender_ShowMonth($month)
     $t_month->tokens['header']=$t_header->process(true);
     $t_month->tokens['days']=$output;
     EngineCore::SetPageContent($t_month->process(true));
+    if($doupcoming)
+    {
+        $t_upcoming = new TemplateProcessor("calender/upcoming");
+        $t_upcoming->push_data($events_upcoming);
+        if(count($events_today)>0)
+        {
+            $t_upcoming->tokens['today']="true";
+            $t_upcoming->push_data($events_today);
+        }
+       
+        EngineCore::AddPageContent($t_upcoming->process(true));
+        
+    }
 }
 
 

@@ -5,10 +5,9 @@ class TemplateProcessor
 	private $tplprefix="templates/";
         private $layoutsdir="layouts/";
 	private $tplpostfix=".tpl";
-	private $tplfpostfix=".f";
-	private $tplfuncprefix="tpl";
+	private $tplfpostfix=".tpl.php";
+	private $tplfuncprefix="TemplateFunction";
 	private $builtinfuncprefix="TemplateProcessorBuiltin";
-	public $tokens;
 	private $contents;
 	private $fname;
 	private $cb;
@@ -24,8 +23,14 @@ class TemplateProcessor
         
         private $varstack=[];
         
+        private $finalnodes;
+        
 	protected $symbols=array('{','}','%');
-	function __construct($file,$useLayout=false)
+	
+        
+	public $tokens;
+        
+        function __construct($file,$useLayout=false)
 	{
             $this->isLayout=$useLayout;
 		$this->tokens=Array();
@@ -60,9 +65,20 @@ class TemplateProcessor
 		$this->contents=$this->cb;
 	}
 	
+        function dumpState()
+        {
+            ini_set("var_display_max_depth",-1);
+            EngineCore::Dump2Debug($this->varstack);
+            EngineCore::Dump2Debug($this->finalnodes);
+        }
+        
+        function push_data($data)
+        {
+            $this->varstack[]=$data;//$this->wrap_datatype($data);
+        }
 	
         
-        function process_node($node)
+        private function process_node($node)
         {
             $nodetype=$node['type'];
             switch($nodetype)
@@ -105,44 +121,49 @@ class TemplateProcessor
             }
         }
         
-        function process_nodelist($nodelist)
+        private function process_nodelist($nodelist)
         {
             $result="";
             foreach($nodelist as $node)
             {
-                // echo "--starting to process node";
                 $output=$this->process_node($node);
-                //var_dump($node);
-                //var_dump($output);
-                // echo "---end ooutput";
-                if(!isset($output['stringval']) || isset($output['elements']))
+                if(isset($output['elements']))
                 {
-                    //var_dump($output);
-                    //die;
-                    $this->varstack[]=$output['elements'];//($this->wrap_datatype($output))['elements'];
-                    EngineCore::Write2Debug("fuck");
-                    EngineCore::Dump2Debug($this->varstack);
-                    EngineCore::Write2Debug("ass");
-                    //var_dump($this->varstack);
-                    //return ["type"=>"literal","stringval"=>""];
+                    $this->varstack[]=$output['elements'];
+                }
+                elseif(isset($output['stringval']) && is_scalar($output['stringval']))
+                {
+                    $result.=$output['stringval'];
                 }
                 else
                 {
-                    $result.=$output['stringval'];
+                    echo "fuck!!!!!";
+                    var_dump($output);
                 }
                 
             }
             return $result;
         }
         
-        function process_var($node)
+        private function process_var($node)
         {
             $name = $this->process_nodelist($node['varname']);
-            return ["type"=>"literal","stringval"=>$this->tokens[$name]];
+            if(!isset($this->tokens[$name]))
+            {
+                EngineCore::Write2Debug("Variable {%$name%} was not defined!!!!!!");
+                $value="";
+            }
+            else
+            {
+                $value=$this->tokens[$name];
+                
+            }
+            
+            return ["type"=>"literal","stringval"=>$value];
             
         }
         
-        function process_var_bound($node)
+        private function process_var_bound($node)
         {
             $name = $this->process_nodelist($node['varname']);
             // check if any current vars to bind exist
@@ -172,7 +193,7 @@ class TemplateProcessor
             
         }
         
-        function process_var_default($node)
+        private function process_var_default($node)
         {
             $name = $this->process_nodelist($node['varname']);
             $default = $this->process_nodelist($node['default']);
@@ -183,7 +204,7 @@ class TemplateProcessor
             return ["type"=>"literal","stringval"=>$this->tokens[$name]];
         }
         
-        function process_template($node)
+        private function process_template($node)
         {
             $template = $this->process_nodelist($node['template_name']);
             $params =[];
@@ -198,7 +219,7 @@ class TemplateProcessor
             return ["type"=>"literal","stringval"=>$t->do_new_parser()];
         }
         
-        function process_template_func($node)
+        private function process_template_func($node)
         {
             $output="";
             $func_name = $this->process_nodelist($node['template_func_name']);
@@ -225,7 +246,7 @@ class TemplateProcessor
             }
             return $this->wrap_datatype($output);
         }
-        function process_builtin($node)
+        private function process_builtin($node)
         {
             $output="";
             $func_name = $this->process_nodelist($node['builtin_name']);
@@ -234,7 +255,14 @@ class TemplateProcessor
             {
                 return $this->builtin_foreach($node);
             }
-            
+            if($func_name == "ifset")
+            {
+                return $this->builtin_ifset($node);
+            }
+            if($func_name == "if")
+            {
+                return $this->builtin_ifset($node);
+            }
             
             
             $params =[];
@@ -254,7 +282,34 @@ class TemplateProcessor
             return $this->wrap_datatype($output);
         }
         
-        function builtin_foreach($node)
+        private function builtin_ifset($node)
+        {
+            $input = $this->process_nodelist($node['params'][0]);
+            if($input!="")
+            {
+                $output = $this->process_nodelist($node['params'][1]);
+            }
+            else
+            {
+                $output = $this->process_nodelist($node['params'][2]);
+            }
+            return ["type"=>"literal","stringval"=>$output];
+        }
+        private function builtin_if($node)
+        {
+            $input = $this->process_nodelist($node['params'][0]);
+            if($input=="true")
+            {
+                $output = $this->process_nodelist($node['params'][1]);
+            }
+            else
+            {
+                $output = $this->process_nodelist($node['params'][2]);
+            }
+            return ["type"=>"literal","stringval"=>$output];
+        }
+        
+        private function builtin_foreach($node)
         {
             $before=count($this->varstack);
             $input = $this->process_nodelist($node['params'][0]);
@@ -262,7 +317,7 @@ class TemplateProcessor
             $output="";
             // keep hold of this
             $start = $this->pointer;
-            if($before==$after)
+            if($after==0)
             {
                 // no vars stacked
                 $output="";
@@ -271,6 +326,8 @@ class TemplateProcessor
             {
                 $data=end($this->varstack);
                 $typed=$this->wrap_datatype($data);
+                //var_dump($data);
+                //var_dump($typed);
                 switch($typed['type'])
                 {
                     case "row":
@@ -286,7 +343,7 @@ class TemplateProcessor
                         {
                             // be kind, rewind
                             $this->pointer=$start;
-                            $this->varstack[]=$data[$i];
+                            $this->varstack[]=$typed['elements'][$i];
                             $output.= $this->process_nodelist($node['params'][1]);
                             array_pop($this->varstack);
                         }
@@ -298,7 +355,7 @@ class TemplateProcessor
             return ["type"=>"literal","stringval"=>$output];
         }
         
-        function wrap_datatype($output)
+        private function wrap_datatype($output)
         {
             // decide whether to return a literal (single string),
             // a list (array of string), a row or a table
@@ -311,6 +368,16 @@ class TemplateProcessor
                     if(is_array($output[0]))
                     {
                         return ["type"=>"table","elements"=>$output];
+                    }
+                    // maybe a table of objects?
+                    elseif(is_object($output[0]))
+                    {
+                        $newtable = [];
+                        foreach($output as $obj)
+                        {
+                            $newtable[]=(array)$obj;
+                        }
+                        return ["type"=>"table","elements"=>$newtable];
                     }
                     // definitely a list
                     else
@@ -338,6 +405,7 @@ class TemplateProcessor
             
             
             $nodes = $this->get_nodelist();
+            $this->finalnodes=$nodes;
             $output= $this->process_nodelist($nodes);
             //echo $output;
             //var_dump($nodes);
@@ -346,17 +414,17 @@ class TemplateProcessor
             return $output;
         }
         
-        function peekChar($offset=0)
+        private function peekChar($offset=0)
         {
             return $this->chars[$this->pointer+$offset];
         }
         
-        function canGetChars($amount=1)
+        private function canGetChars($amount=1)
         {
             return $this->pointer+$amount < $this->len;
         }
         
-        function getChars($amount=1)
+        private function getChars($amount=1)
         {
             $output="";
             while($this->pointer+1<$this->len && $amount > 0)
@@ -368,7 +436,7 @@ class TemplateProcessor
         }
         
         
-        function get_nodelist()
+        private function get_nodelist()
         {
             $list=[];
             $current_node=[

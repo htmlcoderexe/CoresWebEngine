@@ -4,7 +4,7 @@ class CalendarEvent
     public $id;
     public $timestamp;
     
-    public $targetDate;
+    public $date;
     public $startTime;
     public $endTime;
     public $allDay;
@@ -18,14 +18,17 @@ class CalendarEvent
 
     function __construct($id)
     {
-        $EvaInstance = new EVA($id);
-        if($EvaInstance)
+        $e = new EVA($id);
+        if($e)
         {
-            
+            $this->title=$e->attributes['title'];
+            $this->date=$e->attributes['calendar.date'];
+            $this->startTime=$e->attributes['calendar.time'];
+            $this->description=$e->attributes['description'];
         }
         else
         {
-            
+            return;
         }
         
     }

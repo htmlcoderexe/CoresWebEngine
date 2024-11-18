@@ -1,5 +1,5 @@
 <?php
-function tpl_debugforeach_count($params)
+function TemplateFunction_debugforeach_count($params)
 {
     $count=$params;
     $output=[];

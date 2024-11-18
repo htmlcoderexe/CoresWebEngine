@@ -1,1 +1,1 @@
-{#foreach|{$count|20$}|<h3>{:*:}</h3>#}
+{#foreach|{$count|20$}|{#foreach|{$count|{:*:}$}|{#foreach|{$count|{:*:}$}|<h3>{:*:}</h3>#}#}#}

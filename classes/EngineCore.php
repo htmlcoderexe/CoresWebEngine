@@ -206,9 +206,9 @@ class EngineCore
      * Write anything to the #DEBUG channel
      * @param string $content Whatever they wish to scream about.
      */
-    public static function Write2Debug($content)
+    public static function Write2Debug($content,$linebreak=true)
     {
-        self::$DebugInfo .= $content;
+        self::$DebugInfo .= $content.($linebreak?"<br />":"");
     }
 
     /**
