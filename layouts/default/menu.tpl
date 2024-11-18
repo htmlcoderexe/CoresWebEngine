@@ -1,5 +1,6 @@
 <div id="menubar">
-{$getlinks$}
- 
+
+    <ul>{#foreach|{$menulinks$}|{{menulink|text={:text:}|link={:link:}}}#}
+    </ul>
 
 </div><!--end #menubar-->

@@ -12,3 +12,7 @@ function tpl_menu_getlinks()
 	} 
 	return "\r\n\t<ul>$acc1\r\n\t</ul>";
 }
+function tpl_menu_menulinks()
+{
+    return DBHelper::RunTable("SELECT link,text FROM menulinks",[]);
+}

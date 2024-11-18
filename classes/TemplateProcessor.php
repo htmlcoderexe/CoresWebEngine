@@ -9,11 +9,6 @@ class TemplateProcessor
 	private $tplfuncprefix="tpl";
 	private $builtinfuncprefix="TemplateProcessorBuiltin";
 	public $tokens;
-	private $matches;
-	private $matches_def;
-	private $subtemplates;
-	private $functioncalls;
-	private $bfunctioncalls;
 	private $contents;
 	private $fname;
 	private $cb;
@@ -22,15 +17,12 @@ class TemplateProcessor
         
         private $pointer;
         private $chars;
-        private $charslen;
-        private $stacklevel;
-        private $parsetree=[];
-        private $currentnode;
+        private $len;
+        
         private $terminator_stack=[];
         private $last_terminator="";
         
-        private $mode;
-        private $output;
+        private $varstack=[];
         
 	protected $symbols=array('{','}','%');
 	function __construct($file,$useLayout=false)
@@ -83,6 +75,10 @@ class TemplateProcessor
                 {
                     return $this->process_var($node);
                 }
+                case "var_bound":
+                {
+                    return $this->process_var_bound($node);
+                }
                 case "variable_default":
                 {
                     return $this->process_var_default($node);
@@ -99,6 +95,13 @@ class TemplateProcessor
                 {
                     return $this->process_builtin($node);
                 }
+                case "row":
+                case "list":
+                case "table":
+                {
+                    $this->varstack[]=$node['elements'];
+                    return ["type"=>"literal","stringval"=>""];
+                }
             }
         }
         
@@ -107,8 +110,27 @@ class TemplateProcessor
             $result="";
             foreach($nodelist as $node)
             {
+                // echo "--starting to process node";
                 $output=$this->process_node($node);
-                $result.=$output['stringval'];
+                //var_dump($node);
+                //var_dump($output);
+                // echo "---end ooutput";
+                if(!isset($output['stringval']) || isset($output['elements']))
+                {
+                    //var_dump($output);
+                    //die;
+                    $this->varstack[]=$output['elements'];//($this->wrap_datatype($output))['elements'];
+                    EngineCore::Write2Debug("fuck");
+                    EngineCore::Dump2Debug($this->varstack);
+                    EngineCore::Write2Debug("ass");
+                    //var_dump($this->varstack);
+                    //return ["type"=>"literal","stringval"=>""];
+                }
+                else
+                {
+                    $result.=$output['stringval'];
+                }
+                
             }
             return $result;
         }
@@ -117,6 +139,36 @@ class TemplateProcessor
         {
             $name = $this->process_nodelist($node['varname']);
             return ["type"=>"literal","stringval"=>$this->tokens[$name]];
+            
+        }
+        
+        function process_var_bound($node)
+        {
+            $name = $this->process_nodelist($node['varname']);
+            // check if any current vars to bind exist
+            if(count($this->varstack)>0)
+            {
+                $vars=end($this->varstack);
+                if(!is_array($vars) && $name="*")
+                {
+                    return ["type"=>"literal","stringval"=>$vars];
+                }
+                if(isset($vars[$name]))
+                {
+                    return ["type"=>"literal","stringval"=>$vars[$name]];
+                }
+                else
+                {
+                    EngineCore::Write2Debug("Bound var &lt;".$name."> missing value");
+                    return ["type"=>"literal","stringval"=>""];
+                }
+            }
+            else
+            {
+                EngineCore::Write2Debug("Unexpected bound var &lt;".$name.">");
+                return ["type"=>"literal","stringval"=>""];
+            }
+            
             
         }
         
@@ -171,12 +223,19 @@ class TemplateProcessor
             {
                 $output=call_user_func($this->tplfuncprefix."_".basename($this->fname)."_".$func_name);
             }
-            return ["type"=>"literal","stringval"=>$output];
+            return $this->wrap_datatype($output);
         }
         function process_builtin($node)
         {
             $output="";
             $func_name = $this->process_nodelist($node['builtin_name']);
+            
+            if($func_name == "foreach")
+            {
+                return $this->builtin_foreach($node);
+            }
+            
+            
             
             $params =[];
             foreach($node['params'] as $param)
@@ -191,6 +250,78 @@ class TemplateProcessor
             else
             {
                 $output=call_user_func($this->builtintplfuncprefix."_".$func_name);
+            }
+            return $this->wrap_datatype($output);
+        }
+        
+        function builtin_foreach($node)
+        {
+            $before=count($this->varstack);
+            $input = $this->process_nodelist($node['params'][0]);
+            $after=count($this->varstack);
+            $output="";
+            // keep hold of this
+            $start = $this->pointer;
+            if($before==$after)
+            {
+                // no vars stacked
+                $output="";
+            }
+            else
+            {
+                $data=end($this->varstack);
+                $typed=$this->wrap_datatype($data);
+                switch($typed['type'])
+                {
+                    case "row":
+                    {
+                        $output = $this->process_nodelist($node['params'][1]);
+                        array_pop($this->varstack);
+                        break;
+                    }
+                    case "list":
+                    case "table":
+                    {
+                        for($i=0;$i<count($data);$i++)
+                        {
+                            // be kind, rewind
+                            $this->pointer=$start;
+                            $this->varstack[]=$data[$i];
+                            $output.= $this->process_nodelist($node['params'][1]);
+                            array_pop($this->varstack);
+                        }
+                        array_pop($this->varstack);
+                        break;
+                    }
+                }
+            }
+            return ["type"=>"literal","stringval"=>$output];
+        }
+        
+        function wrap_datatype($output)
+        {
+            // decide whether to return a literal (single string),
+            // a list (array of string), a row or a table
+            if(is_array($output))
+            {
+                // list or table 
+                if(isset($output[0]))
+                {
+                    // likely a table
+                    if(is_array($output[0]))
+                    {
+                        return ["type"=>"table","elements"=>$output];
+                    }
+                    // definitely a list
+                    else
+                    {
+                         return ["type"=>"list","elements"=>$output];
+                    }
+                } // no numerical keys, must be a row
+                else
+                {
+                    return ["type"=>"row","elements"=>$output];
+                }
             }
             return ["type"=>"literal","stringval"=>$output];
         }
@@ -316,6 +447,24 @@ class TemplateProcessor
                                         $current_node['default']=$default;
                                         $current_node['type']="variable_default";
                                     }
+                                    $list[]=$current_node;
+                                    $current_node=[
+                                       "type"=>"literal",
+                                        "stringval"=>""
+                                    ];
+                                    break;
+                                }
+                                case ":":
+                                {
+                                    array_push($this->terminator_stack,":");
+                                    $list[]=$current_node;
+                                    $this->pointer++;
+                                    $this->pointer++;
+                                    $current_node =[];
+                                    $varname=$this->get_nodelist();
+                                    // check if it was var or vardefault
+                                    $current_node['type']="var_bound";
+                                    $current_node['varname']=$varname;
                                     $list[]=$current_node;
                                     $current_node=[
                                        "type"=>"literal",

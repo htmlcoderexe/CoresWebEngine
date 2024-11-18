@@ -218,7 +218,7 @@ class EngineCore
      *///                   3dump5me
     public static function Dump2Debug($whatever)
     {
-        self::WriteDebug(self::VarDumpString($whatever));
+        self::Write2Debug(self::VarDumpString($whatever));
     }
 
     //-----------------------------+
