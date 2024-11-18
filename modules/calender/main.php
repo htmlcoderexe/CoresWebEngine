@@ -197,6 +197,10 @@ function ModuleFunction_calender_ShowMonth($month)
             {
                 $t_day->tokens['verb']="view";
             }
+            else
+            {
+                $t_day->tokens['verb']="create";
+            }
             $output.=$t_day->process(true);
         }
     }
