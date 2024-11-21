@@ -105,6 +105,14 @@
     background-color: #004F00;
 }
 
+.cal-week-title
+{
+    font-size: 3em;
+    text-align: center;
+    padding: 0;
+    margin-bottom:0;
+}
+
 .cal-weekview
 {
     height:53em;

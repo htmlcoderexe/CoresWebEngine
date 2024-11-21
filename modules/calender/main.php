@@ -199,6 +199,27 @@ function ModuleFunction_calender_ShowDay($day)
     EngineCore::AddPageContent($t->process(true));
     EngineCore::SetPageTitle("Events on ".$e->attributes['calendar.date']);
 }
+function ModuleFunction_calender_ShowEvent($eventID)
+{
+        $e=new EVA($eventID);
+        if(!$e)
+        {
+         return;   
+        }
+        
+        $t=new TemplateProcessor("calender/displayeventlist");
+        $t->tokens['eventId']=$e->id;
+        $t->tokens['title']=$e->attributes['title'];
+        $t->tokens['date']=$e->attributes['calendar.date'];
+        $t->tokens['time']=$e->attributes['calendar.time'];
+        $t->tokens['description']=$e->attributes['description'];
+        $output=$t->process(true);
+    
+    $t = new TemplateProcessor("calender/eventsondate");
+    $t->tokens['events']=$output;
+    EngineCore::AddPageContent($t->process(true));
+    EngineCore::SetPageTitle("Events on ".$e->attributes['calendar.date']);
+}
 
 
 function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
@@ -380,7 +401,10 @@ function ModuleFunction_calender_ShowWeek($year,$week)
             }
         }
     }
-    
+    $tpl->tokens=[
+        "year"=>$year,
+        "weekno"=>$week
+    ];
     $tpl->tokens['days']=$daynames;
     $tpl->tokens['events']=$events;
     EngineCore::SetPageContent($tpl->process(true));
@@ -404,6 +428,11 @@ function ModuleAction_calender_view($params)
         case "date":
         {
             ModuleFunction_calender_ShowDay($params[1]);
+            return;
+        }
+        case "event":
+        {
+            ModuleFunction_calender_ShowEvent($params[1]);
             return;
         }
         case "week":

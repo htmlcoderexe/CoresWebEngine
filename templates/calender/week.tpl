@@ -1,4 +1,4 @@
-<h1>Week {%weekno|-1%}</h1>
+<h1 class="cal-week-title">{%year|1691%}  W{%weekno|-1%}</h1>
 <div class="cal-weekview">
     
       <br />
