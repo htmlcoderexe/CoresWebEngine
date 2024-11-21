@@ -123,6 +123,7 @@
     border-right: 1px #207040 solid;
     border-left: 1px #207040 solid;
     padding-top: 0.3em;
+    pointer-events: none;
 }
 
 .cal-week-header:nth-child(1 of .cal-week-header)
@@ -138,6 +139,10 @@
 .cal-week-header:nth-child(7 of .cal-week-header)
 {
     color:red;
+}
+.cal-week-header a
+{
+    pointer-events: all;
 }
 
 .cal-week-agenda-bg
@@ -175,4 +180,11 @@
     min-height: 1em;
     padding: 0.3em;
     box-sizing: border-box;
+}
+.cal-week-event a
+{
+    position:absolute;
+    height: 100%;
+    width: 100%;
+    
 }

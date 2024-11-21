@@ -362,7 +362,7 @@ function ModuleFunction_calender_ShowWeek($year,$week)
     for($i =1;$i<8;$i++)
     {
         $date = strtotime($year."W".sprintf("%02u", $week).$i);
-        $daynames[]=date("D j/m",$date);
+        $daynames[]=["date"=>date("Ymd",$date),"title"=>date("D j/m",$date)];
         $onthisday= CalendarScheduler::CheckDate(date("Y-m-d",$date));
         if($onthisday)
         {
@@ -374,13 +374,14 @@ function ModuleFunction_calender_ShowWeek($year,$week)
                 $event_entry['xpos']=13*($i-1);
                 $event_entry['ypos']= ModuleFunction_calender_TimeToEms($ems, $hh-$starting_hour, $mm);
                 $event_entry['height']= ModuleFunction_calender_TimeToEms($ems,$dhh,$dmm);
+                $event_entry['id']=$event;
                 EngineCore::Dump2Debug($event_entry);
                 $events[]=$event_entry;
             }
         }
     }
     
-    $tpl->tokens['daynames']=$daynames;
+    $tpl->tokens['days']=$daynames;
     $tpl->tokens['events']=$events;
     EngineCore::SetPageContent($tpl->process(true));
 }
