@@ -1,5 +1,6 @@
 <?php
 
+
 function ModuleFunction_calender_ParseYYYYMMDD($params,$split=false)
 {
     $result= $params[0].$params[1].$params[2].$params[3]."-".$params[4].$params[5]."-".$params[6].$params[7];
@@ -18,7 +19,38 @@ function ModuleAction_calender_default($params)
     
 }
 
-function ModuleFunction_CreateEvent($title,$date,$time,$description)
+function ModuleFunction_EditEvent($eID,$title,$date,$time,$duration,$description)
+{
+    if(!$title || !$date||!$eID)
+    {
+        EngineCore::GTFO("/calender/edit/error");
+        return;
+    }
+    $event = new EVA($eID);
+    if(!$event)
+    {
+        EngineCore::GTFO("/calender/edit/error");
+        return;
+    }
+    $event->SetSingleAttribute("title",$title);
+    $event->SetSingleAttribute("calendar.date",$date);
+    if(!$time)
+    {
+        $time ="00:00";
+    }
+    if(!$duration)
+    {
+        $duration="01:00";
+    }
+    $event->SetSingleAttribute("calendar.time",$time);
+    $event->SetSingleAttribute("calendar.duration",$duration);
+    $event->SetSingleAttribute("description",$description);
+    $event->Save();
+    EngineCore::GTFO("/calender");
+    return;
+}
+
+function ModuleFunction_CreateEvent($title,$date,$time,$duration,$description)
 {
     if(!$title || !$date)
     {
@@ -32,26 +64,81 @@ function ModuleFunction_CreateEvent($title,$date,$time,$description)
     {
         $time ="00:00";
     }
+    if(!$duration)
+    {
+        $duration="01:00";
+    }
     $event->AddAttribute("calendar.time",$time);
+    $event->AddAttribute("calendar.duration",$duration);
     $event->AddAttribute("description",$description);
     $event->Save();
     EngineCore::GTFO("/calender");
     return;
 }
 
+
+function ModuleAction_calender_edit($params)
+{
+    $selectedId=$params[0] ?? -1;
+    $title = EngineCore::POST("title","");
+    $date = EngineCore::POST("date","");
+    $time = EngineCore::POST("time","");
+    $duration = EngineCore::POST("timeD","");
+    $description = EngineCore::POST("description","");
+    $submitted=EngineCore::POST("create","");
+    $eventId=EngineCore::POST("EventID");
+    if($submitted && $eventId && (new EVA($eventId))!=null)
+    {
+        ModuleFunction_EditEvent($eventId,$title,$date,$time,$duration,$description);
+        return;
+    }
+    $mode = $params[1] ?? "default";
+    
+    if(new EVA($selectedId)==null)
+    {
+        EngineCore::GTFO("/calender");
+        return;
+    }
+    
+    switch($mode)
+    {
+        case "error":
+        {
+            $t=new TemplateProcessor("calender/createevent");
+            $t->tokens['error']="Invalid input.";       
+            EngineCore::AddPageContent($t->process(true));
+            EngineCore::SetPageTitle("Create event");
+            return;
+        }
+        default:
+        {
+            $t=new TemplateProcessor("calender/createevent");
+            $event = new CalendarEvent($selectedId);
+            $t->tokens=(array)$event;
+            $t->tokens['verb']="edit";
+            $t->tokens['eventId']=$event->EvaInstance->id;
+            EngineCore::AddPageContent($t->process(true));
+            EngineCore::SetPageTitle("Editing event");
+            return;
+        }
+    }
+}
+
+
 function ModuleAction_calender_create($params)
 {
     $title = EngineCore::POST("title","");
     $date = EngineCore::POST("date","");
     $time = EngineCore::POST("time","");
+    $duration = EngineCore::POST("timeD","");
     $description = EngineCore::POST("description","");
     $submitted=EngineCore::POST("create","");
     if($submitted)
     {
-        ModuleFunction_CreateEvent($title,$date,$time,$description);
+        ModuleFunction_CreateEvent($title,$date,$time,$duration,$description);
         return;
     }
-    $mode = isset ($params[0])?$params[0]:"default";
+    $mode = $params[0] ?? "default";
     
     switch($mode)
     {
@@ -100,6 +187,7 @@ function ModuleFunction_calender_ShowDay($day)
         $e=new EVA($event);
         $events[]=$e;
         $t=new TemplateProcessor("calender/displayeventlist");
+        $t->tokens['eventId']=$e->id;
         $t->tokens['title']=$e->attributes['title'];
         $t->tokens['date']=$e->attributes['calendar.date'];
         $t->tokens['time']=$e->attributes['calendar.time'];
@@ -259,6 +347,43 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     }
 }
 
+function ModuleFunction_calender_TimeToEms($ems,$hh,$mm)
+{
+    return ((floatval($hh))*1.0*$ems +floatval($mm)/60.0*$ems);
+}
+
+function ModuleFunction_calender_ShowWeek($year,$week)
+{
+    $tpl=new TemplateProcessor("calender/week");
+    $events=[];
+    $ems=2.0;
+    $starting_hour=0.0;
+    $daynames=[];//["November 18","November 19","November 20","November 21","November 22","November 23","November 24"];
+    for($i =1;$i<8;$i++)
+    {
+        $date = strtotime($year."W".sprintf("%02u", $week).$i);
+        $daynames[]=date("D j/m",$date);
+        $onthisday= CalendarScheduler::CheckDate(date("Y-m-d",$date));
+        if($onthisday)
+        {
+            foreach($onthisday as $event)
+            {
+                $event_entry=(array)(new CalendarEvent($event));
+                list($hh,$mm)=explode(":",$event_entry['startTime']);
+                list($dhh,$dmm)=explode(":",$event_entry['duration']);
+                $event_entry['xpos']=13*($i-1);
+                $event_entry['ypos']= ModuleFunction_calender_TimeToEms($ems, $hh-$starting_hour, $mm);
+                $event_entry['height']= ModuleFunction_calender_TimeToEms($ems,$dhh,$dmm);
+                EngineCore::Dump2Debug($event_entry);
+                $events[]=$event_entry;
+            }
+        }
+    }
+    
+    $tpl->tokens['daynames']=$daynames;
+    $tpl->tokens['events']=$events;
+    EngineCore::SetPageContent($tpl->process(true));
+}
 
 
 
@@ -278,6 +403,11 @@ function ModuleAction_calender_view($params)
         case "date":
         {
             ModuleFunction_calender_ShowDay($params[1]);
+            return;
+        }
+        case "week":
+        {
+            ModuleFunction_calender_ShowWeek($params[1],$params[2]);
             return;
         }
         default:

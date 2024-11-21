@@ -140,3 +140,13 @@ function TemplateProcessorBuiltin_debuginfo()
     }
     return "";
 }
+
+function TemplateProcessorBuiltin_count($end,$start=1,$step=1,$width=1)
+{
+    $output=[];
+    for($i=$start;$i<=$end;$i+=$step)
+    {
+        $output[]=sprintf("%0".intval($width)."d",$i);
+    }
+    return $output;
+}

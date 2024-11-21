@@ -104,3 +104,75 @@
 {
     background-color: #004F00;
 }
+
+.cal-weekview
+{
+    height:53em;
+    position:relative;
+}
+
+.cal-week-header
+{
+    width: 13%;
+    display:inline-block;
+    text-align:center;
+    position:relative;
+    box-sizing:border-box;
+    z-index:1;
+    height:52em;
+    border-right: 1px #207040 solid;
+    border-left: 1px #207040 solid;
+    padding-top: 0.3em;
+}
+
+.cal-week-header:nth-child(1 of .cal-week-header)
+{
+    margin-left:2.5em;
+}
+
+.cal-week-header:nth-child(6 of .cal-week-header)
+{
+    color:red;
+}
+
+.cal-week-header:nth-child(7 of .cal-week-header)
+{
+    color:red;
+}
+
+.cal-week-agenda-bg
+{
+    
+    height: 48em;
+    width:100%;
+    position:absolute;
+    left:0;
+    display:inline-block;
+}
+.cal-week-timegrid
+{
+    display: inline-block;
+    position:absolute;
+    box-shadow: inset 0px 1px 0px 0px #207040;
+    height: 2em;
+    width: 100%;
+}
+.cal-week-timegrid:nth-child(odd)
+{
+    background-color: #202620;
+}
+.cal-week-weekgrid
+{
+    
+}
+
+.cal-week-event
+{
+    width: 13%;
+    position:absolute;
+    top: 0;
+    background-color: #004F00;
+    min-height: 1em;
+    padding: 0.3em;
+    box-sizing: border-box;
+}

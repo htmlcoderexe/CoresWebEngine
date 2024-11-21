@@ -1,4 +1,5 @@
 <?php
+Module::DemandProperty("calendar.duration", "Duration", "The duration of an event.");
 class CalendarEvent
 {
     public $id;
@@ -6,7 +7,7 @@ class CalendarEvent
     
     public $date;
     public $startTime;
-    public $endTime;
+    public $duration;
     public $allDay;
     
     
@@ -14,7 +15,7 @@ class CalendarEvent
     public $description;
     
     
-    private $EvaInstance;
+    public EVA $EvaInstance;
 
     function __construct($id)
     {
@@ -24,7 +25,9 @@ class CalendarEvent
             $this->title=$e->attributes['title'];
             $this->date=$e->attributes['calendar.date'];
             $this->startTime=$e->attributes['calendar.time'];
+            $this->duration=$e->attributes['calendar.duration']??"01:00";
             $this->description=$e->attributes['description'];
+            $this->EvaInstance=$e;
         }
         else
         {
