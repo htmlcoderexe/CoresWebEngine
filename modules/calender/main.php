@@ -252,7 +252,7 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     $daysprevmont =$prev_month->format("t");
     
     $headerprev=$prev_month->format("M Y");
-    $headercurrent=$currentmonth->format("M Y");
+    $headercurrent=$currentmonth->format("F Y");
     $headernext=$next_month->format("M Y");
     $headerlinkprev=$prev_month->format("Ym");
     $headerlinknext=$next_month->format("Ym");
@@ -273,6 +273,13 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     
     // find out current month's day
     $daysthismont =$currentmonth->format("t");
+    $firstweek=$currentmonth->format("W");
+    $lastday=date_create_from_format("Ymd",$y.$m.$daysthismont);
+    $lastweek=$lastday->format("W");
+    if(intval($lastweek)<intval($firstweek))
+    {
+        $lastweek+=52;
+    }
     $events_upcoming=[];
     $events_today=[];
     for($i=0;$i<$daysthismont;$i++)
@@ -355,6 +362,22 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     $t_month= new TemplateProcessor("calender/calendarmonth");
     $t_month->tokens['header']=$t_header->process(true);
     $t_month->tokens['days']=$output;
+    $weeknos="";
+    $t_week=new TemplateProcessor("calender/weekcell");
+    for($i=$firstweek;$i<$lastweek+1;$i++)
+    {
+        $weekno=intval($i);
+        $yearno=$y;
+        if($weekno>52)
+        {
+            $weekno-=52;
+            $yearno++;
+        }
+        $t_week->tokens['week']=$weekno;
+        $t_week->tokens['year']=$yearno;
+        $weeknos.=($t_week->process(true));
+    }
+    $t_month->tokens['weeks']=$weeknos;
     EngineCore::SetPageContent($t_month->process(true));
     if($doupcoming)
     {
@@ -375,38 +398,73 @@ function ModuleFunction_calender_TimeToEms($ems,$hh,$mm)
 
 function ModuleFunction_calender_ShowWeek($year,$week)
 {
+    $now = time();
+    $now+= EngineCore::GetTimeOffset();
+    $nowhh=date("h",$now); 
+    $nowmm=date("i",$now);
+    $nowday=date("Ymd",$now);
     $tpl=new TemplateProcessor("calender/week");
     $events=[];
     $ems=2.0;
     $starting_hour=0.0;
+    $marker=[];
     $daynames=[];//["November 18","November 19","November 20","November 21","November 22","November 23","November 24"];
     for($i =1;$i<8;$i++)
     {
         $date = strtotime($year."W".sprintf("%02u", $week).$i);
-        $daynames[]=["date"=>date("Ymd",$date),"title"=>date("D j/m",$date)];
+        $isred = $i==7;
+        $isblue = $i==6;
+        // TODO: check red days other than Sundays
+        
+        
+        $ismonday=$i==1;
+        $daystyle= ($ismonday?" cal-week-monday":"").($isred?" cal-week-redday":($isblue?" cal-week-blueday":""));
+        $daynames[]=["date"=>date("Ymd",$date),"title"=>date("D j/m",$date),"style"=>$daystyle];
         $onthisday= CalendarScheduler::CheckDate(date("Y-m-d",$date));
         if($onthisday)
         {
             foreach($onthisday as $event)
             {
+                
                 $event_entry=(array)(new CalendarEvent($event));
+                if(!$event_entry['isValid'])
+                {
+                    continue;
+                }
                 list($hh,$mm)=explode(":",$event_entry['startTime']);
                 list($dhh,$dmm)=explode(":",$event_entry['duration']);
                 $event_entry['xpos']=13*($i-1);
                 $event_entry['ypos']= ModuleFunction_calender_TimeToEms($ems, $hh-$starting_hour, $mm);
                 $event_entry['height']= ModuleFunction_calender_TimeToEms($ems,$dhh,$dmm);
                 $event_entry['id']=$event;
-                EngineCore::Dump2Debug($event_entry);
                 $events[]=$event_entry;
             }
+        }
+        if($nowday==date("Ymd",$date))
+        {
+            $marker['xpos']=13*($i-1);
+            $marker['ypos']= ModuleFunction_calender_TimeToEms($ems, $nowhh, $nowmm);
+        }
+        if($ismonday)
+        {
+            $month=date("m",$date);
         }
     }
     $tpl->tokens=[
         "year"=>$year,
-        "weekno"=>$week
+        "weekno"=>$week,
+        "month"=>$month,
+        "prevyear"=>$week==1?$year-1:$year,
+        "prevweek"=>$week==1?52:$week-1,
+        "nextyear"=>$week==52?$year+1:$year,
+        "nextweek"=>$week==52?1:$week+1
     ];
     $tpl->tokens['days']=$daynames;
     $tpl->tokens['events']=$events;
+    if($marker)
+    {
+         $tpl->tokens['marker']=$marker;
+    }
     EngineCore::SetPageContent($tpl->process(true));
 }
 

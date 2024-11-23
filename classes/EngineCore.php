@@ -267,7 +267,16 @@ class EngineCore
         }
         echo "<a href=\"$url\">Go to $url</a>";
     }
-
+    /**
+     * Gets the user's time offset - only works from second page load on
+     * @return int the time offset, falling back to 0 (UTC) if not found
+     */
+    static function GetTimeOffset()
+    {
+        return isset($_COOKIE['timeoffset'])?intval($_COOKIE['timeoffset']):0;
+       
+    }
+    
     /**
      * Send the user back to the previous page
      * Original comments kept, code slightly updated

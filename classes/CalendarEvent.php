@@ -14,7 +14,7 @@ class CalendarEvent
     public $title;
     public $description;
     
-    
+    public $isValid=true;
     public EVA $EvaInstance;
 
     function __construct($id)
@@ -22,11 +22,11 @@ class CalendarEvent
         $e = new EVA($id);
         if($e)
         {
-            $this->title=$e->attributes['title'];
-            $this->date=$e->attributes['calendar.date'];
-            $this->startTime=$e->attributes['calendar.time'];
+            $this->title=$e->attributes['title']??$this->Invalidate();
+            $this->date=$e->attributes['calendar.date']??$this->Invalidate();
+            $this->startTime=$e->attributes['calendar.time']??$this->Invalidate();
             $this->duration=$e->attributes['calendar.duration']??"01:00";
-            $this->description=$e->attributes['description'];
+            $this->description=$e->attributes['description']??$this->Invalidate();
             $this->EvaInstance=$e;
         }
         else
@@ -34,6 +34,12 @@ class CalendarEvent
             return;
         }
         
+    }
+    
+    function Invalidate()
+    {
+        $this->isValid=false;
+        return "";
     }
 
     function Create()

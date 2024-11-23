@@ -1,37 +1,93 @@
+*, *::before, *::after
+{
+    box-sizing: border-box;
+}
+
+h1, h2, h3, h4, h5, h6, h7, h8
+{
+    margin-top: 0;
+}
+
 .cal-container
 {
-    width: 29.6em;
-    border: 1px red solid;
-    overflow:auto;
+    
 }
 
 .cal-header
 {
+    padding-bottom:5%;
     text-align: center;
+    font-size: 2.5em;
 }
 
+.cal-header a
+{
+    font-size: 0.7em;
+    margin-top: 1em;
+}
+
+.cal-header a:first-of-type
+{
+    float: left;
+}
+.cal-header a:last-of-type
+{
+    float: right;
+}
+
+
+.cal-weeks
+{
+    width: 12.5%;
+    display:inline-block;
+    float:left;
+}
 .cal-days
 {
-    
+    width: 87.5%;
+    display:inline-block;
+    float:left;
 }
 
 
 .cal-cell
 {
     display: block;
-    width: 4.1em;
-    height: 2em;
-    padding-top:0.5em;
+    width: 14.2857%;
+    padding-bottom:7.142857%;
+    font-size:1.5rem;
     border: 1px #303030 solid;
     position:relative;
     float:left;
+}
+
+.cal-week-cell{
+    display: block;
+    width: 100%;
+    padding-bottom: 50%;
+    font-size:1.5rem;
+    border: 1px #303030 solid;
+    position:relative;
+    float:left;
+    text-align:center;
+    line-height:2.35em;
+}
+
+.cal-week-cell a
+{
+    
+    width:100%;
+    height:100%;
+    position:absolute;
+    margin-left:0;
+    line-height:2;
 }
 
 .cal-cur, .cal-prev, .cal-today, .cal-next
 {
     
     text-align:center;
-    line-height:2.35em;
+    line-height:2.35;
 }
 
 .cal-cur
@@ -51,7 +107,7 @@
 
 .cal-today
 {
-    box-shadow: inset 3px 3px red, inset -3px -3px red;
+    box-shadow: inset 6px 6px red, inset -6px -6px red;
     font-weight: bold;
 }
 
@@ -61,26 +117,33 @@
     
     width:100%;
     height:100%;
-    aaborder:1px red solid;
     position:absolute;
-    margin-top:-0.5em;
     margin-left:0;
     pointer-events: none;
+    line-height:2;
+}
+.center_because_css_sucks
+{
+    width: auto !important;
+    height: auto !important;
+    display:inline-block;
+    top:50%;
+    left:50%;
+    transform:  translateX(-50%) translateY(-50%);
 }
 .cal-cell a
 {
     
     width:100%;
     height:100%;
-    aaborder:1px red solid;
     position:absolute;
-    margin-top:-0.5em;
     margin-left:0;
+    line-height:2;
 }
 
 .cal-event-generic
 {
-    box-shadow: inset 0px 3px 0px 0px #2060A0;
+    box-shadow: inset 0px 8px 0px 0px #2060A0;
 }
 
 
@@ -88,7 +151,7 @@
 
 .cal-event-adm
 {
-    box-shadow: inset 0px -3px 0px 0px #20A060;
+    box-shadow: inset 0px -8px 0px 0px #20A060;
     
 }
 
@@ -134,17 +197,17 @@
     pointer-events: none;
 }
 
-.cal-week-header:nth-child(1 of .cal-week-header)
+.cal-week-header.cal-week-monday
 {
-    margin-left:2.5em;
+    margin-left:3em;
 }
 
-.cal-week-header:nth-child(6 of .cal-week-header)
+.cal-week-header.cal-week-blueday
 {
     color:red;
 }
 
-.cal-week-header:nth-child(7 of .cal-week-header)
+.cal-week-header.cal-week-redday
 {
     color:red;
 }
@@ -195,4 +258,13 @@
     height: 100%;
     width: 100%;
     
+}
+
+.cal-week-marker
+{
+    width: 13%;
+    position:absolute;
+    top: 0;
+    height: 2.2em;
+    border: red solid 3px;
 }
