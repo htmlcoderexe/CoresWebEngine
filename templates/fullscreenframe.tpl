@@ -16,6 +16,13 @@
         <script type="text/javascript">
         window.SetFullSCreen=false;
         window.contentFrame=document.getElementById("contentframe");
+        function CheckFullScreen() {
+            if (window.matchMedia('(display-mode: fullscreen)').matches ||
+            window.document.fullscreenElement) {
+            } else {
+               linkEvent();
+            }
+        }
         function doFullScreen()
         {
             if(!window.SetFullScreen)
@@ -27,8 +34,10 @@
         }
         function linkEvent()
         {
+                window.SetFullScreen=false;
             window.contentFrame.contentDocument.addEventListener("click",doFullScreen);
         }
+        window.addEventListener("resize",CheckFullScreen);
         </script>
     </body>
 </html>
