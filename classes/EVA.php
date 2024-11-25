@@ -55,6 +55,8 @@ class EVA
             DBHelper::Insert('eva_objects',Array(null,$type,$owner));
             $objid=DBHelper::GetLastId();
             $object= new EVA($objid);
+            $object->attributes=[];
+            $object->proplist=[];
             while(count($blueprint)>0)
             {
                 $prop=array_shift($blueprint);
@@ -239,6 +241,14 @@ class EVA
 		";
             return DBHelper::RunList($query,[$value,$type,$property]);
 	}
+        
+        
+        public static function GetAllOfType($type)
+        {
+            $q=DBHelper::Select("eva_objects",["id"],["type"=>$type]);
+            return DBHelper::RunList($q,[$type]);
+        }
+        
 	
 	public function FindAttribute($name)
 	{

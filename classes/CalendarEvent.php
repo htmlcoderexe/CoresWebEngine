@@ -1,5 +1,9 @@
 <?php
 Module::DemandProperty("calendar.duration", "Duration", "The duration of an event.");
+Module::DemandProperty("calendar.event_type","Event type","Type of a calendar event.");
+Module::DemandProperty("calendar.tagcolour","Calendar colour","How the event is marked in the month view.");
+Module::DemandProperty("calendar.agendacolour","Schedule colour","How the event is marked in the week view.");
+Module::DemandProperty("name", "Name", "Name of something.");
 class CalendarEvent
 {
     public $id;
@@ -14,6 +18,8 @@ class CalendarEvent
     public $title;
     public $description;
     
+    public $type;
+    
     public $isValid=true;
     public EVA $EvaInstance;
 
@@ -27,6 +33,7 @@ class CalendarEvent
             $this->startTime=$e->attributes['calendar.time']??$this->Invalidate();
             $this->duration=$e->attributes['calendar.duration']??"01:00";
             $this->description=$e->attributes['description']??$this->Invalidate();
+            $this->type=$e->attributes['calendar.event_type']??"";
             $this->EvaInstance=$e;
         }
         else

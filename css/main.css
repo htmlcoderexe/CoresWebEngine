@@ -32,7 +32,7 @@ body
 }
 #rightcolumn
 {
-	width: 30%;
+	width: 20%;
 	float: right;
 	
 }
@@ -70,7 +70,7 @@ h2
 	padding-top:36px;
 	padding-left:24px;
 	padding-right:24px;
-	width:60%;
+	width:75%;
 	z-index:0;
 	/*
 	/

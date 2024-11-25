@@ -62,3 +62,8 @@ class Module
         }
     }
 }
+$struct=[
+    "name"=>"varchar(255)",
+    "time"=>"int"
+];
+Module::DemandTable("verified_tables",$struct,true,false);

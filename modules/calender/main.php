@@ -76,6 +76,88 @@ function ModuleFunction_CreateEvent($title,$date,$time,$duration,$description)
     return;
 }
 
+function ModuleFunction_calender_ManageTypes()
+{
+    $types=EVA::GetAllOfType("calendar.event.type");
+    $tpl=new TemplateProcessor("calender/managetypes");
+    foreach($types as $type)
+    {
+        $t=new EVA($type);
+        $flattype=(array)($t->attributes);
+        $flattype['id']=$t->id;
+        $tpl->tokens['types'][]=$flattype;
+    }
+    EngineCore::AddPageContent($tpl->process(true));
+}
+
+function ModuleFunction_calender_CreateUpdate($tagname, $tagcolour,$schedulecolour,$id=-1)
+{
+    if($id==-1)
+    {
+        $e=EVA::CreateObject("calendar.event.type");
+    }
+    else
+    {
+        $e=new EVA($id);
+    }
+    $e->SetSingleAttribute("calendar.tagcolour",$tagcolour);
+    $e->SetSingleAttribute("name",$tagname);
+    $e->SetSingleAttribute("calendar.agendacolour",$schedulecolour);
+    $e->Save();
+    EngineCore::GTFO("/calender/type/manager/");
+    die();
+}
+
+function ModuleAction_calender_type($params)
+{
+    $action=$params[0]??"manager";
+    switch($action)
+    {
+        case "edit":
+        case "create":
+        {
+            $id=$params[1]??-1;
+            $tpl=new TemplateProcessor("calender/edittype");
+            $item=new EVA($id);
+            //var_dump($item);//die;
+            if($item->id!=null && $id!=-1)
+            {
+                $tpl->tokens['name']=$item->attributes['name'];
+                $tpl->tokens['agendacolour']=$item->attributes['calendar.tagcolour'];
+                $tpl->tokens['tagcolour']=$item->attributes['calendar.agendacolour'];
+                $tpl->tokens['typeId']=$item->id;
+            }
+            EngineCore::AddPageContent($tpl->process(true));
+            return;
+        }
+        case "update":
+        {
+            $name=EngineCore::POST("name");
+            $tc=EngineCore::POST("tagcolour");
+            $ac=EngineCore::POST("agendacolour");
+            $id=EngineCore::POST("TypeID");
+            if($name=="")
+            {
+                $name="No name";
+            }
+            if(EngineCore::POST("create"))
+            {
+                ModuleFunction_calender_CreateUpdate($name, $tc, $ac,$id);
+            }
+        }
+        case "manager":
+        {
+            ModuleFunction_calender_ManageTypes();
+            return;
+        }
+        default:
+        {
+            ModuleFunction_calender_ManageTypes();
+            return;            
+        }
+    }
+}
+
 
 function ModuleAction_calender_edit($params)
 {
