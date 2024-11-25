@@ -1,3 +1,4 @@
+<meta http-equiv="refresh" content="300">
 <h1 class="cal-week-title"><a href="/calender/view/week/{%prevyear%}/{%prevweek%}"> &larr;</a> <a href="/calender/view/month/{%year%}{%month%}">{%year|1691%}  W{%weekno|-1%}</a> <a href="/calender/view/week/{%nextyear%}/{%nextweek%}">&rarr;<!--hear me rawr lmao--> </a></h1>
 <div class="cal-weekview">
     
