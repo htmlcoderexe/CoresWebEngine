@@ -8,10 +8,13 @@ error_reporting(E_ALL);
 //phpinfo();
 //mysql_connect(DB_SERVER,DB_USER,DB_PASS);
 //mysql_select_db(MAIN_DATABASE);
+define("DB_VERIFICATION_TABLE","verified_tables");
 
 class DBHelper
 {
-
+    public const VERIFICATION_TABLE_OK=0;
+    public const VERIFICATION_TABLE_EXISTS=1;
+    public const VERIFICATION_TABLE_MISSING=2;
     public static PDO $DBLink;
 
     /*
@@ -85,7 +88,31 @@ class DBHelper
         }
         return $whereclause;
     }
-
+    
+    public static function Select($table,$fields,$where,$orderby=[],$limit=0,$offset=0)
+    {
+        $q="SELECT ". implode(",",$fields) . " FROM $table ".(count($where)>0?"WHERE ":"").self::Where($where);
+        if(count($orderby)>0)
+        {
+            $q.=" ORDER BY ";
+            $multiple=false;
+            foreach($orderby as $field=>$mode)
+            {
+                if($multiple)
+                {
+                    $q.=", ";
+                }
+                $q.="$field $mode";
+                $multiple=true;
+            }
+        }
+        if($limit>0)
+        {
+            $q.=" LIMIT $offset,$limit";
+        }
+        return $q;
+    }
+    
     /**
      * Runs a prepared statement and discards the result
      * @param string $query The query to prepare and run
@@ -207,6 +234,101 @@ class DBHelper
         $params = array_values($where);
         return self::RunScalar($query,$params,0);
     }
+    
+    public static function VerifyTable($name,$fields,$useID,$useCache)
+    {
+        if($useCache)
+        {
+            $verify=self::RunScalar("SELECT time FROM ".DB_VERIFICATION_TABLE." WHERE name = ?",[$name]);
+            if($verify)
+            {
+                return self::VERIFICATION_TABLE_OK;
+            }
+        }
+        //$exists=self::RunTable("SHOW TABLES LIKE $name",[]);
+        /*
+        if(!$exists)
+        {
+             return self::VERIFICATION_TABLE_MISSING;
+        }
+        //*/
+        
+        try
+        {
+            $table=self::RunTable("SHOW COLUMNS FROM $name",[]);
+        } catch (Exception $ex) {
+            return self::VERIFICATION_TABLE_MISSING;
+        }
+        
+        
+        if(!$table)
+        {
+            return self::VERIFICATION_TABLE_MISSING;
+        }
+        foreach($table as $row)
+        {
+            if(isset($fields[$row['Field']]))
+            {
+                if($fields[$row['Field']]==$row['Type'])
+                {
+                    
+                }
+                else
+                {
+                    return self::VERIFICATION_TABLE_EXISTS;
+                }
+            }
+            else
+            {
+                if($useID && $row['Field']=='id')
+                {
+                    if($row['Key']=="PRI" && $row['Extra']=="auto_increment")
+                    {
+                        
+                    }
+                    else
+                    {
+                        return self::VERIFICATION_TABLE_EXISTS;
+                    }
+                }
+                else
+                {
+                     return self::VERIFICATION_TABLE_EXISTS;
+                }
+            }
+        }
+        if($useCache)
+        {
+            self::Insert(DB_VERIFICATION_TABLE,[NULL,$name,time()]);
+        }
+        return self::VERIFICATION_TABLE_OK;
+        
+    }
+    
+    public static function MakeTable($name,$fields,$useID)
+    {
+        $query="CREATE TABLE $name (";
+        $first=true;
+        if($useID)
+        {
+            $query.="id int NOT NULL AUTO_INCREMENT";
+            $first=false;
+        }
+        foreach($fields as $fname=>$ftype)
+        {
+            $query.=$first?"":", ";
+            $query.=$fname." ".$ftype;
+            $first=false;
+        }
+        
+        if($useID)
+        {
+            $query.=", PRIMARY KEY (id)";
+        }
+        $query.=")";
+        self::RunStmt($query, []);
+    }
+    
     
     //DEPRECATED
     public static function GetArray($stmt)

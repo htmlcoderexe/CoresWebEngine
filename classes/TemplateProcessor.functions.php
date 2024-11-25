@@ -89,9 +89,10 @@ function TemplateProcessorBuiltin_isloggedin()
     return (User::GetCurrentUser()->username != "Guest") ? "true" : "false";
 }
 
-function TemplateProcessorBuiltin_userinfo($param)
+
+function TemplateProcessorBuiltin_userinfo($param,$uid=-1)
 {
-    $user = User::GetCurrentUser();
+    $user = $uid==-1?User::GetCurrentUser():new User(User::GetUsername( $uid));
     switch($param)
     {
         case "username":
@@ -110,6 +111,16 @@ function TemplateProcessorBuiltin_userinfo($param)
     }
 }
 
+function TemplateProcessorBuiltin_date($format,$date=-1)
+{
+    if($date==-1)
+    {
+        $date=time();
+    }
+    return date($format,intval($date));
+}
+
+
 function TemplateProcessorBuiltin_ifpermission($permission)
 {
     $user = User::GetCurrentUser();
@@ -125,7 +136,7 @@ function TemplateProcessorBuiltin_baseuri()
     return BASE_URI;
 }
 
-function TemplateProcessorBuiltin_date($date, $format = "d-F-Y H:i:s")
+function TemplateProcessorBuiltin_datee($date, $format = "d-F-Y H:i:s")
 {
     if($date == "")
         $date = time();

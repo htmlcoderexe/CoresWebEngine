@@ -14,9 +14,19 @@ class Module
         }
     }
     
-    public static function DemandTable($table,$structure,$useIdColumn=true)
+    public static function DemandTable($table,$structure,$useIdColumn=true,$cacheSuccess=true)
     {
-        
+        $result=DBHelper::VerifyTable($table, $structure, $useIdColumn, $cacheSuccess);
+        if($result==DBHelper::VERIFICATION_TABLE_OK)
+        {
+            return;
+        }
+        if($result==DBHelper::VERIFICATION_TABLE_MISSING)
+        {
+            DBHelper::MakeTable($table,$structure,$useIdColumn);
+            return;
+        }
+        EngineCore::Write2Debug("Failure. Table is not correct.");
     }
     
     function __construct($name)
