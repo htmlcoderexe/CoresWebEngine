@@ -12,6 +12,10 @@
     <label for="timeD">Event duration</label><br />
     <input name="timeD" id ="timeD" type ="time" value="{%duration|01:00%}" />
     <br />
+    <label for="type">Event type</label><br />
+    <select id="type" name="type">
+        {#foreach|{%types%}|<option value="{:typeId:}" {#ifeq|{:typeId:}|{%type%}|selected="selected"#}>{:name:}</option><!--{%type|-1%}-->#}
+    </select>
     <label for="description">Event description</label><br />
     <textarea name="description" id ="description">{%description|%}</textarea>
     <input name ="create" type="hidden" value ="true" /><br />

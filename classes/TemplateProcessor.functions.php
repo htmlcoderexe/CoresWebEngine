@@ -37,6 +37,15 @@ function TemplateProcessorBuiltin_ifnonzero($cond, $truepart, $falsepart = "")
     return $falsepart;
 }
 
+function TemplatePRocessorBuiltin_ifeq($cond,$cmp,$truepart,$falsepart="")
+{
+    if($cond==$cmp)
+    {
+        return $truepart;
+    }
+    return $falsepart;
+}
+
 function TemplateProcessorBuiltin_svar($var, $default = "undefined")
 {
     if(!isset($_SESSION[$var]))

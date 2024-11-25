@@ -19,7 +19,7 @@ function ModuleAction_calender_default($params)
     
 }
 
-function ModuleFunction_EditEvent($eID,$title,$date,$time,$duration,$description)
+function ModuleFunction_EditEvent($eID,$title,$date,$time,$duration,$description,$type)
 {
     if(!$title || !$date||!$eID)
     {
@@ -45,12 +45,13 @@ function ModuleFunction_EditEvent($eID,$title,$date,$time,$duration,$description
     $event->SetSingleAttribute("calendar.time",$time);
     $event->SetSingleAttribute("calendar.duration",$duration);
     $event->SetSingleAttribute("description",$description);
+    $event->SetSingleAttribute("calendar.event_type",$type);
     $event->Save();
     EngineCore::GTFO("/calender");
     return;
 }
 
-function ModuleFunction_CreateEvent($title,$date,$time,$duration,$description)
+function ModuleFunction_CreateEvent($title,$date,$time,$duration,$description,$type)
 {
     if(!$title || !$date)
     {
@@ -71,6 +72,7 @@ function ModuleFunction_CreateEvent($title,$date,$time,$duration,$description)
     $event->AddAttribute("calendar.time",$time);
     $event->AddAttribute("calendar.duration",$duration);
     $event->AddAttribute("description",$description);
+    $event->AddAttribute("calendar.event_type",$type);
     $event->Save();
     EngineCore::GTFO("/calender");
     return;
@@ -169,9 +171,10 @@ function ModuleAction_calender_edit($params)
     $description = EngineCore::POST("description","");
     $submitted=EngineCore::POST("create","");
     $eventId=EngineCore::POST("EventID");
+    $type=EngineCore::Post("type","");
     if($submitted && $eventId && (new EVA($eventId))!=null)
     {
-        ModuleFunction_EditEvent($eventId,$title,$date,$time,$duration,$description);
+        ModuleFunction_EditEvent($eventId,$title,$date,$time,$duration,$description,$type);
         return;
     }
     $mode = $params[1] ?? "default";
@@ -188,6 +191,16 @@ function ModuleAction_calender_edit($params)
         {
             $t=new TemplateProcessor("calender/createevent");
             $t->tokens['error']="Invalid input.";       
+            
+            $t->tokens['types']=[];
+            $types=EVA::GetAllOfType("calendar.event.type");
+            foreach($types as $type)
+            {
+                $e=new EVA($type);
+                $flattype=(array)($e->attributes);
+                $flattype['typeId']=$e->id;
+                $t->tokens['types'][]=$flattype;
+            }
             EngineCore::AddPageContent($t->process(true));
             EngineCore::SetPageTitle("Create event");
             return;
@@ -195,10 +208,20 @@ function ModuleAction_calender_edit($params)
         default:
         {
             $t=new TemplateProcessor("calender/createevent");
+            $types=EVA::GetAllOfType("calendar.event.type");
             $event = new CalendarEvent($selectedId);
             $t->tokens=(array)$event;
             $t->tokens['verb']="edit";
             $t->tokens['eventId']=$event->EvaInstance->id;
+            $t->tokens['type']=$event->type;
+            $t->tokens['types']=[];
+            foreach($types as $type)
+            {
+                $e=new EVA($type);
+                $flattype=(array)($e->attributes);
+                $flattype['typeId']=$e->id;
+                $t->tokens['types'][]=$flattype;
+            }
             EngineCore::AddPageContent($t->process(true));
             EngineCore::SetPageTitle("Editing event");
             return;
@@ -215,9 +238,10 @@ function ModuleAction_calender_create($params)
     $duration = EngineCore::POST("timeD","");
     $description = EngineCore::POST("description","");
     $submitted=EngineCore::POST("create","");
+    $type=EngineCore::Post("type","");
     if($submitted)
     {
-        ModuleFunction_CreateEvent($title,$date,$time,$duration,$description);
+        ModuleFunction_CreateEvent($title,$date,$time,$duration,$description,$type);
         return;
     }
     $mode = $params[0] ?? "default";
@@ -239,6 +263,15 @@ function ModuleAction_calender_create($params)
             {
                 $datestring= ModuleFunction_calender_ParseYYYYMMDD($params[1]);
                 $t->tokens['date']=$datestring;      
+            } 
+            $t->tokens['types']=[];
+            $types=EVA::GetAllOfType("calendar.event.type");
+            foreach($types as $type)
+            {
+                $e=new EVA($type);
+                $flattype=(array)($e->attributes);
+                $flattype['typeId']=$e->id;
+                $t->tokens['types'][]=$flattype;
             }
             EngineCore::AddPageContent($t->process(true));
             EngineCore::SetPageTitle("Create event");
@@ -246,7 +279,15 @@ function ModuleAction_calender_create($params)
         }
         default:
         {
-            $t=new TemplateProcessor("calender/createevent");
+            $t=new TemplateProcessor("calender/createevent"); $t->tokens['types']=[];
+            $types=EVA::GetAllOfType("calendar.event.type");
+            foreach($types as $type)
+            {
+                $e=new EVA($type);
+                $flattype=(array)($e->attributes);
+                $flattype['typeId']=$e->id;
+                $t->tokens['types'][]=$flattype;
+            }
             EngineCore::SetPageTitle("Create event");
             return;
         }
@@ -519,6 +560,12 @@ function ModuleFunction_calender_ShowWeek($year,$week)
                 $event_entry['ypos']= ModuleFunction_calender_TimeToEms($ems, $hh-$starting_hour, $mm);
                 $event_entry['height']= ModuleFunction_calender_TimeToEms($ems,$dhh,$dmm);
                 $event_entry['id']=$event;
+                if($event_entry['type']!="")
+                {
+                    $etype=new EVA($event_entry['type']);
+                    $col=$etype->attributes['calendar.agendacolour'];
+                    $event_entry['colour']=$col;
+                }
                 $events[]=$event_entry;
             }
         }
