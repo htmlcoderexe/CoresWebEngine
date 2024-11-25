@@ -1,5 +1,5 @@
  <a href="/ticket/submit/">Submit a ticket</a>
-<table class="ticket-ticketlist">
+<table class="ticket-ticketlist" style="width:100%">
     <tr>
         <th>Number</th>
         <th>Short description</th>

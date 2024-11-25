@@ -400,7 +400,7 @@ function ModuleFunction_calender_ShowWeek($year,$week)
 {
     $now = time();
     $now+= EngineCore::GetTimeOffset();
-    $nowhh=date("h",$now); 
+    $nowhh=date("H",$now); 
     $nowmm=date("i",$now);
     $nowday=date("Ymd",$now);
     $tpl=new TemplateProcessor("calender/week");
