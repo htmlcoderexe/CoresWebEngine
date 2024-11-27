@@ -16,7 +16,7 @@ class DBHelper
     public const VERIFICATION_TABLE_EXISTS=1;
     public const VERIFICATION_TABLE_MISSING=2;
     public static PDO $DBLink;
-
+    public static $DEBUG=false;
     /*
       public static function Q($query)
       {
@@ -139,6 +139,15 @@ class DBHelper
      */
     public static function RunStmt($query, $params): PDOStatement
     {
+        if(self::$DEBUG)
+        {
+            EngineCore::Write2Debug("<strong>Executing MySQL query:</strong>");
+            EngineCore::Write2Debug($query);
+            EngineCore::Write2Debug("<em>[".implode("|",$params)."]</em>");EngineCore::Write2Debug("<strong>Executing MySQL query:</strong>");
+            EngineCore::Write2Debug($query);
+            EngineCore::Write2Debug("<em>[".implode("|",$params)."]</em>");
+        }
+        
         // prep the statement
         $stmt = DBHelper::$DBLink->prepare($query);
         // bind all params

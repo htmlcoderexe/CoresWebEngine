@@ -8,6 +8,8 @@
     <label for="time">Event time HH:MM</label><br />
     <input name="time" id ="timee" type ="time" />
     <br />
+    <select name="type">
+    </select>
     <label for="description">Event description</label><br />
     <textarea name="description" id ="description"></textarea>
     

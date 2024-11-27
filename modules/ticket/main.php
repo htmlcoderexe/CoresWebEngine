@@ -36,21 +36,62 @@ function ModuleAction_ticket_view($params)
     $tpl->tokens['title']=$ticket->Title;
     $tpl->tokens['description']=$ticket->Description;
     $tpl->tokens['submitter']=$ticket->Submitter;
+    $tpl->tokens['status']=Ticket::ReadableStatusName($ticket->CurrentState);
+    $tpl->tokens['statuscode']=$ticket->CurrentState;
     EngineCore::AddPageContent($tpl->process(true));
     
     
 }
 
-function ModuleAction_ticket_list($params)
+function ModuleFunction_ticket_GetNotClosed()
 {
     $filters=["completedtime"=>0];
     $q=DBHelper::Select("tickets", ["id","type","subject","EvaID","title","submitter","time"], $filters,["time"=>"DESC"]);
-    $tickets=DBHelper::RunTable($q,array_values($filters));
-    
+    return DBHelper::RunTable($q,array_values($filters));
+}
+function ModuleFunction_ticket_GetWithStatus()
+{
+    $q="SELECT id,type,subject,EvaID,title,submitter,time,"
+            . "(SELECT s.newstate "
+            . "FROM ticket_state_changes s "
+            . "WHERE t.id= s.ticketid "
+            . "ORDER BY time DESC "
+            . "LIMIT 1 "
+            . ") as status "
+            . "FROM tickets t "
+            . "WHERE completedtime = 0 "
+            . "ORDER BY status";
+    return DBHelper::RunTable($q,[]);
+}
+
+
+function ModuleAction_ticket_list($params)
+{
+    $tickets= ModuleFunction_ticket_GetWithStatus();
+    for($i=0;$i<count($tickets);$i++)
+    {
+        $tickets[$i]['status']=Ticket::ReadableStatusName($tickets[$i]['status']);
+    }
     array_walk($tickets,function(&$v,$k){
         $v['ticketNumber']=Ticket::MakeTicketNumber($v['type'],$v['id']);
     });
     $tpl=new TemplateProcessor("ticket/ticketslist");
     $tpl->tokens['tickets']=$tickets;
     EngineCore::AddPageContent($tpl->process(true));
+}
+
+function ModuleAction_ticket_modify($params)
+{
+    $tid=$params[0]??"XXX000000";
+    $ticket=new Ticket($tid);
+    if(!$ticket)
+    {
+        EngineCore::GTFO("/ticket/");
+    }
+    $stateupdate=EngineCore::POST("newstate","");
+    if($stateupdate)
+    {
+        $ticket->ChangeState($stateupdate);
+        EngineCore::GTFO("/ticket/view/".$tid);
+    }
 }

@@ -52,7 +52,27 @@ class Ticket
     
     public const TICKET_CODES =["INC","REQ","PRJ"];
     
+    public const STATUS_OPEN=0;
+    public const STATUS_INPROGRESS=1;
+    public const STATUS_WAIT_CHILD=2;
+    public const STATUS_ONHOLD_TIME=3;
+    public const STATUS_ONHOLD_INDEFINITE=4;
+    public const STATUS_WAIT_FIX=5;
+    public const STATUS_CLOSED=6;
+    
+    public const TICKET_STATUSES=[
+        "New",
+        "In Progress",
+        "Awaiting task",
+        "Postponed",
+        "Frozen",
+        "Resolved",
+        "Closed"
+    ];
+    
     public const TICKET_NUMBER_LENGTH=6;
+    
+    
     
     public function __construct($ticketID)
     {
@@ -69,12 +89,29 @@ class Ticket
         $this->Title=$ticketresult['title'];
         $this->Description=$ticketresult['description'];
         $this->Submitter=$ticketresult['submitter'];
+        $this->GetState();
     }
     
     public function GetState()
     {
-        $q=DBHelper::Select("tickets", ["newstate"], ["ticketid"=>$this->Id],["time"=>"DESC"],1);
+        $q=DBHelper::Select("ticket_state_changes", ["newstate"], ["ticketid"=>$this->Id],["time"=>"DESC"],1);
         $this->CurrentState=DBHelper::RunScalar($q, [$this->Id]);
+        return $this->CurrentState;
+    }
+    
+    public function ChangeState($state)
+    {
+        DBHelper::Insert("ticket_state_changes",[null, $this->Id,$state,time()]);
+        if($state==self::STATUS_CLOSED)
+        {        
+            DBHelper::Update("tickets",["completedtime"=>time()],["id"=>$this->Id]);
+        }
+    }
+    
+    public function Close()
+    {
+        $this->ChangeState(self::STATUS_CLOSED);
+        $this->Done=true;
     }
     
     public function GetNumber()
@@ -82,14 +119,14 @@ class Ticket
         return self::MakeTicketNumber($this->Type,$this->Id);
     }
     
-    public static function Create($title,$description,$type,$category=0,$target=-1,)
+    public static function Create($title,$description,$type,$category=0,$target=-1)
     {
         $cu=User::GetCurrentUser();
         $e=EVA::CreateObject("ticket",EVA::OWNER_CURRENT);
         $insert=[null,$type,$cu->userid,$target==-1?$cu->userid:$target,$e->id,$title,$description,time(),$category,0,$cu->userid];
         DBHelper::Insert("tickets",$insert);
         $tid=DBHelper::GetLastId();
-        $stateinsert=[null,$tid,0,time()];
+        $stateinsert=[null,$tid,self::STATUS_OPEN,time()];
         DBHelper::Insert("ticket_state_changes",$stateinsert);
         return self::MakeTicketNumber($type,$tid);
     }
@@ -114,6 +151,10 @@ class Ticket
         }
         $number=sprintf("%0".self::TICKET_NUMBER_LENGTH."d",$id);
         return $code.$number;
+    }
+    public static function ReadableStatusName($status)
+    {
+        return self::TICKET_STATUSES[$status % count(self::TICKET_STATUSES)];
     }
 }
 
