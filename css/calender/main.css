@@ -178,8 +178,17 @@ h1, h2, h3, h4, h5, h6, h7, h8
 
 .cal-weekview
 {
-    height:53em;
+    min-height:70vh;
     position:relative;
+}
+
+.cal-week-header-wrapper
+{
+    display:block;
+    position:sticky;
+    top:0;
+    width:100%;
+    height:1em;
 }
 
 .cal-week-header
@@ -189,12 +198,21 @@ h1, h2, h3, h4, h5, h6, h7, h8
     text-align:center;
     position:relative;
     box-sizing:border-box;
-    z-index:1;
+    az-index:1;
     height:52em;
     border-right: 1px #207040 solid;
     border-left: 1px #207040 solid;
     padding-top: 0.3em;
     pointer-events: none;
+}
+
+.cal-day-label
+{
+    background-color: #101010;
+    border: 1px solid #207040;
+    border-radius: 2px;
+    padding:2px;
+    box-sizing:border-box;
 }
 
 .cal-week-header.cal-week-monday
@@ -219,11 +237,12 @@ h1, h2, h3, h4, h5, h6, h7, h8
 .cal-week-agenda-bg
 {
     
-    height: 48em;
+    height: 100%;
     width:100%;
     position:absolute;
     left:0;
     display:inline-block;
+    overflow: auto;
 }
 .cal-week-timegrid
 {
