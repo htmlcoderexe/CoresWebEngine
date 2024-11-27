@@ -1,1 +1,1 @@
-{#if|{#isloggedin|#}|{{userbox}}|{{loginform|loginprompt=Log in}}#} 
+{#if|{#isloggedin|#}|{{userbox}}|{{loginform|loginprompt=Log in}}#}

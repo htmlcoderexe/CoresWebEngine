@@ -72,6 +72,21 @@ class TemplateProcessor
             EngineCore::Dump2Debug($this->finalnodes);
         }
         
+        function dumpStateNice()
+        {
+            return self::dump_tree_schematic($this->finalnodes,0,true);
+        }
+        
+        static function CountNodeWeights($list)
+        {
+            $weight=0;
+            foreach($list as $node)
+            {
+                $weight+=$node['weight']??1;
+            }
+            return $weight;
+        }
+        
         function push_data($data)
         {
             $this->varstack[]=$data;//$this->wrap_datatype($data);
@@ -493,12 +508,9 @@ class TemplateProcessor
                     // these try to start shit
                     case "{":
                     {
-                        //echo "saw {";
-                        // check if there's more
                         if($this->canGetChars())
                         {
                             $newnodechar=$this->peekChar(1);
-                            //echo $newnodechar;
                             switch($newnodechar)
                             {
                                 case "%":
@@ -512,12 +524,15 @@ class TemplateProcessor
                                     // check if it was var or vardefault
                                     $current_node['type']="variable";
                                     $current_node['varname']=$varname;
+                                    $current_node['weight']=1;
+                                    $current_node['weight']+=self::CountNodeWeights($varname);
                                     if($this->last_terminator=="|")
                                     {
                                         $this->last_terminator="";
                                         $default=$this->get_nodelist();
                                         $current_node['default']=$default;
                                         $current_node['type']="variable_default";
+                                        $current_node['weight']+=self::CountNodeWeights($default);
                                     }
                                     $list[]=$current_node;
                                     $current_node=[
@@ -534,7 +549,8 @@ class TemplateProcessor
                                     $this->pointer++;
                                     $current_node =[];
                                     $varname=$this->get_nodelist();
-                                    // check if it was var or vardefault
+                                    $current_node['weight']=1;
+                                    $current_node['weight']+=self::CountNodeWeights($varname);
                                     $current_node['type']="var_bound";
                                     $current_node['varname']=$varname;
                                     $list[]=$current_node;
@@ -551,16 +567,18 @@ class TemplateProcessor
                                     $this->pointer++;
                                     $this->pointer++;
                                     $current_node =[];
+                                    $current_node['weight']=1;
                                     $funcname=$this->get_nodelist();
-                                    // check if it was var or vardefault
+                                    $current_node['weight']+=self::CountNodeWeights($funcname);
                                     $current_node['type']="builtin";
                                     $current_node['builtin_name']=$funcname;
                                     $current_node['params']=[];
                                     while($this->last_terminator=="|")
                                     {
                                         $this->last_terminator="";
-                                        $current_node['params'][]=$this->get_nodelist();
-                                    }
+                                        $current_node['params'][]=$this->get_nodelist();     
+                                    }                               
+                                    $current_node['weight']+=self::CountNodeWeights($current_node['params']);
                                     $list[]=$current_node;
                                     $current_node=[
                                        "type"=>"literal",
@@ -575,8 +593,10 @@ class TemplateProcessor
                                     $this->pointer++;
                                     $this->pointer++;
                                     $current_node =[];
+                                    $current_node['weight']=1;
                                     $funcname=$this->get_nodelist();
-                                    // check if it was var or vardefault
+                                    $current_node['weight']+=self::CountNodeWeights($funcname);
+                                    
                                     $current_node['type']="template_func";
                                     $current_node['template_func_name']=$funcname;
                                     $current_node['params']=[];
@@ -585,6 +605,7 @@ class TemplateProcessor
                                         $this->last_terminator="";
                                         $current_node['params'][]=$this->get_nodelist();
                                     }
+                                    $current_node['weight']+=self::CountNodeWeights($current_node['params']);
                                     $list[]=$current_node;
                                     $current_node=[
                                        "type"=>"literal",
@@ -600,8 +621,9 @@ class TemplateProcessor
                                     $this->pointer++;
                                     $this->pointer++;
                                     $current_node =[];
+                                    $current_node['weight']=1;
                                     $funcname=$this->get_nodelist();
-                                    // check if it was var or vardefault
+                                    $current_node['weight']+=self::CountNodeWeights($funcname);
                                     $current_node['type']="template";
                                     $current_node['template_name']=$funcname;
                                     $current_node['params']=[];
@@ -610,22 +632,21 @@ class TemplateProcessor
                                     while($this->last_terminator=="|" || $this->last_terminator=="=")
                                     {
                                         $current_thing=$this->get_nodelist();
-                                        //$current_node['params'][]=$this->get_nodelist();
                                         if($this->last_terminator == "=")
                                         {
-                                        //$this->last_terminator="";
                                             $current_param['name']=$current_thing;
                                             $expect_param_value=true;
                                         }
                                         else
                                         {
-                                        //$this->last_terminator="";
                                             $current_param['value']=$current_thing;
                                             $expect_param_value=false;
                                         }
                                         if(!$expect_param_value)
                                         {
                                           $current_node['params'][]=$current_param;
+                                          $current_node['weight']+=self::CountNodeWeights($current_param['name']);
+                                          $current_node['weight']+=self::CountNodeWeights($current_param['value']);
                                         }
                                     }
                                     $list[]=$current_node;
@@ -706,8 +727,151 @@ class TemplateProcessor
                 
             }
             $list[]=$current_node;
+            // eliminate those pesky empty string nodes that go everywhere
+            $list_clean=[];
+            foreach($list as $node)
+            {
+                if($node['type']=="literal" && $node['stringval']=="")
+                {
+                    
+                }
+                else
+                {
+                    $list_clean[]=$node;
+                }
+            }
+            $list=$list_clean;
             return $list;
         }    
+        
+    static function dump_tree_schematic($tree,$colourgen=0,$breaks=false)
+    {
+        $accumulator=$breaks?"<style>"
+                . "body{"
+                . "color:#000000;"
+                . "background-color:#FFF;"
+                . "}"
+                . " div{"
+                . "min-width:4em;"
+                . "overflow:hidden;"
+                . "}"
+                . ""
+                . ".Q{"
+                . "color:red;"
+                . "font-size:2em;"
+                . "}"
+                . "</style>":"";
+        $weightsmax=0;
+        $colours=["red","orange","yellow","green","blue","violet","magenta"];
+        $colourgen%=count($colours);
+        foreach($tree as $node)
+        {
+            if(isset($node['stringval'])&&$node['stringval']=="")
+            {
+                continue;
+            }
+            $weightsmax+=$node['weight']??1;
+        }
+        if($weightsmax==0)
+        {
+            return "<span style=\"font-size:3em;font-weight:bold\">Ø</span>";
+        }
+        foreach($tree as $node)
+        {
+            $width=$breaks?100:(($node['weight']??1)/$weightsmax*100);
+            if($node['type']=="literal")
+            {
+                if($node['stringval']=="")
+                {
+                    continue;
+                }
+                $accumulator.= "<div style=\"box-sizing:border-box;border:2px solid ".$colours[$colourgen].";float:left;position:relative;width:100%\"><strong>".$node['type']."</strong><br />";
+                $preview=(!$breaks && strlen($node['stringval'])>20)?substr($node['stringval'],0,17)."...":$node['stringval'];
+                
+                $accumulator.= '<em class="Q">[</em><code>'. htmlspecialchars($preview).'</code><em class="Q">]</em>';
+                $accumulator.= "</div><br style=\"clear:both\"/>";
+                continue;
+            }
+            $accumulator.= "<div style=\"box-sizing:border-box;border:2px solid ".$colours[$colourgen].";float:left;position:relative;width:100%\"><strong>".$node['type']."</strong><br />";
+            
+            $omnomnom=[];
+            foreach(array_keys($node) as $prop)
+            {
+                switch($prop)
+                {
+                    case "weight":
+                    case "type":
+                    {
+                        break;
+                    }
+                    case "params":
+                    {
+                        $isKVP=false;
+                        foreach($node['params'] as $param)
+                        {
+                            if(isset($param['name']))
+                            {
+                               // $accumulator.=self::dump_tree_schematic($param['name']);
+                                //$accumulator.=self::dump_tree_schematic($param['value']);
+                                $isKVP=true;
+                                break;
+                            }
+                            else
+                            {
+                                
+                                //$accumulator.=self::dump_tree_schematic($param);
+                            }
+                        }
+                        
+                        if($isKVP)
+                        {
+                            foreach($node['params'] as $param)
+                            {
+                                $omnomnom[]=["paramname", self::CountNodeWeights($param["name"]),self::dump_tree_schematic($param["name"],$colourgen+2)];
+                                $omnomnom[]=["paramvalue", self::CountNodeWeights($param["value"]),self::dump_tree_schematic($param["value"],$colourgen+2)];
+                            }
+                        }
+                        else
+                        {
+                            foreach($node['params'] as $param)
+                            {
+                                $omnomnom[]=["param", self::CountNodeWeights($param),self::dump_tree_schematic($param,$colourgen+2)];
+                            }
+                        }
+                        
+                        
+                        //$omnomnom.=self::dump_tree_schematic($omnomnom,$colourgen+1);
+                        
+                        break;
+                    }
+                    default:
+                    {
+                        
+                        $omnomnom[]=[$prop, self::CountNodeWeights($node[$prop]),self::dump_tree_schematic($node[$prop],$colourgen+2)];
+                    }
+                }
+                
+            }
+            $subweightsmax=0;
+            foreach($omnomnom as $subnode)
+            {
+                $subweightsmax+=$subnode[1];
+            }
+            if($subweightsmax>0)
+            {
+                foreach($omnomnom as $subnode)
+                {
+                    $accumulator.= "<div style=\"box-sizing:border-box;border:2px solid ".$colours[($colourgen+1)%count($colours)].";float:left;position:relative;width:".(($subnode[1])/$subweightsmax*100)."%\"><em>".$subnode[0]."</em><br />";
+                
+                    $accumulator.=$subnode[2];
+                    $accumulator.="</div>";
+                }
+            }
+            
+            $accumulator.= "</div><br style=\"clear:both\"/>";;
+        }
+        return $accumulator;
+    }
         
         
     function process($silence = false, $autoreset = true)
