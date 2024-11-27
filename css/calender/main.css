@@ -199,7 +199,7 @@ h1, h2, h3, h4, h5, h6, h7, h8
     position:relative;
     box-sizing:border-box;
     az-index:1;
-    height:52em;
+    height:75vh;
     border-right: 1px #207040 solid;
     border-left: 1px #207040 solid;
     padding-top: 0.3em;
