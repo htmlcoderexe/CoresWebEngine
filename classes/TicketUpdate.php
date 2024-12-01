@@ -35,9 +35,36 @@ class TicketUpdate
         
     }
     
-    
-    public static function Create($parent,$text,$user,$files=[])
+    /**
+     * Creates and posts a ticket update.
+     * @param int $parent Ticket's root object ID
+     * @param string $text Update's text
+     * @param int $user UID associated with the update
+     * @param string $type Update type
+     * @param array $files a slice of PHP's $_FILES array
+     * @return TicketUpdate the resulting ticket update
+     */
+    public static function Create($parent,$text,$user,$type="info",$files=[])
     {
-        EVA::CreateObject("ticket.update",EVA::OWNER_NOBODY,["description"=>$text,"user_id"=>$user,"ticket.update.type"=>$type,"parent_object"=>$parent,"timestamp"=>time()]);
+        $e= EVA::CreateObject("ticket.update",EVA::OWNER_NOBODY,["description"=>$text,"user_id"=>$user,"ticket.update.type"=>$type,"parent_object"=>$parent,"timestamp"=>time()]);
+        // check if the array is actually usable
+        if(isset($files['name']))
+        {
+            for($i = 0; $i < count($files['name']); $i++)
+            {
+                $file = File::Upload($files, $i);
+                if($file)
+                {
+                    $e->AddAttribute("attachment", $file->blobid);
+                }
+                else
+                {
+                    EngineCore::WriteUserError("Uploading \"" . $files['name'][$i] . "\" failed.", 0);
+                    Logger::Log("Was unable to upload \"" . $files['name'][$i] . "\".", 0, "upload error");
+                }
+            }
+        }
+        $e->Save();
+        return new TicketUpdate($e->id);
     }
 }

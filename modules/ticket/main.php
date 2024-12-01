@@ -132,24 +132,7 @@ function ModuleAction_ticket_modify($params)
         $user=User::GetCurrentUser()->userid;
         $type=EngineCore::POST("update_type","info");
         
-        $obj=EVA::CreateObject("ticket.update",EVA::OWNER_NOBODY,["description"=>$text,"user_id"=>$user,"ticket.update.type"=>$type,"parent_object"=>$ticket->EvaId,"timestamp"=>time()]);
-        if(isset($_FILES['update_attachment']))
-        {    
-            for($i=0;$i<count($_FILES['update_attachment']['name']);$i++)
-            {
-                $file=File::Upload($_FILES['update_attachment'],$i);
-                if($file)
-                {
-                    $obj->AddAttribute("attachment",$file->blobid);
-                }
-                else
-                {
-                    EngineCore::WriteUserError("Uploading \"".$_FILES['update_attachment']['name'][$i]."\" failed.",0);
-                    Logger::Log("Was unable to upload \"".$_FILES['update_attachment']['name'][$i]."\".",0,"upload error");
-                }
-            }
-        }
-        $obj->Save();
+        $ticket->AppendUpdate($text,$user,$type,$_FILES['update_attachment']??[]);
         EngineCore::GTFO("/ticket/view/".$tid);
         die();
     }

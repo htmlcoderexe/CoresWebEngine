@@ -160,9 +160,10 @@ class Ticket
         return $updatecount;
     }
     
-    public function AppendUpdate()
+    public function AppendUpdate($text,$user,$type,$files=[])
     {
-        
+        $update=TicketUpdate::Create($this->EvaId, $text, $user, $type, $files);
+        $this->Updates[]=$update;
     }
     
     
