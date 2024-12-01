@@ -1,8 +1,8 @@
 <div class="box">
 			<div class="boxheader">
-			{#ifset|{%headlink|%}|<a href="{%headlink|%}">|#}
+			{#ifset|headlink|<a href="{%headlink%}">|#}
 				{%header|&nbsp;%}
-				{#ifset|{%headlink|%}|</a>|#}
+				{#ifset|headlink|</a>|#}
 			</div>
 			<div class="boxbody">
 			{%content|{#lipsum|500#}%}

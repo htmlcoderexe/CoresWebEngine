@@ -30,6 +30,8 @@ class TemplateProcessor
         
 	public $tokens;
         
+        public const EMPTY_NODE = [["type"=>"literal","stringval"=>""]];
+        
         function __construct($file,$useLayout=false)
 	{
             $this->isLayout=$useLayout;
@@ -181,39 +183,31 @@ class TemplateProcessor
             
         }
         
+        private function get_bound_var($name,$silent=false)
+        {
+            if(count($this->varstack)==0)
+            {
+                $silent or EngineCore::Write2Debug("Unexpected bound var &lt;".$name.">");
+                return "";
+            }
+            $current=end($this->varstack);
+            if( $name=="*")
+            {
+                return $current;
+            }
+            if(isset($current[$name]))
+            {
+                return $current[$name];
+            }
+            $silent or EngineCore::Write2Debug("Bound var &lt;".$name."> missing value");
+            return "";
+            
+        }
+        
         private function process_var_bound($node)
         {
             $name = $this->process_nodelist($node['varname']);
-            // check if any current vars to bind exist
-            if(count($this->varstack)>0)
-            {
-                $value="";
-                $vars=end($this->varstack);
-                if(!is_array($vars) && $name="*")
-                {
-                    $value=$vars;
-                }elseif(isset($vars[$name]))
-                {
-                    $value=$vars[$name];
-                }
-                else
-                {
-                    EngineCore::Write2Debug("Bound var &lt;".$name."> missing value");
-                    return ["type"=>"literal","stringval"=>""];
-                }
-                if(!is_scalar($value))
-                {
-                    return $this->wrap_datatype($value);
-                }
-                return ["type"=>"literal","stringval"=>$value];
-            }
-            else
-            {
-                EngineCore::Write2Debug("Unexpected bound var &lt;".$name.">");
-                return ["type"=>"literal","stringval"=>""];
-            }
-            
-            
+            return $this->wrap_datatype($this->get_bound_var($name));
         }
         
         private function process_var_default($node)
@@ -304,22 +298,35 @@ class TemplateProcessor
             }
             return $this->wrap_datatype($output);
         }
-        
+        /**
+         * Check if a specific variable is set in the template and process the corresponding branch
+         * @param array $node input ifset node
+         * @return array The flattened node with either of the results
+         */
         private function builtin_ifset($node)
         {
+            // get the variable name
             $input = $this->process_nodelist($node['params'][0]);
+            $evaluation=false;
+            
+            // check if it's in the set tokens and not empty
             if(isset($this->tokens[$input]) && $this->tokens[$input])
             {
-                $output = $this->process_nodelist($node['params'][1]);
+                $evaluation=true;
             }
-            elseif(isset($this->tokens[$input]) && $this->tokens[$input])
+            // check if it's a bound variable (starting with : here to distinguish)
+            elseif(isset($input[0]) && $input[0]==":" && $this->get_bound_var(substr($input,1)))
             {
-                
+                $evaluation=true;
             }
+            // else false
             else
             {
-                $output = $this->process_nodelist($node['params'][2]);
+                $evaluation=false;
             }
+            // run either the truebranch or the falsebranch depending on the result
+            $output=$evaluation ? $this->process_nodelist($node['params'][1]??TemplateProcessor::EMPTY_NODE):$this->process_nodelist($node['params'][2]??TemplateProcessor::EMPTY_NODE);
+            // return the collapsed node
             return ["type"=>"literal","stringval"=>$output];
         }
         private function builtin_if($node)

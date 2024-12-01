@@ -55,15 +55,14 @@
     <button>Update</button>
 </form>#}
 {#ifset|updates|
-{#foreach|{%updates%}|<div class="ticket-update"><h4>{#userinfo|username|{:user:}#} - {#date|H:i, Y-M-d|{:time:}#}</h4>{:text:}<br />{#foreach|{:filedata:}|
+    {#foreach|{%updates%}|
+        <div class="ticket-update"><h4>{#userinfo|username|{:user:}#} - {#date|H:i, Y-M-d|{:time:}#}</h4>{:text:}<br />
+        {#ifset|:filedata|
+            {#foreach|{:filedata:}|
+            <a class="ticket-filelink" href="/files/stream/{:blobid:}">{:fullname:}</a> {#hread|{:filesize:}#}<br/>
+            #}
+        |#}
 
-
-
-
-<a class="ticket-filelink" href="/files/stream/{:blobid:}">{:fullname:}</a> {#hread|{:filesize:}#}<br/>#}
-
-
-
-</div>#}
-
+        </div>
+    #}
 #}
