@@ -45,6 +45,7 @@ class File
         $this->type=$f->attributes['mimetype'];
         $this->filesize=$f->attributes['filesize'];
         $this->blobid=$f->attributes['blobid'];
+        $this->fullname=$this->fname.".".$this->filext;
     }
     
     public static function GetByBlobID($blobid)

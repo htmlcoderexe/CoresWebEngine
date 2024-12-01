@@ -170,3 +170,10 @@ function TemplateProcessorBuiltin_count($end,$start=1,$step=1,$width=1)
     }
     return $output;
 }
+
+function TemplateProcessorBuiltin_hread($size)
+{
+    $output="";
+    $output.=Utility::FormatUnit(intval($size));
+    return $output;
+}

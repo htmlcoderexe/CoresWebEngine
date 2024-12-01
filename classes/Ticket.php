@@ -146,15 +146,18 @@ class Ticket
     public function GetUpdates()
     {
         $this->Updates=[];
+        $updatecount=0;
         $updateIds=EVA::GetByProperty("parent_object", $this->EvaId, "ticket.update");
         foreach($updateIds as $update)
         {
-            $e=new EVA($update);
-            if($e)
+            $e=new TicketUpdate($update);
+            if($e->ticket)
             {
                 $this->Updates[]=$e;
+                $updatecount++;
             }
         }
+        return $updatecount;
     }
     
     public function AppendUpdate()

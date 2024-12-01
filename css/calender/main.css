@@ -1,12 +1,4 @@
-*, *::before, *::after
-{
-    box-sizing: border-box;
-}
 
-h1, h2, h3, h4, h5, h6, h7, h8
-{
-    margin-top: 0;
-}
 
 .cal-container
 {
@@ -286,4 +278,15 @@ h1, h2, h3, h4, h5, h6, h7, h8
     top: 0;
     height: 2.2em;
     border: red solid 3px;
+}
+
+/****
+TODO: MOVE TO OTHER CSS DUH
+
+*/
+
+.ticket-filelink
+{
+    font-size:0.9em;
+    font-family:monospace;
 }

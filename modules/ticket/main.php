@@ -1,4 +1,5 @@
 <?php
+require_once CLASS_DIR."TicketUpdate.php";
 require_once CLASS_DIR."Ticket.php";
 /* 
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
@@ -38,6 +39,30 @@ function ModuleAction_ticket_view($params)
     $tpl->tokens['submitter']=$ticket->Submitter;
     $tpl->tokens['status']=Ticket::ReadableStatusName($ticket->CurrentState);
     $tpl->tokens['statuscode']=$ticket->CurrentState;
+    if($ticket->GetUpdates()>0)
+    {
+        $updates=array_reverse($ticket->Updates);
+        $updates_flat=[];
+        foreach($updates as $update)
+        {
+            $flat_update=(array)$update;
+            $flat_update['filedata']=[];
+            if(!is_array($flat_update['files']))
+            {
+                $flat_update['files']=[$flat_update['files']];
+            }
+            foreach($flat_update['files'] as $file)
+            {
+                $fileobj=File::GetByBlobID($file);
+                if($fileobj)
+                {
+                    $flat_update['filedata'][]=$fileobj;
+                }
+            }
+            $updates_flat[]=$flat_update;
+        }
+        $tpl->tokens['updates']=$updates_flat;
+    }
     EngineCore::AddPageContent($tpl->process(true));
     
     

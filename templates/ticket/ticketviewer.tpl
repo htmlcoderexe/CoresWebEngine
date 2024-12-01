@@ -54,3 +54,16 @@
     <button id="form_end" type="button" onclick="AddUploader();">Add file</button><br/>
     <button>Update</button>
 </form>#}
+{#ifset|updates|
+{#foreach|{%updates%}|<div class="ticket-update"><h4>{#userinfo|username|{:user:}#} - {#date|H:i, Y-M-d|{:time:}#}</h4>{:text:}<br />{#foreach|{:filedata:}|
+
+
+
+
+<a class="ticket-filelink" href="/files/stream/{:blobid:}">{:fullname:}</a> {#hread|{:filesize:}#}<br/>#}
+
+
+
+</div>#}
+
+#}

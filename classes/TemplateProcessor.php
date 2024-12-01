@@ -187,20 +187,25 @@ class TemplateProcessor
             // check if any current vars to bind exist
             if(count($this->varstack)>0)
             {
+                $value="";
                 $vars=end($this->varstack);
                 if(!is_array($vars) && $name="*")
                 {
-                    return ["type"=>"literal","stringval"=>$vars];
-                }
-                if(isset($vars[$name]))
+                    $value=$vars;
+                }elseif(isset($vars[$name]))
                 {
-                    return ["type"=>"literal","stringval"=>$vars[$name]];
+                    $value=$vars[$name];
                 }
                 else
                 {
                     EngineCore::Write2Debug("Bound var &lt;".$name."> missing value");
                     return ["type"=>"literal","stringval"=>""];
                 }
+                if(!is_scalar($value))
+                {
+                    return $this->wrap_datatype($value);
+                }
+                return ["type"=>"literal","stringval"=>$value];
             }
             else
             {
@@ -306,6 +311,10 @@ class TemplateProcessor
             if(isset($this->tokens[$input]) && $this->tokens[$input])
             {
                 $output = $this->process_nodelist($node['params'][1]);
+            }
+            elseif(isset($this->tokens[$input]) && $this->tokens[$input])
+            {
+                
             }
             else
             {
