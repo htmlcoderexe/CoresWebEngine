@@ -84,14 +84,49 @@ function ModuleAction_ticket_modify($params)
 {
     $tid=$params[0]??"XXX000000";
     $ticket=new Ticket($tid);
+    
     if(!$ticket)
     {
         EngineCore::GTFO("/ticket/");
+        die();
     }
+    
     $stateupdate=EngineCore::POST("newstate","");
+    
     if($stateupdate)
     {
         $ticket->ChangeState($stateupdate);
         EngineCore::GTFO("/ticket/view/".$tid);
+        die();
     }
+    
+    $update=EngineCore::POST("newupdate","");
+    if($update)
+    {
+        $text=EngineCore::POST("update_text","");
+        $user=User::GetCurrentUser()->userid;
+        $type=EngineCore::POST("update_type","info");
+        
+        $obj=EVA::CreateObject("ticket.update",EVA::OWNER_NOBODY,["description"=>$text,"user_id"=>$user,"ticket.update.type"=>$type,"parent_object"=>$ticket->EvaId,"timestamp"=>time()]);
+        if(isset($_FILES['update_attachment']))
+        {    
+            for($i=0;$i<count($_FILES['update_attachment']['name']);$i++)
+            {
+                $file=File::Upload($_FILES['update_attachment'],$i);
+                if($file)
+                {
+                    $obj->AddAttribute("attachment",$file->blobid);
+                }
+                else
+                {
+                    EngineCore::WriteUserError("Uploading \"".$_FILES['update_attachment']['name'][$i]."\" failed.",0);
+                    Logger::Log("Was unable to upload \"".$_FILES['update_attachment']['name'][$i]."\".",0,"upload error");
+                }
+            }
+        }
+        $obj->Save();
+        EngineCore::GTFO("/ticket/view/".$tid);
+        die();
+    }
+    
 }

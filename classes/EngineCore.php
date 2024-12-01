@@ -203,6 +203,26 @@ class EngineCore
         return new TemplateProcessor(self::$Layout . DIRECTORY_SEPARATOR . $name , true);
     }
     /**
+     * Write an error to the user session to be retrieved later
+     * @param string $message Error message to write
+     * @param int $type Type of the error
+     */
+    public static function WriteUserError($message,$type=0)
+    {
+        $_SESSION['cores_user_errors'][]=[$type,$message];
+    }
+    
+    public static function GetUserErrors($peek=false)
+    {
+        $errors=$_SESSION['cores_user_errors'];
+        if(!$peek)
+        {
+            unset($_SESSION['cores_user_errors']);
+        }
+        return $errors;
+    }
+    
+    /**
      * Write anything to the #DEBUG channel
      * @param string $content Whatever they wish to scream about.
      */

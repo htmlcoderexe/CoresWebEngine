@@ -20,7 +20,8 @@ $structure_states=[
 
 Module::DemandTable("tickets", $structure_tickets);
 Module::DemandTable("ticket_state_changes",$structure_states);
-
+Module::DemandProperty("attachment","Attachment","BLOB id of attached file");
+Module::DemandProperty("ticket.update.type","Ticket update type","Type of an update attached to a ticket");
 /**
  * Description of Ticket
  *
@@ -45,6 +46,7 @@ class Ticket
     public $Done;
     public $CurrentState;
     
+    public $Updates=[];
     
     public const TYPE_INC=0;
     public const TYPE_REQ=1;
@@ -73,7 +75,11 @@ class Ticket
     public const TICKET_NUMBER_LENGTH=6;
     
     
-    
+    /**
+     * Loads a ticket given its canonical number
+     * @param string $ticketID ticket number in canonical format
+     * @return type Ticket the ticket if it was found, else null
+     */
     public function __construct($ticketID)
     {
         list($type,$id)=self::ParseTicketNumber($ticketID);
@@ -85,6 +91,7 @@ class Ticket
             return;
         }
         $this->Id=$id;
+        $this->EvaId=$ticketresult['EvaID'];;
         $this->Type=$type;
         $this->Title=$ticketresult['title'];
         $this->Description=$ticketresult['description'];
@@ -92,6 +99,10 @@ class Ticket
         $this->GetState();
     }
     
+    /**
+     * Refresh the ticket's state from DB and return it as well
+     * @return string, I think
+     */
     public function GetState()
     {
         $q=DBHelper::Select("ticket_state_changes", ["newstate"], ["ticketid"=>$this->Id],["time"=>"DESC"],1);
@@ -99,26 +110,76 @@ class Ticket
         return $this->CurrentState;
     }
     
+    /**
+     * Set the ticket's state
+     * @param int(technically) $state the new state code
+     * seriously can we get it on with the enums
+     */
     public function ChangeState($state)
     {
         DBHelper::Insert("ticket_state_changes",[null, $this->Id,$state,time()]);
+        $this->CurrentState=$state;
         if($state==self::STATUS_CLOSED)
-        {        
+        {   
+            $this->Done=time();
             DBHelper::Update("tickets",["completedtime"=>time()],["id"=>$this->Id]);
         }
+        
     }
-    
+    /**
+     * Close the ticket (wait, really?)
+     */
     public function Close()
     {
         $this->ChangeState(self::STATUS_CLOSED);
         $this->Done=true;
     }
-    
+    /**
+     * Get the ticket's canonical number ("INC080085");
+     * @return string
+     */
     public function GetNumber()
     {
         return self::MakeTicketNumber($this->Type,$this->Id);
     }
     
+    public function GetUpdates()
+    {
+        $this->Updates=[];
+        $updateIds=EVA::GetByProperty("parent_object", $this->EvaId, "ticket.update");
+        foreach($updateIds as $update)
+        {
+            $e=new EVA($update);
+            if($e)
+            {
+                $this->Updates[]=$e;
+            }
+        }
+    }
+    
+    public function AppendUpdate()
+    {
+        
+    }
+    
+    
+    /*------------------\
+    |*                  |
+    |   Static methods  |
+    |                   |
+     \-----------------*/
+    
+    
+    
+    /**
+     * 
+     * @param type $title
+     * @param type $description
+     * @param type $type
+     * @param type $category
+     * @param type $target
+     * @return type
+     */
     public static function Create($title,$description,$type,$category=0,$target=-1)
     {
         $cu=User::GetCurrentUser();

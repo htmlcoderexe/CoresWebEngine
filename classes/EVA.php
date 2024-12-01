@@ -40,7 +40,7 @@ class EVA
          * @param array $blueprint List of attributes to preload on the object.
          * @return \EVA
          */
-	public static function CreateObject($type,$owner = self::OWNER_NOBODY,$blueprint=Array())
+	public static function CreateObject($type,$owner = self::OWNER_NOBODY,$blueprint=[])
 	{
             if($owner === self::OWNER_CURRENT)
             {
@@ -57,10 +57,20 @@ class EVA
             $object= new EVA($objid);
             $object->attributes=[];
             $object->proplist=[];
-            while(count($blueprint)>0)
+            if(isset($blueprint[0]))
             {
-                $prop=array_shift($blueprint);
-                $object->AddAttribute($prop,'');
+                while(count($blueprint)>0)
+                {
+                    $prop=array_shift($blueprint);
+                    $object->AddAttribute($prop,'');
+                }
+            }
+            elseif(is_array($blueprint))
+            {
+                foreach($blueprint as $attribute=>$value)
+                {
+                    $object->AddAttribute($attribute,$value);
+                }
             }
             return $object;
 	}
