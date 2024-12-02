@@ -222,6 +222,15 @@ class EngineCore
         return $errors;
     }
     
+    public static function CheckPermission($permission,$user=null)
+    {
+        if(!$user)
+        {
+            $user=User::GetCurrentUser();
+        }
+        return $user->HasPermission($permission);
+    }
+    
     /**
      * Write anything to the #DEBUG channel
      * @param string $content Whatever they wish to scream about.
@@ -324,6 +333,48 @@ class EngineCore
     {
         return DBHelper::RunScalar("SELECT setting_value FROM system_settings WHERE setting_name=?", [$setting], 0);
     }
+    
+    static function SetSetting($setting,$value)
+    {
+        
+    }
+    
+    static function GetAllSettings()
+    {
+        return DBHelper::RunTable(DBHelper::Select("system_settings",["setting_name","setting_value"][]),[]);
+    }
+    
+    static function GetMenuLink($id)
+    {
+        return DBHelper::RunRow(DBHelper::Select("menulinks",["id","link","text"],["id"=>$id]),[$id]);
+    }
+    
+    static function GetMenuLinks()
+    {
+        return DBHelper::RunTable(DBHelper::Select("menulinks",["id","link","text"],[]),[]);
+    }
+    
+    static function SetMenuLink($id,$link,$text)
+    {
+        return DBHelper::Update("menulinks",["link"=>$link,"text"=>$text],["id"=>$id]);
+    }
+    static function AddMenuLink($link,$text)
+    {
+        return DBHelper::Insert("menulinks",[null,$link,$text]);
+    }
+    static function SetMenuLinkHref($id,$link)
+    {
+        return DBHelper::Update("menulinks",["link"=>$link],["id"=>$id]);
+    }
+    static function SetMenuLinkText($id,$text)
+    {
+        return DBHelper::Update("menulinks",["text"=>$text],["id"=>$id]);
+    }
+    static function DeleteMenuLink($id)
+    {
+        return DBHelper::Delete("menulinks",["id"=>$id]);
+    }
+    
 
     //---------------------------------------------+
     // More random crap and ostensibly useful code |
