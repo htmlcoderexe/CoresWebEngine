@@ -227,19 +227,20 @@ input[type=button], button
 }
 
 
-
-
 input[readonly]
 {
 	background-color:transparent;
 	border-color:transparent;
-}textarea[readonly]
+}
+
+textarea[readonly]
 {
 	border-color:#201000;
 	border-width:1px;
 	border-style:solid;
 	background-color:transparent;
 }
+
 input[readonly]:hover, textarea[readonly]:hover
 {
 	border: 1px #7F7F7F solid;
@@ -256,27 +257,6 @@ a.smalllink
 	font-size: 0.7em;
 }
 
-#chatbox
-{
-	height:300px;
-	overflow:auto;
-	background: url('/images-site/chatbg.jpg');
-	background-attachment: local;
-	border: 2px inset #F5F5F5;
-	border-radius:5px;
-}
-
-#chatform #test
-{
-	width: 87%;
-}
-
-#chatform #send
-{
-	width:9%;
-}
-
-/* end chat */
 
 /* begin kb */
 .kbpage a
@@ -288,3 +268,17 @@ a.smalllink
 
 
 
+input[data-post-state^=updating] +*::after
+{
+    content:'\0267B';
+}
+
+input[data-post-state^=ready] +*::after
+{
+    content:'\02714';
+}
+
+input[data-post-state^=error] +*::after
+{
+    content:'\026A0';
+}

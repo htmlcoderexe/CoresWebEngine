@@ -48,6 +48,7 @@ function DoPostUpdate()
     if(this.tagName==="input" && this.type==="checkbox")
     this.dataset.postState="updating";
     var target =this;
+    target.dataset.postState="updating";
     let ajax = new XMLHttpRequest();
     ajax.onreadystatechange=function()
     {

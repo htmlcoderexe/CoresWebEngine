@@ -10,8 +10,8 @@
         {#foreach|{%menu%}|
         <tr>
             <td>{:id:}</td>
-            <td><input data-endpoint="/cpanel/menu/update/{:id:}" name="text" value="{:text:}" /></td>
-            <td><input data-endpoint="/cpanel/menu/update/{:id:}" name="link" value="{:link:}" /></td>
+            <td><input data-endpoint="/cpanel/menu/update/{:id:}" name="text" value="{:text:}" /><span></span></td>
+            <td><input data-endpoint="/cpanel/menu/update/{:id:}" name="link" value="{:link:}" /><span></span></td>
             <td><form action="/cpanel/menu/delete/" method="POST"><input name="id" value="{:id:}" type="hidden" /><button>&#x274C;</button></form></td>
         </tr>
 #}
