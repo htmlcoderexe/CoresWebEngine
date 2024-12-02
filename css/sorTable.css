@@ -1,0 +1,12 @@
+.sortable th[data-sorting-dir="up"]::before
+{
+    content: '\02191';
+}
+.sortable th[data-sorting-dir="down"]::before
+{
+    content: '\02193';
+}
+.sortable th::before
+{
+    content: '\021F5';
+}
