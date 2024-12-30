@@ -231,6 +231,16 @@ class EngineCore
         return $user->HasPermission($permission);
     }
     
+    public static function RequirePermission($permission,$user=null)
+    {
+        if(!self::CheckPermission($permission,$user))
+        {
+            self::WriteUserError("Not authorised to use this",1); // TODO error constants
+            self::GTFO("/main/unauthorised");
+            die;
+        }
+    }
+    
     /**
      * Write anything to the #DEBUG channel
      * @param string $content Whatever they wish to scream about.

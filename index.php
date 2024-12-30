@@ -30,6 +30,7 @@ require_once CLASS_DIR."DBHelper.php";
 require_once CLASS_DIR."Logger.php";
 require_once CLASS_DIR."TemplateProcessor.php";
 require_once CLASS_DIR."User.php";
+require_once CLASS_DIR."UserGroup.php";
 require_once CLASS_DIR."User/UserExtendedProps.php";
 require_once CLASS_DIR."Module.php";
 require_once CLASS_DIR."AuthHelper.php";

@@ -184,7 +184,6 @@ class User
      */
     public function GetPermissions()
     {
-        return ['super'];
         // if this was already loaded before, just return that
         if($this->permissions != null)
         {
@@ -197,13 +196,7 @@ class User
             return $permissions;
         }
         // ask the db for any permissions matching this userid
-        $permrequest = DBHelper::RunTable("
-		SELECT permissions.id,name
-		FROM userpermissionmap
-		INNER JOIN permissions
-		ON userpermissionmap.permission_id = permissions.id
-		WHERE user_id=?
-		",[$this->userid]);
+        $permrequest = DBHelper::RunList(DBHelper::Select("user_permissions",["permission_name"],["user_id"=>$this->userid]),[$this->userid]);
         // return none
         if(count($permrequest)<1)
         {
@@ -212,7 +205,7 @@ class User
         // go through each row and add the permission to the list
         foreach($permrequest as $perm)
         {
-            $permissions[] = $perm['name'];
+            $permissions[] = $perm;
         }
         // save for next time
         $this->permissions = $permissions;
@@ -230,8 +223,10 @@ class User
         {
             return false;
         }
+        $yes=in_array("super", $this->GetPermissions()) ? true : in_array($permission, $this->GetPermissions());
+        EngineCore::Dump2Debug($this);
         // check if user has the super permission, if not, check if requested permission is in user's permissions
-        return in_array("super", $this->GetPermissions()) ? true : in_array($permission, $this->GetPermissions());
+        return $yes;
     }
     
     /**

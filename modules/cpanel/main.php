@@ -1,5 +1,115 @@
 <?php
 use EngineCore as C;
+
+
+function ModuleFunction_cpanel_ListGroups()
+{
+    $groups=DBHelper::RunTable(DBHelper::Select("user_groups", ["id","type","name","description","owner"], []),[]);
+    for($i=0;$i<count($groups);$i++)
+    {
+        $g = new UserGroup();
+        $g->FromRow($groups[$i]);
+        $members=$g->GetMembers();
+        $groups[$i]['count']=count($members);
+        
+    }
+    $t=new TemplateProcessor("cpanel/grouplist");
+    $t->tokens['groups']=$groups;
+    C::AddPageContent($t->process(true));
+    
+}
+
+function ModuleFunction_cpanel_CreateGroup()
+{
+    
+}
+
+function ModuleFunction_cpanel_ShowGroupEditor($gid=0)
+{
+    $tpl=new TemplateProcessor("cpanel/groupeditor");
+    if($gid>0)
+    {
+        $groupinfo=new UserGroup();
+        $groupinfo->FromId($gid);
+        $memberlist=$groupinfo->GetMembers();
+        $members=[];
+        foreach($memberlist as $mid)
+        {
+            $member=['uid'=>$mid];
+            $member['username']=User::GetUsername($mid);
+            $members[]=$member;
+        }
+        
+        $tpl->tokens['members']=$members;
+        $tpl->tokens['adduser']="true";
+        $tpl->tokens['gid']=$gid;
+    }
+    C::AddPageContent($tpl->process(true));
+    return;
+}
+
+
+function ModuleAction_cpanel_group($params)
+{
+    $action=$params[0]??"list";
+    switch($action)
+    {
+        default:
+        {
+            C::RequirePermission("groups.list");
+            ModuleFunction_cpanel_ListGroups();
+            
+            break;
+        }
+        case "create":
+        {
+            C::RequirePermission("groups.create");
+            if(C::POST("gname")!="")
+            {
+                ModuleFunction_cpanel_CreateGroup();
+            }
+            else
+            {
+                ModuleFunction_cpanel_ShowGroupEditor();
+            }
+        }
+        case "adduser":
+        {
+            break;
+        }
+        case "removeuser":
+        {
+            break;
+        }
+        case "view":
+        {
+            $gid=$params[1];
+            ModuleFunction_cpanel_ShowGroupEditor($gid);
+            
+            break;
+        }
+        case "chown":
+        {
+            break;
+        }
+        case "delete":
+        {
+            break;
+        }
+    }
+}
+
+function ModuleAction_cpanel_users($params)
+{
+    $action=$params[0]??"list";
+    switch($action)
+    {
+        
+    }
+
+}
+
+
 function ModuleAction_cpanel_settings($params)
 {
     
