@@ -24,6 +24,23 @@ function ModuleFunction_cpanel_CreateGroup()
     
 }
 
+function ModuleFunction_cpanel_AddUser($gid,$uid)
+{
+    $group=new UserGroup();
+    $group->FromId($gid);
+    if(!($group->owner ?? false))
+    {
+        C::WriteUserError("Inжalid group", 1);
+        return false;
+    }
+    if(!$group->UserCanEditGroup(C::$CurrentUser))
+    {
+        C::WriteUserError("You aren't allowed to do this.", 4);
+        return false;
+    }
+    return $group->AddMember($uid);
+}
+
 function ModuleFunction_cpanel_ShowGroupEditor($gid=0)
 {
     $tpl=new TemplateProcessor("cpanel/groupeditor");
@@ -47,6 +64,8 @@ function ModuleFunction_cpanel_ShowGroupEditor($gid=0)
     C::AddPageContent($tpl->process(true));
     return;
 }
+
+
 
 
 function ModuleAction_cpanel_group($params)
@@ -75,6 +94,13 @@ function ModuleAction_cpanel_group($params)
         }
         case "adduser":
         {
+            $gid=C::POST['gid'];
+            $username=C::POST['username'];
+            $uid=User::GetId($username);
+            if($gid!=="" && $username !== "" && $uid > 0)
+            {
+                $result=ModuleFunction_cpanel_AddUser($gid,$uid);
+            }
             break;
         }
         case "removeuser":
@@ -93,6 +119,10 @@ function ModuleAction_cpanel_group($params)
             break;
         }
         case "delete":
+        {
+            break;
+        }
+        case "denied":
         {
             break;
         }

@@ -68,4 +68,16 @@ class UserGroup
         }
         return false;
     }
+    
+    public function AddMember($uid)
+    {
+        
+        if(in_array($uid,$this->GetMembers()))
+        {
+            return true;
+        }
+        $this->memberlist[]=$uid;
+        DBHelper::Insert("user_group_memberships",[null,$this->id,$uid]);
+        return true;
+    }
 }
