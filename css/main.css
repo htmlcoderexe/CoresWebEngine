@@ -201,7 +201,7 @@ li a
 /* end sidebar box styling */
 
 
-input
+input, textarea, select
 {
 	border-radius:2px;
 	border: 1px solid #00C000;

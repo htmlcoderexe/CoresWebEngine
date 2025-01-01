@@ -18,29 +18,45 @@ class UserGroup
     public User $owner;
     public string $name;
     public int $type;
+    public string $description;
     
     public const TYPE_ORG=0;
     public const TYPE_FUNC=1;
     public const TYPE_ROLE=2;
     public const TYPE_SPECIAL=3;
     
-    public function FromId($id)
+    public const TYPES= [
+        ["name"=>"Organisation", "code"=>0],
+        ["name"=>"Functional", "code"=>1],
+        ["name"=>"Role", "code"=>2],
+        ["name"=>"Special", "code"=>3]
+    ];
+    
+    public static function FromId($id)
     {
         $g=DBHelper::RunRow(DBHelper::Select("user_groups", ["id","type","name","description","owner"],['id'=>$id]),[$id]);
         if($g)
         {
-            $this->FromRow($g);
+            return self::FromRow($g);
         }
     }
     
-    public function FromRow($row)
+    public static function FromRow($row)
     {
-        $this->type=$row['type'];
-        $this->id=$row['id'];
-        $this->description=$row['description'];
-        $this->name=$row['name'];
+        $group=new UserGroup();
+        $group->type=$row['type'];
+        $group->id=$row['id'];
+        $group->description=$row['description'];
+        $group->name=$row['name'];
         
-        $this->owner=new User(User::GetUsername($row['owner']));
+        $group->owner=new User(User::GetUsername($row['owner']));
+    
+        return $group;
+    }
+    
+    public function Save()
+    {
+        DBHelper::Update("user_groups",["type"=>$this->type,"name"=>$this->name,"description"=>$this->description,"owner"=>$this->owner->userid],['id'=>$this->id]);
     }
     
     public function GetMembers()
@@ -79,5 +95,17 @@ class UserGroup
         $this->memberlist[]=$uid;
         DBHelper::Insert("user_group_memberships",[null,$this->id,$uid]);
         return true;
+    }
+    public function RemoveMember($uid)
+    {
+        $index=array_Search($this->GetMembers(),$uid);
+        
+        if($index!==false)
+        {
+            unset($this->memberlist[$index]);
+            $this->memberlist=array_values($this->memberlist);
+            return true;
+        }
+        return false;
     }
 }

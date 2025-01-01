@@ -7,8 +7,7 @@ function ModuleFunction_cpanel_ListGroups()
     $groups=DBHelper::RunTable(DBHelper::Select("user_groups", ["id","type","name","description","owner"], []),[]);
     for($i=0;$i<count($groups);$i++)
     {
-        $g = new UserGroup();
-        $g->FromRow($groups[$i]);
+        $g = UserGroup::FromRow($groups[$i]);
         $members=$g->GetMembers();
         $groups[$i]['count']=count($members);
         
@@ -26,9 +25,8 @@ function ModuleFunction_cpanel_CreateGroup()
 
 function ModuleFunction_cpanel_AddUser($gid,$uid)
 {
-    $group=new UserGroup();
-    $group->FromId($gid);
-    if(!($group->owner ?? false))
+    $group=UserGroup::FromId($gid);
+    if(!$group)
     {
         C::WriteUserError("Inжalid group", 1);
         return false;
@@ -40,14 +38,39 @@ function ModuleFunction_cpanel_AddUser($gid,$uid)
     }
     return $group->AddMember($uid);
 }
+function ModuleFunction_cpanel_ModifyGroup($gid,$groupinfo)
+{
+    $group=UserGroup::FromId($gid);
+    if(!$group)
+    {
+        C::WriteUserError("Inжalid group", 1);
+        return false;
+    }
+    if(!$group->UserCanEditGroup(C::$CurrentUser))
+    {
+        C::WriteUserError("You aren't allowed to do this.", 4);
+        return false;
+    }
+    $group->name=$groupinfo['gname'];
+    $group->description=$groupinfo['description'];
+    $group->type=$groupinfo['gtype'];
+    $group->owner=new User(User::GetUsername($groupinfo['ownerid']));
+    C::Dump2Debug($group);
+    C::Dump2Debug($groupinfo);
+    
+    $group->Save();
+    
+    return true;
+    
+}
 
 function ModuleFunction_cpanel_ShowGroupEditor($gid=0)
 {
     $tpl=new TemplateProcessor("cpanel/groupeditor");
+        $tpl->tokens['types']=UserGroup::TYPES;
     if($gid>0)
     {
-        $groupinfo=new UserGroup();
-        $groupinfo->FromId($gid);
+        $groupinfo=UserGroup::FromId($gid);
         $memberlist=$groupinfo->GetMembers();
         $members=[];
         foreach($memberlist as $mid)
@@ -56,10 +79,14 @@ function ModuleFunction_cpanel_ShowGroupEditor($gid=0)
             $member['username']=User::GetUsername($mid);
             $members[]=$member;
         }
-        
+        $tpl->tokens['type']=$groupinfo->type;
+        $tpl->tokens['description']=$groupinfo->description;
+        $tpl->tokens['owner']=(array)$groupinfo->owner;
+        $tpl->tokens['name']=$groupinfo->name;
         $tpl->tokens['members']=$members;
         $tpl->tokens['adduser']="true";
         $tpl->tokens['gid']=$gid;
+        $tpl->tokens['verb']="edit";
     }
     C::AddPageContent($tpl->process(true));
     return;
@@ -91,15 +118,52 @@ function ModuleAction_cpanel_group($params)
             {
                 ModuleFunction_cpanel_ShowGroupEditor();
             }
+            break;
+        }
+        case "edit":
+        {
+            $gid=intval(C::POST('gid'));
+            if(C::POST("gname")!="" && $gid>0)
+            {
+                $groupinfo=[
+                  "gname"=>C::POST('gname'),
+                  "gtype"=>C::POST('gtype'),
+                  "description"=>C::POST('gdesc'),
+                  "ownerid"=>C::POST('ownerid'),  
+                ];
+                $result=ModuleFunction_cpanel_ModifyGroup($gid,$groupinfo);
+                if($result)
+                {
+                    C::GTFO("/cpanel/group/view/".$gid);
+                }
+                else
+                {
+                    C::WriteUserError("Could not update group info.");
+                }
+            }
+            else
+            {
+                ModuleFunction_cpanel_ShowGroupEditor();
+            }
+            break;
         }
         case "adduser":
         {
-            $gid=C::POST['gid'];
-            $username=C::POST['username'];
+            $gid=C::POST('gid');
+            $username=C::POST('username');
             $uid=User::GetId($username);
             if($gid!=="" && $username !== "" && $uid > 0)
             {
-                $result=ModuleFunction_cpanel_AddUser($gid,$uid);
+                $result=ModuleFunction_cpanel_AddUser($gid,$uid); 
+                if($result)
+                {
+                    C::GTFO("/cpanel/group/view/".$gid);
+                }
+                else
+                {
+                    C::WriteUserError("Could not add member.");
+                }
+                   
             }
             break;
         }
