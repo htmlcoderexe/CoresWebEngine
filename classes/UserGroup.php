@@ -8,6 +8,7 @@ class UserGroup
 {
     
     private $memberlist;
+    private $permissions;
     /**
      * Group ID
      * @var int
@@ -83,6 +84,16 @@ class UserGroup
     }
     
     /**
+     * Finds all groups a given User is a member of
+     * @param int $uid UserID to check
+     * @return array List of group IDs for this user
+     */
+    public static function GetUserGroups($uid)
+    {
+        return DBHelper::RunList(DBHelper::Select("user_group_memberships",["uid"],["uid"=>$uid]),[$uid]);
+    }
+    
+    /**
      * Writes group's basic data (excluding members) to database.
      */
     public function Save()
@@ -105,7 +116,7 @@ class UserGroup
     
     /**
      * Check if a given user can modify the group.
-     * @param User $user The user to check
+     * @param \User $user The user to check
      * @return bool True if user can modify the group, false otherwise.
      */
     public function UserCanEditGroup(User $user)
@@ -163,4 +174,44 @@ class UserGroup
         }
         return false;
     }
+    
+    /**
+     * Gets permissions for a group specified by its ID
+     * @param int $gid Group ID to be checked
+     * @return array List of permissions granted to the group specified by ID
+     */
+    public static function GetPermissionsByGID($gid)
+    {
+        return DBHelper::RunList(DBHelper::Select("group_permissions",["permission_name"],["group_id"=>$gid]),[$gid]);
+    }
+    
+    /**
+     * Get the Group's permissions
+     * @return array List of permissions granted to this group
+     */
+    public function GetPermissions()
+    {
+        // if this was already loaded before, just return that
+        if($this->permissions != null)
+        {
+            return $this->permissions;
+        }
+        $permissions = Array();
+        // ask the db for any permissions matching this gid
+        $permrequest = self::GetPermissionsByGID($this->id);
+        // return none
+        if(count($permrequest)<1)
+        {
+            return[];
+        }
+        // go through each row and add the permission to the list
+        foreach($permrequest as $perm)
+        {
+            $permissions[] = $perm;
+        }
+        // save for next time
+        $this->permissions = $permissions;
+        return $this->permissions;
+    }
+    
 }

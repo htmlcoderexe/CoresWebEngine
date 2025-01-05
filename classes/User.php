@@ -207,6 +207,16 @@ class User
         {
             $permissions[] = $perm;
         }
+        
+        $groups=UserGroup::GetUserGroups($this->userid);
+        foreach($groups as $group)
+        {
+            $perms=UserGroup::GetPermissionsByGID(intval($group));
+            foreach($perms as $perm)
+            {
+                $permissions[]=$perm;
+            }
+        }
         // save for next time
         $this->permissions = $permissions;
         return $this->permissions;
