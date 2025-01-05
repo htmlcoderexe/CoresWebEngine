@@ -1,30 +1,48 @@
 <?php
-
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Scripting/PHPClass.php to edit this template
- */
-
 /**
- * Description of UserGroup
+ * Represents a group of users
  *
- * @author admin
+ * @author htmlcoderexe
  */
 class UserGroup
 {
     
     private $memberlist;
+    /**
+     * Group ID
+     * @var int
+     */
     public int $id;
+    /**
+     * Group owner
+     * @var User
+     */
     public User $owner;
+    /**
+     * Group name
+     * @var string
+     */
     public string $name;
+    /**
+     * Group type, see types further down
+     * @var int
+     */
     public int $type;
+    /**
+     * Group description for management convenience
+     * @var string
+     */
     public string $description;
     
     public const TYPE_ORG=0;
     public const TYPE_FUNC=1;
     public const TYPE_ROLE=2;
     public const TYPE_SPECIAL=3;
-    
+    /**
+     * This standardises group types and is also used to generate the 
+     * HTML for the control that allows selecting/displaying the group's
+     * type.
+     */
     public const TYPES= [
         ["name"=>"Organisation", "code"=>0],
         ["name"=>"Functional", "code"=>1],
@@ -32,6 +50,11 @@ class UserGroup
         ["name"=>"Special", "code"=>3]
     ];
     
+    /**
+     * Load a group from database, given its ID.
+     * @param int $id Group ID
+     * @return \UserGroup Group if exists
+     */
     public static function FromId($id)
     {
         $g=DBHelper::RunRow(DBHelper::Select("user_groups", ["id","type","name","description","owner"],['id'=>$id]),[$id]);
@@ -41,6 +64,11 @@ class UserGroup
         }
     }
     
+    /**
+     * Load a group from an associative array (as received from the database)
+     * @param array $row Row containing group data
+     * @return \UserGroup Group object from the data provided
+     */
     public static function FromRow($row)
     {
         $group=new UserGroup();
@@ -54,11 +82,18 @@ class UserGroup
         return $group;
     }
     
+    /**
+     * Writes group's basic data (excluding members) to database.
+     */
     public function Save()
     {
         DBHelper::Update("user_groups",["type"=>$this->type,"name"=>$this->name,"description"=>$this->description,"owner"=>$this->owner->userid],['id'=>$this->id]);
     }
     
+    /**
+     * Get a list of this group's members.
+     * @return array List of group's members
+     */
     public function GetMembers()
     {
         if(!$this->memberlist)
@@ -68,16 +103,24 @@ class UserGroup
         return $this->memberlist;
     }
     
+    /**
+     * Check if a given user can modify the group.
+     * @param User $user The user to check
+     * @return bool True if user can modify the group, false otherwise.
+     */
     public function UserCanEditGroup(User $user)
     {
+        // owner is allowed by default
         if($this->owner->userid === $user->userid)
         {
             return true;
         }
+        // this permission allows full control over any group
         if($user->HasPermission("groups.super"))
         {
             return true;
         }
+        // specific permission given to edit the group
         if($user->HasPermission("groups.edit.".$this->id))
         {
             return true;
@@ -85,6 +128,11 @@ class UserGroup
         return false;
     }
     
+    /**
+     * Adds a specific user to the group
+     * @param int $uid UserID of the member to be added
+     * @return bool True if member was added, false if not (see user messages why)
+     */
     public function AddMember($uid)
     {
         
@@ -96,6 +144,12 @@ class UserGroup
         DBHelper::Insert("user_group_memberships",[null,$this->id,$uid]);
         return true;
     }
+    
+    /**
+     * Removes a specific user from the group
+     * @param int $uid UserID of the member to be removed
+     * @return bool True if member was removed, false otherwise
+     */
     public function RemoveMember($uid)
     {
         $index=array_Search($uid,$this->GetMembers());
