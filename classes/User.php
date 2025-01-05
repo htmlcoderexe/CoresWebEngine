@@ -207,7 +207,7 @@ class User
         {
             $permissions[] = $perm;
         }
-        
+        // now get all the group permissions
         $groups=UserGroup::GetUserGroups($this->userid);
         foreach($groups as $group)
         {
@@ -237,6 +237,54 @@ class User
         EngineCore::Dump2Debug($this);
         // check if user has the super permission, if not, check if requested permission is in user's permissions
         return $yes;
+    }
+    
+    public function CanManagePermission($permission)
+    {
+        if($this->HasPermission("permission.super"))
+        {
+            return true;
+        }
+        $permgroup_all=UserGroup::FromName($permission.".all");
+        if($permgroup_all && $permgroup_all->HasMember($this->userid))
+        {
+            return true;
+        }
+    }
+    
+    public function CanGrantPermission($permission)
+    {
+        if($this->CanManagePermission($permission))
+        {
+            return true;
+        }
+        if($this->HasPermission("permission.grant"))
+        {
+            return true;
+        }
+        $permgroup_grant=UserGroup::FromName($permission.".grant");
+        if($permgroup_grant && $permgroup_grant->HasMember($this->userid))
+        {
+            return true;
+        }
+        return false;
+    }
+    public function CanRevokePermission($permission)
+    {
+        if($this->CanManagePermission($permission))
+        {
+            return true;
+        }
+        if($this->HasPermission("permission.revoke"))
+        {
+            return true;
+        }
+        $permgroup_revoke=UserGroup::FromName($permission.".revoke");
+        if($permgroup_revoke && $permgroup_revoke->HasMember($this->userid))
+        {
+            return true;
+        }
+        return false;
     }
     
     /**

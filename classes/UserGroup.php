@@ -39,6 +39,7 @@ class UserGroup
     public const TYPE_FUNC=1;
     public const TYPE_ROLE=2;
     public const TYPE_SPECIAL=3;
+    public const TYPE_PERMISSION=4;
     /**
      * This standardises group types and is also used to generate the 
      * HTML for the control that allows selecting/displaying the group's
@@ -48,8 +49,23 @@ class UserGroup
         ["name"=>"Organisation", "code"=>0],
         ["name"=>"Functional", "code"=>1],
         ["name"=>"Role", "code"=>2],
-        ["name"=>"Special", "code"=>3]
+        ["name"=>"Special", "code"=>3],
+        ["name"=>"Permission", "code"=>4]
     ];
+    
+    /**
+     * Load a group from database, given its name
+     * @param string $name Group Name
+     * @return \UserGroup Group if one matching the name exists.
+     */
+    public static function FromName($name)
+    {
+        $id=DBHelper::RunScalar(DBHelper::Select("user_groups", ["id"],['name'=>$name]),[$name]);
+        if($id)
+        {
+            return self::FromId($id);
+        }
+    }
     
     /**
      * Load a group from database, given its ID.
@@ -83,6 +99,22 @@ class UserGroup
         return $group;
     }
     
+    public static function Create($name,$description,$type,$owner=0)
+    {
+        $exists=UserGroup::FromName($name);
+        if($exists)
+        {
+            EngineCore::WriteUserError("Group with name \"$name\" already exists.");
+            return null;
+        }
+        if($owner==0)
+        {
+            $owner=EngineCore::$CurrentUser->userid;
+        }
+        DBHelper::Insert("user_groups",[null,intval($type),$name,intval($owner),$description]);
+        return self::FromName($name);
+    }
+    
     /**
      * Finds all groups a given User is a member of
      * @param int $uid UserID to check
@@ -93,6 +125,20 @@ class UserGroup
         return DBHelper::RunList(DBHelper::Select("user_group_memberships",["uid"],["uid"=>$uid]),[$uid]);
     }
     
+    public static function GroupContainsUser($gid,$uid)
+    {
+        $count=DBHelper::Count("user_group_memberships", "gid", ["uid"=>$uid,"gid"=>$gid]);
+        return $count > 0;
+    }
+    
+    public function HasMember($uid)
+    {
+        if(in_array($uid,$this->GetMembers()))
+        {
+            return true;
+        }
+        return false;
+    }
     /**
      * Writes group's basic data (excluding members) to database.
      */

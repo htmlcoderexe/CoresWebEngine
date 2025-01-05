@@ -5,7 +5,7 @@
         {#foreach|{%types%}|<option value="{:code:}" {#ifeq|{:code:}|{%type|0%}|selected="selected"#}>{:name:}</option>#}
     </select><br />
     {#ifset|owner|<span>Group owner:</span><br />
-    <span>{%owner%}{:username:}</span><br />#}
+    <span>{%owner%}{:username:}{#ifeq|{#userinfo|username#}|{:username:}| (that's you!)#}</span><br />#}
     <label for="gdesc">Description:</label><br />
     <textarea name="gdesc" id="gdesc">{%description|%}</textarea><br />
     <input type="hidden" name="ownerid" value="{#ifset|owner|{:userid:}|-1#}" />

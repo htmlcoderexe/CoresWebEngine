@@ -18,9 +18,9 @@ function ModuleFunction_cpanel_ListGroups()
     
 }
 
-function ModuleFunction_cpanel_CreateGroup()
+function ModuleFunction_cpanel_CreateGroup($name,$description,$type)
 {
-    
+    return UserGroup::Create($name,$description,$type);
 }
 
 function ModuleFunction_cpanel_AddUser($gid,$uid)
@@ -138,7 +138,17 @@ function ModuleAction_cpanel_group($params)
             C::RequirePermission("groups.create");
             if(C::POST("gname")!="")
             {
-                ModuleFunction_cpanel_CreateGroup();
+                $result=ModuleFunction_cpanel_CreateGroup(C::POST("gname"),C::POST("gdesc"),C::POST("gtype"));
+                if($result)
+                {
+                    C::GTFO("/cpanel/group/view/".$result->id);
+                    die;
+                }
+                else
+                {
+                    C::GTFO("/cpanel/group/list");
+                    die;
+                }
             }
             else
             {
@@ -181,16 +191,17 @@ function ModuleAction_cpanel_group($params)
             if($gid!=="" && $username !== "" && $uid > 0)
             {
                 $result=ModuleFunction_cpanel_AddUser($gid,$uid); 
-                if($result)
-                {
-                    C::GTFO("/cpanel/group/view/".$gid);
-                }
-                else
+                if(!$result)
                 {
                     C::WriteUserError("Could not add member.");
                 }
-                   
             }
+            else
+            {
+                C::WriteUserError("Bad username.");
+            }
+            C::GTFO("/cpanel/group/view/".$gid);
+            die;
             break;
         }
         case "removeuser":
