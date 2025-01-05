@@ -1,4 +1,7 @@
-{#if|{#ifpermission|group.create#}|<a href="/cpanel/group/create">New group...</a>#}
+<h2>Group management</h2>
+<p>
+    <a href="/cpanel/">🔙 Go Back</a>
+</p>{#if|{#ifpermission|group.create#}|<a href="/cpanel/group/create">New group...</a>#}
 <table class="sortable">
     <thead>
         <tr>

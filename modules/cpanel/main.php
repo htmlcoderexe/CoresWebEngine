@@ -38,6 +38,28 @@ function ModuleFunction_cpanel_AddUser($gid,$uid)
     }
     return $group->AddMember($uid);
 }
+function ModuleFunction_cpanel_RemoveUser($gid,$uid)
+{
+    $group=UserGroup::FromId($gid);
+    if(!$group)
+    {
+        C::WriteUserError("Inжalid group", 1);
+        return false;
+    }
+    if(!$group->UserCanEditGroup(C::$CurrentUser))
+    {
+        C::WriteUserError("You aren't allowed to do this.", 4);
+        return false;
+    }$group->GetMembers();
+    // main reason is to prevent root from unrooting itself
+    // but it makes sense to disallow leaving groups as the last member in general
+    if(count($group->GetMembers())<2 && $uid === intval(C::$CurrentUser->userid))
+    {
+        C::WriteUserError("Cannot leave group empty.");
+        return false;
+    }
+    return $group->RemoveMember($uid);
+}
 function ModuleFunction_cpanel_ModifyGroup($gid,$groupinfo)
 {
     $group=UserGroup::FromId($gid);
@@ -93,7 +115,11 @@ function ModuleFunction_cpanel_ShowGroupEditor($gid=0)
 }
 
 
-
+function ModuleAction_cpanel_default($params)
+{
+    C::RequirePermission("management");
+    C::AppendTemplate("cpanel/mainscreen");
+}
 
 function ModuleAction_cpanel_group($params)
 {
@@ -169,6 +195,22 @@ function ModuleAction_cpanel_group($params)
         }
         case "removeuser":
         {
+            $gid=C::POST('gid');
+            $uid=intval(C::POST('uid'));
+            if($gid!=="" && $uid > 0)
+            {
+                $result=ModuleFunction_cpanel_RemoveUser($gid,$uid); 
+                if($result)
+                {
+                    C::GTFO("/cpanel/group/view/".$gid);
+                }
+                else
+                {
+                    C::WriteUserError("Could not remove member.");
+                    C::GTFO("/cpanel/group/view/".$gid);
+                }
+                   
+            }
             break;
         }
         case "view":
@@ -198,7 +240,33 @@ function ModuleAction_cpanel_users($params)
     $action=$params[0]??"list";
     switch($action)
     {
-        
+        case "create":
+        {
+            C::RequirePermission("user.create");
+            $username=C::POST("username");
+            $password=C::POST("password");
+            $email="nobody@example.net";
+            $nickname=$username;
+            $newuser=User::Create($username,$password,$nickname,$email);
+            if($newuser && $newuser->userid>0)
+            {
+                C::GTFO("/cpanel/users/");
+            }
+            else
+            {
+                C::GTFO("/cpanel/users/");
+                die;
+            }
+        }
+        case "list":
+        default:
+        {
+            $userlist=DBHelper::RunTable(DBHelper::Select("users", ["id","username","timestamp","disabled"], []),[]);
+            $tpl=new TemplateProcessor("cpanel/userlist");
+            $tpl->tokens['users']=$userlist;
+            C::AddPageContent($tpl->process(true));
+            
+        }
     }
 
 }

@@ -270,11 +270,18 @@ class User
         DBHelper::Delete("userpermissionmap", ['user_id'=>$this->user,'permission_id'=>$perm_id]);
     }
 
-    public static function Create($username, $password, $nickname, $first, $last, $email, $sex, $dob, $sign)
+    public static function Create($username, $password, $nickname, $email)
     {
-        DBHelper::Insert('users', [null, $username, password_hash($password, PASSWORD_DEFAULT), time(), 1, 0]);
-        DBHelper::Insert('userinfo', [null, $nickname, 1, $email, 1, 1, $dob, $sex]);
         $user = new User($username);
+        if($user->userid>0)
+        {
+            EngineCore::WriteUserError("Username already exists.");
+            return null;
+        }
+        DBHelper::Insert('users', [null, $username, password_hash($password, PASSWORD_DEFAULT), time(), 1, 0]);
+        DBHelper::Insert('userinfo', [null, $nickname, 1, $email, 1, 1, 0, 0]);
+        $user = new User($username);
+        return $user;
     }
 
     public function Enable()

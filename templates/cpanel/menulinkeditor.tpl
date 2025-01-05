@@ -1,3 +1,7 @@
+<h2>Main menu</h2>
+<p>
+    <a href="/cpanel/">🔙 Go Back</a>
+</p>
 <table width="100%" class="sortable">
     <thead>
         <tr>

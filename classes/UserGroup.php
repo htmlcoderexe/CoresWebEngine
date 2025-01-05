@@ -98,12 +98,13 @@ class UserGroup
     }
     public function RemoveMember($uid)
     {
-        $index=array_Search($this->GetMembers(),$uid);
+        $index=array_Search($uid,$this->GetMembers());
         
         if($index!==false)
         {
             unset($this->memberlist[$index]);
             $this->memberlist=array_values($this->memberlist);
+            DBHelper::Delete("user_group_memberships",['uid'=>$uid,'gid'=>$this->id]);
             return true;
         }
         return false;
