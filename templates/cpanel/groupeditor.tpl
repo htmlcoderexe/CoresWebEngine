@@ -12,6 +12,7 @@
     <input type="hidden" name="gid" value="{%gid|-1%}" />
     <button type="submit">Save</button>
 </form>
+    {#foreach|{#errors#}|{:*:}#}
     {#ifset|members|<h3>Members</h3>#}
 {#ifset|adduser|<form action="/cpanel/group/adduser" method="POST"><input name="gid" type="hidden" value="{%gid%}" /><input name="username" /><button type="submit">➕</button></form>#}
 {#ifset|members|{#foreach|{%members%}|<form action ="/cpanel/group/removeuser" method="POST">

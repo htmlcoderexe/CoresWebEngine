@@ -59,7 +59,7 @@ class TicketUpdate
                 }
                 else
                 {
-                    EngineCore::WriteUserError("Uploading \"" . $files['name'][$i] . "\" failed.", 0);
+                    EngineCore::WriteUserError("Uploading \"" . $files['name'][$i] . "\" failed.", "upload");
                     Logger::Log("Was unable to upload \"" . $files['name'][$i] . "\".", 0, "upload error");
                 }
             }

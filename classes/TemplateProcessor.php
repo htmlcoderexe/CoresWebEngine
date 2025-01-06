@@ -294,7 +294,7 @@ class TemplateProcessor
             }
             else
             {
-                $output=call_user_func($this->builtintplfuncprefix."_".$func_name);
+                $output=call_user_func($this->builtinfuncprefix."_".$func_name);
             }
             return $this->wrap_datatype($output);
         }

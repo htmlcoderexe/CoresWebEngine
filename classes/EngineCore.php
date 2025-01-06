@@ -205,20 +205,41 @@ class EngineCore
     /**
      * Write an error to the user session to be retrieved later
      * @param string $message Error message to write
-     * @param int $type Type of the error
+     * @param String $channel Type of the error
      */
-    public static function WriteUserError($message,$type=0)
+    public static function WriteUserError($message,$channel="generic")
     {
-        $_SESSION['cores_user_errors'][]=[$type,$message];
+        $_SESSION['cores_user_errors'][]=[$channel,$message];
     }
-    
-    public static function GetUserErrors($peek=false)
+    /**
+     * Fetch errors written, either all or just a specific channel
+     * @param string $channel Error channel to retrieve, or empty to fetch all
+     * @param bool $peek Do not erase the fetched errors
+     * @return array List of string messages.
+     */
+    public static function GetUserErrors($channel="",$peek=false)
     {
-        $errors=$_SESSION['cores_user_errors'];
-        if(!$peek)
+        $errors=[];
+        if(!isset($_SESSION['cores_user_errors']))
         {
-            unset($_SESSION['cores_user_errors']);
+            return [];
         }
+        $listlength=count($_SESSION['cores_user_errors']);
+        for($i=0;$i< $listlength;$i++)
+        {
+            $error=$_SESSION['cores_user_errors'][$i];
+            if($channel=="" || $error[0]==$channel)
+            {
+                $errors[]=$error[1];
+            }
+            if(!$peek)
+            {
+                unset($_SESSION['cores_user_errors'][$i]);
+            }
+        }
+        // reset numbering
+        $_SESSION['cores_user_errors']=array_values($_SESSION['cores_user_errors']);
+        
         return $errors;
     }
     
@@ -235,7 +256,7 @@ class EngineCore
     {
         if(!self::CheckPermission($permission,$user))
         {
-            self::WriteUserError("Not authorised to use this",1); // TODO error constants
+            self::WriteUserError("Not authorised to use this","permission");
             self::GTFO("/main/unauthorised");
             die;
         }

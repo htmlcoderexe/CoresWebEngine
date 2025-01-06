@@ -28,12 +28,12 @@ function ModuleFunction_cpanel_AddUser($gid,$uid)
     $group=UserGroup::FromId($gid);
     if(!$group)
     {
-        C::WriteUserError("Inжalid group", 1);
+        C::WriteUserError("Inжalid group", "groupmgr");
         return false;
     }
     if(!$group->UserCanEditGroup(C::$CurrentUser))
     {
-        C::WriteUserError("You aren't allowed to do this.", 4);
+        C::WriteUserError("You aren't allowed to do this.", "permission");
         return false;
     }
     return $group->AddMember($uid);
@@ -43,19 +43,19 @@ function ModuleFunction_cpanel_RemoveUser($gid,$uid)
     $group=UserGroup::FromId($gid);
     if(!$group)
     {
-        C::WriteUserError("Inжalid group", 1);
+        C::WriteUserError("Inжalid group", "groupmgr");
         return false;
     }
     if(!$group->UserCanEditGroup(C::$CurrentUser))
     {
-        C::WriteUserError("You aren't allowed to do this.", 4);
+        C::WriteUserError("You aren't allowed to do this.", "permission");
         return false;
     }$group->GetMembers();
     // main reason is to prevent root from unrooting itself
     // but it makes sense to disallow leaving groups as the last member in general
     if(count($group->GetMembers())<2 && $uid === intval(C::$CurrentUser->userid))
     {
-        C::WriteUserError("Cannot leave group empty.");
+        C::WriteUserError("Cannot leave group empty.","groupmgr");
         return false;
     }
     return $group->RemoveMember($uid);
@@ -65,12 +65,12 @@ function ModuleFunction_cpanel_ModifyGroup($gid,$groupinfo)
     $group=UserGroup::FromId($gid);
     if(!$group)
     {
-        C::WriteUserError("Inжalid group", 1);
+        C::WriteUserError("Inжalid group", "groupmgr");
         return false;
     }
     if(!$group->UserCanEditGroup(C::$CurrentUser))
     {
-        C::WriteUserError("You aren't allowed to do this.", 4);
+        C::WriteUserError("You aren't allowed to do this.", "permission");
         return false;
     }
     $group->name=$groupinfo['gname'];
@@ -174,7 +174,7 @@ function ModuleAction_cpanel_group($params)
                 }
                 else
                 {
-                    C::WriteUserError("Could not update group info.");
+                    C::WriteUserError("Could not update group info.","groupmgr");
                 }
             }
             else
@@ -193,12 +193,12 @@ function ModuleAction_cpanel_group($params)
                 $result=ModuleFunction_cpanel_AddUser($gid,$uid); 
                 if(!$result)
                 {
-                    C::WriteUserError("Could not add member.");
+                    C::WriteUserError("Could not add member.","groupmgr");
                 }
             }
             else
             {
-                C::WriteUserError("Bad username.");
+                C::WriteUserError("Bad username.","grouppmgr");
             }
             C::GTFO("/cpanel/group/view/".$gid);
             die;
@@ -217,7 +217,7 @@ function ModuleAction_cpanel_group($params)
                 }
                 else
                 {
-                    C::WriteUserError("Could not remove member.");
+                    C::WriteUserError("Could not remove member.","groupmgr");
                     C::GTFO("/cpanel/group/view/".$gid);
                 }
                    
@@ -298,7 +298,7 @@ function ModuleAction_cpanel_menu($params)
         {
             if(!EngineCore::CheckPermission("menu.manager"))
             {
-                EngineCore::WriteUserError("Not authorised to use this",1); // TODO error constants
+                EngineCore::WriteUserError("Not authorised to use this","permission"); 
                 EngineCore::GTFO("/main/unauthorised");
                 die;
             }
@@ -312,7 +312,7 @@ function ModuleAction_cpanel_menu($params)
         {
             if(!EngineCore::CheckPermission("menu.manager"))
             {
-                EngineCore::WriteUserError("Not authorised to use this",1); // TODO error constants
+                EngineCore::WriteUserError("Not authorised to use this","permission"); 
                 HTTPHeaders::ContentType("text/json");
                 echo '{"responseCode": "Denied"}';
                 die;

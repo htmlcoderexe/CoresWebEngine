@@ -104,7 +104,7 @@ class UserGroup
         $exists=UserGroup::FromName($name);
         if($exists)
         {
-            EngineCore::WriteUserError("Group with name \"$name\" already exists.");
+            EngineCore::WriteUserError("Group with name \"$name\" already exists.","groupmgr");
             return null;
         }
         if($owner==0)

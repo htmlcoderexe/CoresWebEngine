@@ -177,3 +177,8 @@ function TemplateProcessorBuiltin_hread($size)
     $output.=Utility::FormatUnit(intval($size));
     return $output;
 }
+
+function TemplateProcessorBuiltin_errors($channel="")
+{
+    return EngineCore::GetUserErrors($channel);
+}

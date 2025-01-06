@@ -333,7 +333,7 @@ class User
         $user = new User($username);
         if($user->userid>0)
         {
-            EngineCore::WriteUserError("Username already exists.");
+            EngineCore::WriteUserError("Username already exists.","usermgr");
             return null;
         }
         DBHelper::Insert('users', [null, $username, password_hash($password, PASSWORD_DEFAULT), time(), 1, 0]);
