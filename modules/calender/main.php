@@ -505,12 +505,16 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     if($doupcoming)
     {
         $t_upcoming = new TemplateProcessor("calender/upcoming");
-        $t_upcoming->tokens['upcoming']=$events_upcoming;
-        $t_upcoming->tokens['today']=$events_today;
-        
-       
-        EngineCore::AddPageContent($t_upcoming->process(true));
-        
+        if(count($events_today) > 0)
+        {
+            $t_upcoming->tokens['events']=$events_today;
+            EngineCore::AddSideBar("Today", $t_upcoming->process(true));
+        }
+        if(count($events_upcoming) > 0)
+        {
+            $t_upcoming->tokens['events']=$events_upcoming;
+            EngineCore::AddSideBar("Upcoming", $t_upcoming->process(true));
+        }
     }
 }
 

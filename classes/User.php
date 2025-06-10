@@ -7,7 +7,11 @@ class User
     public $username;
     public $permissions;
     public $basicinfo;
-
+    
+    private $groups=[];
+    private $grantableperms=[];
+    private $revokableperms=[];
+    
     function __construct($username)
     {
         $this->username = $username;
@@ -286,6 +290,24 @@ class User
         }
         return false;
     }
+    
+    public function GetGrantablePermissions()
+    {
+        if(!$this->grantableperms)
+        {
+            $groups=UserGroup::GetUserGroups($this->userid);
+            foreach($groups as $gid)
+            {
+                $group=UserGroup::FromId($gid);
+                if($group->type==UserGroup::TYPE_PERMISSION)
+                {
+                    $this->grantableperms[]=$group->name;
+                }
+            }
+        }
+        return $this->grantableperms;
+    }
+    
     
     /**
      * Grant a permission
