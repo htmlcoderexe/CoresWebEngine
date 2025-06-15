@@ -282,3 +282,9 @@ input[data-post-state^=error] +*::after
 {
     content:'\026A0';
 }
+
+label.formlabel 
+{
+    width: 6em;
+    display: inline-block;
+}

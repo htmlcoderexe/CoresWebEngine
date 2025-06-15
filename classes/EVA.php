@@ -366,6 +366,17 @@ class EVA
 		);
 		$this->proplist[]=$attr;
 	}
+        
+        
+        public function GetChildren($child_type)
+        {
+            $q = DBHelper::Select("eva_mappings", ["child_id"], ["parent_type"=>$this->type,
+                "child_type"=>$child_type,
+                "parent_id"=>$this->id]);
+            $child_list = DBHelper::GetList($q);
+            return $child_list;
+        }
+        
 	
 	public function Save()
 	{

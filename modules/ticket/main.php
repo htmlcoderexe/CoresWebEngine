@@ -1,5 +1,6 @@
 <?php
 require_once CLASS_DIR."TicketUpdate.php";
+require_once CLASS_DIR."TicketGroup.php";
 require_once CLASS_DIR."Ticket.php";
 /* 
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
@@ -138,3 +139,75 @@ function ModuleAction_ticket_modify($params)
     }
     
 }
+
+function ModuleFunction_ticket_GetFuncGroups()
+{
+    $groups=DBHelper::RunTable(DBHelper::Select("user_groups", ["id","type","name","description","owner"], ["type"=> UserGroup::TYPE_FUNC]),[UserGroup::TYPE_FUNC]);
+    return $groups;
+}
+
+function ModuleAction_ticket_groups($params)
+{
+    if(count($params) > 0)
+    {
+        $action = array_shift($params);
+    }
+    else
+    {
+        $action = "all";
+    }
+    switch($action)
+    {
+        case "create":
+        {
+            $tpl = new TemplateProcessor("ticket/group_edit");
+            $groups = ModuleFunction_ticket_GetFuncGroups();
+            $tpl->tokens["groups"] = $groups;
+            EngineCore::SetPageContent($tpl->process(true));
+        
+            break;
+        }
+        case "edit":
+        {
+            $gid = (int) array_shift($params);
+            $group = new TicketGroup($gid);
+            if(!isset($group->name))
+            {
+                EngineCore::GTFO("/ticket/groups/all");
+                return;
+            }
+            $tpl = new TemplateProcessor("ticket/group_edit");
+            $groups = ModuleFunction_ticket_GetFuncGroups();
+            $tpl->tokens["groups"] = $groups;
+            $tpl->tokens["gname"] = $group->name;
+            $tpl->tokens["description"] = $group->description;
+            $tpl->tokens["gid"] = $group->id;
+            $tpl->tokens["func_group"] = $group->func_group;
+            EngineCore::SetPageContent($tpl->process(true));
+        
+            break;
+        }
+        case "submit":
+        {
+            $name = EngineCore::POST("gname","");
+            $desc = EngineCore::POST("description","");
+            $gid = EngineCore::POST("func_group","");
+            $id = EngineCore::POST("gid","");
+            if($id == -1)
+            {
+                $new_group = TicketGroup::Create($name,$desc,$gid);
+                EngineCore::GTFO("/ticket/groups/edit/".$new_group->id);
+                return;
+            }
+            $group = new TicketGroup($id);
+            $group->name = $name;
+            $group->description = $desc;
+            $group->func_group = $gid;
+            $group->Update();
+            EngineCore::GTFO("/ticket/groups/edit/".$group->id);
+            return;
+            
+        }
+    }
+}
+
