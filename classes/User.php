@@ -204,12 +204,16 @@ class User
         // return none
         if(count($permrequest)<1)
         {
-            return[];
+           
         }
-        // go through each row and add the permission to the list
-        foreach($permrequest as $perm)
+        else
         {
-            $permissions[] = $perm;
+            // go through each row and add the permission to the list
+            foreach($permrequest as $perm)
+            {
+                $permissions[] = $perm;
+            }
+            
         }
         // now get all the group permissions
         $groups=UserGroup::GetUserGroups($this->userid);
