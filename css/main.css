@@ -124,20 +124,19 @@ h2
 #xxmenubar li:active, #menubar li:hover
 {
 	border-bottom: 3px solid #00C000;
-	padding-bottom:0.36em;
 }
 #menubar li:first-child
 {
 	margin-left:15%;
 }
-li a:active, .boxheader a:active
+#menubar li a:active, .boxheader a:active
 {
 	color:inherit;
 	text-decoration:none;
 	position:relative;
 	top:1px;
 }
-li a
+#menubar li a
 {
 	display:block;
         width: 100%;

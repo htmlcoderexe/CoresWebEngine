@@ -235,6 +235,15 @@ function ModuleAction_ticket_groups($params)
             return;
             
         }
+        case "all":
+        {
+            $tpl = new TemplateProcessor("ticket/groups_list");
+            $groups = EVA::GetKVA("name","ticket_group");
+            $tpl->tokens["groups"] = $groups;
+            EngineCore::SetPageContent($tpl->process(true));
+            
+            return;
+        }
         default:
         {
             $gid = (int) $action;

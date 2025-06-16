@@ -1,4 +1,5 @@
- <a href="/ticket/submit/">Submit a ticket</a>
+ <a href="/ticket/submit/">Submit a ticket</a><br />
+ <a href="/ticket/groups/all">Show groups</a><br />
 <table class="ticket-ticketlist sortable" style="width:100%">
     <thead>
     <tr>

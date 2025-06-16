@@ -1,3 +1,4 @@
+<a href="/ticket/groups/all">&#x021D0;Back</a><br />
 <form action="/ticket/groups/submit" method="POST">
     <label for="gname">Group name: </label><input name="gname" id="gname" value="{%gname|%}" /><br />
     <select name="func_group">
