@@ -87,8 +87,15 @@ function ModuleFunction_ticket_GetNotClosed()
     $q=DBHelper::Select("tickets", ["id","type","subject","EvaID","title","submitter","time"], $filters,["time"=>"DESC"]);
     return DBHelper::RunTable($q,array_values($filters));
 }
-function ModuleFunction_ticket_GetWithStatus()
+function ModuleFunction_ticket_GetWithStatus($group = -1)
 {
+    $cat ="";
+    $params =[];
+    if($group > -1)
+    {
+        $cat = "AND category = ?";
+        $params[]=$group;
+    }
     $q="SELECT id,type,subject,EvaID,title,submitter,time,"
             . "(SELECT s.newstate "
             . "FROM ticket_state_changes s "
@@ -98,8 +105,9 @@ function ModuleFunction_ticket_GetWithStatus()
             . ") as status "
             . "FROM tickets t "
             . "WHERE completedtime = 0 "
+            . $cat
             . "ORDER BY status";
-    return DBHelper::RunTable($q,[]);
+    return DBHelper::RunTable($q,$params);
 }
 
 
@@ -226,6 +234,25 @@ function ModuleAction_ticket_groups($params)
             EngineCore::GTFO("/ticket/groups/edit/".$group->id);
             return;
             
+        }
+        default:
+        {
+            $gid = (int) $action;
+            if($gid < 1)
+            {
+                return;
+            }
+            $tickets= ModuleFunction_ticket_GetWithStatus($gid);
+            for($i=0;$i<count($tickets);$i++)
+            {
+                $tickets[$i]['status']=Ticket::ReadableStatusName($tickets[$i]['status']);
+            }
+            array_walk($tickets,function(&$v,$k){
+                $v['ticketNumber']=Ticket::MakeTicketNumber($v['type'],$v['id']);
+            });
+            $tpl=new TemplateProcessor("ticket/ticketslist");
+            $tpl->tokens['tickets']=$tickets;
+            EngineCore::AddPageContent($tpl->process(true));
         }
     }
 }
