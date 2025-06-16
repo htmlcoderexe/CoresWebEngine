@@ -122,7 +122,10 @@ class UserGroup
      */
     public static function GetUserGroups($uid)
     {
-        return DBHelper::RunList(DBHelper::Select("user_group_memberships",["uid"],["uid"=>$uid]),[$uid]);
+        EngineCore::Write2Debug("Getting perms for <em>$uid</em>...");
+        $groups = DBHelper::RunList(DBHelper::Select("user_group_memberships",["uid"],["uid"=>$uid]),[$uid]);
+        EngineCore::Dump2Debug($groups);
+        return $groups;
     }
     
     public static function GroupContainsUser($gid,$uid)
