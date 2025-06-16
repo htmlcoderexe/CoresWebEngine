@@ -84,7 +84,7 @@ class Ticket
     {
         list($type,$id)=self::ParseTicketNumber($ticketID);
         $filters=["id"=>$id];
-        $q=DBHelper::Select("tickets", ["id","type","subject","EvaID","title","submitter","description"], $filters);
+        $q=DBHelper::Select("tickets", ["id","type","subject","EvaID","title","submitter","description","category"], $filters);
         $ticketresult=DBHelper::RunRow($q,array_values($filters));
         if(!$ticketresult)
         {
@@ -96,6 +96,7 @@ class Ticket
         $this->Title=$ticketresult['title'];
         $this->Description=$ticketresult['description'];
         $this->Submitter=$ticketresult['submitter'];
+        $this->Category=$ticketresult['category'];
         $this->GetState();
     }
     
@@ -164,6 +165,12 @@ class Ticket
     {
         $update=TicketUpdate::Create($this->EvaId, $text, $user, $type, $files);
         $this->Updates[]=$update;
+    }
+    
+    public function Assign($gid)
+    {
+        $this->Category=$gid;
+         DBHelper::Update("tickets",["category"=>$gid],["id"=>$this->Id]);
     }
     
     

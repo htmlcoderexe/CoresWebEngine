@@ -46,4 +46,15 @@ class TicketGroup
         $EVA->Save();
         return new TicketGroup($EVA->id);
     }
+    
+    public static function FromName($name)
+    {
+        $candidates = EVA::GetByProperty("name", $name, "ticket_group");
+        if(count($candidates) > 0)
+        {
+            return new TicketGroup($candidates[0]);
+        }
+        return;
+        
+    }
 }

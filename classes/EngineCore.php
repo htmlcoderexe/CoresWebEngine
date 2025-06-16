@@ -367,6 +367,15 @@ class EngineCore
     
     static function SetSetting($setting,$value)
     {
+        $prev_value = EngineCore::GetSetting($setting);
+        if($prev_value === false)
+        {
+            DBHelper::Insert("system_settings", [$setting, $value]);
+        }
+        else
+        {
+            DBHelper::Update("system_settings",["setting_value"=>$value],["setting_name"=>$setting]);
+        }
         
     }
     

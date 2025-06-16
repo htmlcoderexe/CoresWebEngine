@@ -251,6 +251,19 @@ class EVA
 		";
             return DBHelper::RunList($query,[$value,$type,$property]);
 	}
+	public static function GetKVA($property,$type)
+	{
+            $query ="
+		SELECT DISTINCT object_id,value FROM eva_property_values
+		INNER JOIN eva_objects
+		ON eva_objects.id = object_id
+		INNER JOIN eva_properties 
+		ON eva_properties.id =property_id
+		WHERE eva_objects.type=? and eva_properties.name=?
+		
+		";
+            return DBHelper::RunTable($query,[$type,$property]);
+	}
         
         
         public static function GetAllOfType($type)

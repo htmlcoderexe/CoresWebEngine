@@ -40,6 +40,18 @@ function ModuleAction_ticket_view($params)
     $tpl->tokens['submitter']=$ticket->Submitter;
     $tpl->tokens['status']=Ticket::ReadableStatusName($ticket->CurrentState);
     $tpl->tokens['statuscode']=$ticket->CurrentState;
+    $tpl->tokens['ticket_group_id'] = $ticket->Category;
+    $groups = EVA::GetKVA("name","ticket_group");
+    $assgroup = "!!NOWHERE!!";
+    for($i=0;$i<count($groups);$i++)
+    {
+        if($groups[$i]['object_id'] == $ticket->Category)
+        {
+            $assgroup = $groups[$i]['value'];
+        }
+    }
+    $tpl->tokens['ticket_group_name'] = $assgroup;
+    $tpl->tokens['groups'] = $groups;
     if($ticket->GetUpdates()>0)
     {
         $updates=array_reverse($ticket->Updates);
@@ -134,6 +146,13 @@ function ModuleAction_ticket_modify($params)
         $type=EngineCore::POST("update_type","info");
         
         $ticket->AppendUpdate($text,$user,$type,$_FILES['update_attachment']??[]);
+        EngineCore::GTFO("/ticket/view/".$tid);
+        die();
+    }
+    $group = EngineCore::POST("ticket_group","");
+    if($group)
+    {
+        $ticket->Assign($group);
         EngineCore::GTFO("/ticket/view/".$tid);
         die();
     }

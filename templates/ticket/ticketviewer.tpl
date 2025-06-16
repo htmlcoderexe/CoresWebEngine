@@ -45,6 +45,13 @@
 </form>#}
 
 <h3>{%title%}</h3>
+<h2>Assigned to: {%ticket_group_name%}</h2>
+<form action="/ticket/modify/{%number%}" method="POST"><br />
+    <select name="ticket_group">
+        {#foreach|{%groups%}|<option value="{:object_id:}" {#ifeq|{:object_id:}|{%ticket_group_id%}|selected="selected"#}>{:value:}</option>#}
+    </select>
+    <button>Assign</button>
+</form>
 <p>{%description%}</p>
 
 {#ifeq|{%statuscode%}|6||<form action="/ticket/modify/{%number%}" method="POST"  enctype="multipart/form-data">
