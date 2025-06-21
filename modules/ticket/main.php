@@ -16,7 +16,17 @@ function ModuleAction_ticket_submit($params)
 {
     if(!EngineCore::POST('submit'))
     {
-        EngineCore::AppendTemplate("ticket/submitter");
+        $tpl = new TemplateProcessor("ticket/submitter");
+        $gid = -1;
+        if(count($params)>0)
+        {
+            $gid = intval(array_shift($params));
+        }
+        $groups = EVA::GetKVA("name","ticket_group");
+        $tpl->tokens['group_id'] = $gid;
+        $tpl->tokens['groups'] = $groups;
+        
+        EngineCore::SetPageContent($tpl->process(true));
     }
     else
     {
@@ -120,7 +130,16 @@ function ModuleFunction_ticket_GetWithStatus($group = -1)
 
 function ModuleAction_ticket_list($params)
 {
-    $tickets= ModuleFunction_ticket_GetWithStatus(0);
+    $gid = 0;
+    $tpl=new TemplateProcessor("ticket/ticketslist");
+    if(count($params)>0)
+    {
+        EngineCore::Dump2Debug($params);
+        $gid = intval(array_shift($params));
+        $tpl->tokens['gid'] = $gid;
+        EngineCore::Dump2Debug($params);
+    }
+    $tickets= ModuleFunction_ticket_GetWithStatus($gid);
     for($i=0;$i<count($tickets);$i++)
     {
         $tickets[$i]['status']=Ticket::ReadableStatusName($tickets[$i]['status']);
@@ -128,8 +147,13 @@ function ModuleAction_ticket_list($params)
     array_walk($tickets,function(&$v,$k){
         $v['ticketNumber']=Ticket::MakeTicketNumber($v['type'],$v['id']);
     });
-    $tpl=new TemplateProcessor("ticket/ticketslist");
     $tpl->tokens['tickets']=$tickets;
+    $tpl->tokens['ticketcount'] = count($tickets);
+    if($gid != 0)
+    {
+        $group = new TicketGroup($gid);
+        $tpl->tokens['groupname'] = $group->name;    
+    }
     EngineCore::AddPageContent($tpl->process(true));
 }
 
@@ -262,13 +286,13 @@ function ModuleAction_ticket_groups($params)
             
         }
         case "all":
+        default:
         {
             $tpl = new TemplateProcessor("ticket/groups_list");
             $groups = EVA::GetKVA("name","ticket_group");
             for($i=0;$i<count($groups);$i++)
             {
                 $gid =$groups[$i]['object_id'];
-                $ticket_count = 0;
                 $q = DBHelper::Count("tickets", "category", ["category"=>$gid]);
                 $groups[$i]['count'] = $q;
             }
@@ -276,25 +300,6 @@ function ModuleAction_ticket_groups($params)
             EngineCore::SetPageContent($tpl->process(true));
             
             return;
-        }
-        default:
-        {
-            $gid = (int) $action;
-            if($gid < 1)
-            {
-                return;
-            }
-            $tickets= ModuleFunction_ticket_GetWithStatus($gid);
-            for($i=0;$i<count($tickets);$i++)
-            {
-                $tickets[$i]['status']=Ticket::ReadableStatusName($tickets[$i]['status']);
-            }
-            array_walk($tickets,function(&$v,$k){
-                $v['ticketNumber']=Ticket::MakeTicketNumber($v['type'],$v['id']);
-            });
-            $tpl=new TemplateProcessor("ticket/ticketslist");
-            $tpl->tokens['tickets']=$tickets;
-            EngineCore::AddPageContent($tpl->process(true));
         }
     }
 }

@@ -1,5 +1,7 @@
- <a href="/ticket/submit/">Submit a ticket</a><br />
+ <a href="/ticket/submit/{%gid|%}">Submit a ticket</a><br />
  <a href="/ticket/groups/all">Show groups</a><br />
+ <h2>{%groupname|Unassigned tickets%}</h2>
+ {#ifeq|{%ticketcount%}|0|No tickets!|
 <table class="ticket-ticketlist sortable" style="width:100%">
     <thead>
     <tr>
@@ -18,4 +20,4 @@
         <td>{:status:}</td>
     </tr>#}
     </tbody>
-</table>
+</table>#}
