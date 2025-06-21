@@ -222,6 +222,18 @@ function ModuleAction_ticket_groups($params)
             $id = EngineCore::POST("gid","");
             if($id == -1)
             {
+                $exists = EVA::GetByProperty("name", $name, "ticket_group");
+                if(count($exists) > 0)
+                {
+                    EngineCore::WriteUserError("Group <strong>$name</strong> already exists.", "error");
+                    EngineCore::GTFO("/ticket/groups/create");
+                    return;
+                }
+                if($gid == -1)
+                {
+                    $new_user_group = UserGroup::Create("ticket_" . strtolower($name), "fg for " . $name, UserGroup::TYPE_FUNC);
+                    $gid = $new_user_group->id;
+                }
                 $new_group = TicketGroup::Create($name,$desc,$gid);
                 EngineCore::GTFO("/ticket/groups/edit/".$new_group->id);
                 return;
