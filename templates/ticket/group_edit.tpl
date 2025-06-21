@@ -1,7 +1,11 @@
 <a href="/ticket/groups/all">&#x021D0;Back</a><br />
+<h2>Create a new group</h2>
+<span class="user_error">{#foreach|{#errors|error#}|{:*:}<br />#}</span>
 <form action="/ticket/groups/submit" method="POST">
-    <label for="gname">Group name: </label><input name="gname" id="gname" value="{%gname|%}" /><br />
-    <select name="func_group">
+    <label for="gname" class="formlabel">Group name: </label>
+    <input name="gname" id="gname" value="{%gname|%}" /><br />
+    <label for="func_group" class="formlabel">User group:</label>
+    <select name="func_group" id="func_group">
         <option value="-1">Create automatically</option>
         {#foreach|{%groups%}|<option value="{:id:}" {#ifeq|{:id:}|{%func_group%}|selected="selected"#}>{:name:}</option>#}
     </select>

@@ -209,6 +209,10 @@ class EngineCore
      */
     public static function WriteUserError($message,$channel="generic")
     {
+        if(!isset($_SESSION['cores_user_errors']))
+        {
+            $_SESSION['cores_user_errors'] = [];
+        }
         $_SESSION['cores_user_errors'][]=[$channel,$message];
     }
     /**
@@ -239,7 +243,6 @@ class EngineCore
         }
         // reset numbering
         $_SESSION['cores_user_errors']=array_values($_SESSION['cores_user_errors']);
-        
         return $errors;
     }
     

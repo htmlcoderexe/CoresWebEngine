@@ -28,6 +28,13 @@ function ModuleAction_ticket_submit($params)
     
 }
 
+function ModuleFunction_ticket_goback($error)
+{
+    EngineCore::WriteUserError($error,"error");
+    EngineCore::GTFO("/ticket/groups/create");
+    die();
+}
+
 function ModuleAction_ticket_view($params)
 {
     $ticketNumber=$params[0];
@@ -190,8 +197,8 @@ function ModuleAction_ticket_groups($params)
             $tpl = new TemplateProcessor("ticket/group_edit");
             $groups = ModuleFunction_ticket_GetFuncGroups();
             $tpl->tokens["groups"] = $groups;
+            $tpl->tokens["func_group"] = -1;
             EngineCore::SetPageContent($tpl->process(true));
-        
             break;
         }
         case "edit":
@@ -220,14 +227,21 @@ function ModuleAction_ticket_groups($params)
             $desc = EngineCore::POST("description","");
             $gid = EngineCore::POST("func_group","");
             $id = EngineCore::POST("gid","");
+            
             if($id == -1)
             {
+                if($name=="")
+                {
+                    ModuleFunction_ticket_goback("Please enter a name.");
+                }
+                if($desc =="")
+                {
+                    ModuleFunction_ticket_goback("Description shouldn't be empty.");
+                }
                 $exists = EVA::GetByProperty("name", $name, "ticket_group");
                 if(count($exists) > 0)
                 {
-                    EngineCore::WriteUserError("Group <strong>$name</strong> already exists.", "error");
-                    EngineCore::GTFO("/ticket/groups/create");
-                    return;
+                    ModuleFunction_ticket_goback("Group <strong>$name</strong> already exists.");
                 }
                 if($gid == -1)
                 {
