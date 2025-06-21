@@ -113,7 +113,7 @@ function ModuleFunction_ticket_GetWithStatus($group = -1)
 
 function ModuleAction_ticket_list($params)
 {
-    $tickets= ModuleFunction_ticket_GetWithStatus();
+    $tickets= ModuleFunction_ticket_GetWithStatus(0);
     for($i=0;$i<count($tickets);$i++)
     {
         $tickets[$i]['status']=Ticket::ReadableStatusName($tickets[$i]['status']);
@@ -239,6 +239,13 @@ function ModuleAction_ticket_groups($params)
         {
             $tpl = new TemplateProcessor("ticket/groups_list");
             $groups = EVA::GetKVA("name","ticket_group");
+            for($i=0;$i<count($groups);$i++)
+            {
+                $gid =$groups[$i]['object_id'];
+                $ticket_count = 0;
+                $q = DBHelper::Count("tickets", "category", ["category"=>$gid]);
+                $groups[$i]['count'] = $q;
+            }
             $tpl->tokens["groups"] = $groups;
             EngineCore::SetPageContent($tpl->process(true));
             
