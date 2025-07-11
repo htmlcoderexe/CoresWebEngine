@@ -19,6 +19,7 @@ class File
     public $prev;
     public $type;
     public $filesize;
+    private $evaobj;
     
     public static $last_error;
     
@@ -46,6 +47,20 @@ class File
         $this->filesize=$f->attributes['filesize'];
         $this->blobid=$f->attributes['blobid'];
         $this->fullname=$this->fname.".".$this->filext;
+        $this->evaobj = $f;
+    }
+    
+    public function GetFileHandle($mode = "w+")
+    {
+        $handle = fopen(File::GetFilePath($this->blobid), $mode);
+        return $handle;
+    }
+    
+    public function UpdateSize($size)
+    {
+        $this->filesize = $size;
+        $this->evaobj->SetSingleAttribute("filesize", $size);
+        $this->evaobj->Save();
     }
     
     public static function GetByBlobID($blobid)
@@ -57,7 +72,7 @@ class File
         }
     }
     
-    public static function GetFilePath($blobname)
+    public static function GetFileDir($blobname)
     {
         $dir1=$blobname[0].$blobname[1];
         $dir2=$blobname[2].$blobname[3];
@@ -65,27 +80,24 @@ class File
         $path2=FILESTORE_PATH.DIRECTORY_SEPARATOR.$dir1.DIRECTORY_SEPARATOR.$dir2;
         return $path2;
     }
-    
-    /**
-     * 
-     * @param an array from $_FILE $uploadArray
-     * @param int $index - if specified, $uploadArray contains multiple files and this is an index
-     * @return \File EVA "file" object, null on failure (check File::$last_error)
-     */
-    public static function Upload($uploadArray,$index = -1)
+    public static function GetFilePath($blobname)
     {
-        $filename = basename($index == -1 ? $uploadArray['name'] : $uploadArray['name'][$index]);
-        $tempname = $index == -1 ? $uploadArray['tmp_name'] : $uploadArray['tmp_name'][$index];
-        $filesize = $index == -1 ? $uploadArray['size'] : $uploadArray['size'][$index];
-        $ext=pathinfo($filename)['extension'];
+        $dir = File::GetFileDir($blobname);
+        return $dir .DIRECTORY_SEPARATOR.$blobname;
+    }
+    
+    public static function New($filename)
+    {
+        $fname = basename($filename);
+        $ext = pathinfo($fname)['extension'];
         $mime = array_key_exists($ext,self::MIME_TYPES) ? self::MIME_TYPES[$ext] : "UNKNOWN";
         $blobname = Utility::CreateRandomString(self::BLOBID_LENGTH,Utility::RANDOM_CHR_MIX);
-        $path2=self::GetFilePath($blobname);
-        $fullname = $path2.DIRECTORY_SEPARATOR.$blobname;
+        $path2=self::GetFileDir($blobname);
+        $fullname = self::GetFilePath($blobname);
         self::$last_error=$fullname;
         if(is_dir($path2))
         {
-            if(!move_uploaded_file($tempname,$fullname))
+            if(file_put_contents($fullname,'') === false)
             {
                 self::$last_error="Couldn't write file.";
                 return null;
@@ -95,7 +107,7 @@ class File
         {
             if(mkdir($path2,0777,true))
             {
-                if(!move_uploaded_file($tempname,$fullname))
+                if(file_put_contents($fullname,'') === false)
                 {
                     self::$last_error="Couldn't write file.";
                     return null;
@@ -111,11 +123,41 @@ class File
         $fileobj->AddAttribute("filename",pathinfo($filename)['filename']);
         $fileobj->AddAttribute("mimetype",$mime);
         $fileobj->AddAttribute("file.extension",$ext);
-        $fileobj->AddAttribute("filesize",$filesize);
+        $fileobj->AddAttribute("filesize",0);
         $fileobj->AddAttribute("blobid",$blobname);
         $fileobj->AddAttribute("timestamp",time());
         $fileobj->Save();
         return new File($fileobj->id);
+        
+    }
+    
+    /**
+     * 
+     * @param an array from $_FILE $uploadArray
+     * @param int $index - if specified, $uploadArray contains multiple files and this is an index
+     * @return \File EVA "file" object, null on failure (check File::$last_error)
+     */
+    public static function Upload($uploadArray,$index = -1)
+    {
+        $filename = basename($index == -1 ? $uploadArray['name'] : $uploadArray['name'][$index]);
+        $tempname = $index == -1 ? $uploadArray['tmp_name'] : $uploadArray['tmp_name'][$index];
+        $filesize = $index == -1 ? $uploadArray['size'] : $uploadArray['size'][$index];
+        
+        $newfile = File::New($filename);
+        if(!$newfile)
+        {
+            return null;
+        }
+        
+        $fullname = File::GetFilePath($newfile->blobid);
+        if(!move_uploaded_file($tempname,$fullname))
+        {
+            self::$last_error="Couldn't write file.";
+            return null;
+        }
+        
+        $newfile->UpdateSize($filesize);
+        return $newfile;
     }
     
     public static function ServeByBlobID($blobid,$from=-1,$to=-1)
@@ -126,9 +168,9 @@ class File
         if(!$fileids)
         {
             HTTPHeaders::Status(404);
-            die();
+            die("file [$blobid] was not found.");
         }
-        $filename = self::GetFilePath($blobid).DIRECTORY_SEPARATOR.$blobid;
+        $filename = self::GetFilePath($blobid);
         // 404 if no file
         if(!file_exists($filename))
         {
