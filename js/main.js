@@ -106,6 +106,45 @@ function DoPostUpdate()
     ajax.send("property="+encodeURIComponent(TargetProperty)+"&value="+encodeURIComponent(value));
 }
 
+function displaySuggestions(recipient, suggestions)
+{
+    
+}
+
+function doSuggest()
+{
+    
+    let suggestURL = this.dataset.suggestionsource;
+    
+    var target =this;
+    let ajax = new XMLHttpRequest();
+    ajax.onreadystatechange=function()
+    {
+        if(ajax.readyState===4)
+        {
+            if(ajax.status === 200)
+            {
+                try
+                {
+                    var result = JSON.parse(ajax.responseText);
+                    displaySuggestions(target, result);
+                }
+                catch(error)
+                {
+                   
+                }
+                
+            }
+            else
+            {
+                
+            }
+        }
+    };
+    ajax.open("GET",suggestURL+encodeURIComponent(this.value),true);
+    ajax.send(null);
+}
+
 function AttachPostUpdate()
 {
     document.querySelectorAll("input[data-endpoint], textarea[data-endpoint]").forEach((e)=>{
