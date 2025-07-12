@@ -288,6 +288,38 @@ label.formlabel
     display: inline-block;
 }
 
+
+.suggestable_input_container
+{
+    position: relative;
+    display: inline-block;
+}
+
+.suggestable_box
+{
+    position:absolute;
+    border: 1px solid #00C000;
+    top:100%;
+    left: 0;
+    right: 0;
+    z-index: 1;
+}
+
+.suggestable_box a
+{
+    display: block;
+    background-color: #101010;
+}
+
+.suggestable_box a.selected_suggestion
+{
+    color: #000000;
+    background-color: #108010;
+    font-weight: bold;
+}
+
+
+
 .picturelist
 {
     display: flex;
