@@ -1,1 +1,9 @@
-
+<a href="/pixdb/upload">Upload new image</a>
+<br />
+<br />
+<div class="picturelist">
+    {#foreach|{%pictures%}|
+<div class="thumbnail">
+    <a href="/pixdb/showpic/{:id:}"><img src="/files/stream/{:thumbnail_blob_id:}/{:blob_id:}_thumbnail.png" width="{:thumb_width:}" height="{:thumb_height:}" /></a>
+</div>#}
+</div>

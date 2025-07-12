@@ -2,14 +2,31 @@
 
 require_once("Picture.php");
 
+function ModuleFunction_pixbd_list_thumbnail($idlist)
+{
+    $pics = [];
+    foreach($idlist as $id)
+    {
+        $pic = new Picture($id);
+        if($pic->id !== 0)
+        {
+            $pics[]= $pic;
+        }
+    }
+    $tpl = new TemplateProcessor("pixdb/thumbnailview");
+    $tpl->tokens['pictures'] = $pics;
+    EngineCore::SetPageContent($tpl->process(true));
+}
+
 function ModuleAction_pixdb_default($params)
 {
-    
+    ModuleAction_pixdb_showall($params);
 }
 
 function ModuleAction_pixdb_showall($params)
 {
-    
+    $pic_ids = EVA::GetAllOfType("picture");
+    ModuleFunction_pixbd_list_thumbnail($pic_ids);
 }
 
 function ModuleAction_pixdb_showpic($params)
@@ -44,8 +61,9 @@ function ModuleAction_pixdb_upload($params)
         }
         else
         {
-            $err = File::$last_error;
+            $err = Picture::$last_error;
             EngineCore::WriteUserError("Failed to upload: $err", "error");
+            EngineCore::FromWhenceYouCame();
         }
     }
 }

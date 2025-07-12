@@ -13,6 +13,8 @@ class Picture
 {
     public const MAXIMUM_DIMENSION = 256;
     
+    public static $last_error;
+    
     public $id;
     public $blob_id;
     public $thumbnail_blob_id;
@@ -21,6 +23,10 @@ class Picture
     public $extension;
     public $text;
     public $title;
+    
+    public $aspect_ratio;
+    public $thumb_width;
+    public $thumb_height;
     
     private $eva;
     
@@ -39,8 +45,35 @@ class Picture
         $this->title = $eva->attributes["title"];
         $this->text = $eva->attributes["picture.text"];
         $this->extension = $eva->attributes["file.extension"];
+        
+        // calculated properties
+        
+        $this->aspect_ratio = $this->width / $this->height;
+        
+        // here, the scale is kept even if it enlarges the image, for display purposes
+        
+        $scale = self::ScaleThumbnail($this->width, $this->height);
+        $this->thumb_width = $this->width * $scale;
+        $this->thumb_height = $this->height * $scale;
+        
+        // keep a reference to the EVA object
+        
         $this->eva = $eva;
         
+    }
+    
+    /**
+     * Calculate the scale factor that would fit the given image dimensions into a
+     * MAXIMUM_DIMENSION-sided square
+     * @param int $w
+     * @param int $h
+     * @return float Scale factor
+     */
+    public static function ScaleThumbnail($w, $h)
+    {
+        
+        $limiter = max($w, $h);
+        return self::MAXIMUM_DIMENSION / $limiter;
     }
     
     public static function Create($blob, $thumb, $w, $h, $title, $text, $ext)
@@ -74,13 +107,13 @@ class Picture
         {
             case "png":
             {
-                $image = imagecreatefrompng($tempname);
+                $image = @imagecreatefrompng($tempname);
                 $types = array_diff($types, ['png']);
                 break;
             }
             case "gif":
             {
-                $image = imagecreatefromgif($tempname);
+                $image = @imagecreatefromgif($tempname);
                 $types = array_diff($types, ['gif']);
                 break;
             }
@@ -88,7 +121,7 @@ class Picture
             case "jpeg":
             {
                 $ext = "jpeg";
-                $image = imagecreatefromjpeg($tempname);
+                $image = @imagecreatefromjpeg($tempname);
                 $types = array_diff($types, ['jpeg']);
                 break;
             }
@@ -102,7 +135,7 @@ class Picture
             foreach($types as $imageformat)
             {
                 $imagefx = "imagecreatefrom" . $imageformat;
-                $image = $imagefx($tempname);
+                $image = @$imagefx($tempname);
                 // if a valid image was obtained, note the extension/format and leave the loop
                 if($image)
                 {
@@ -113,6 +146,7 @@ class Picture
             // if still no valid image was found, give up
             if($ext == "")
             {
+                self::$last_error = "Invalid image file";
                 return null;
             }
         }
@@ -136,26 +170,34 @@ class Picture
         // not sure if ever happens but definitely fail in this case
         if($w == 0 || $h == 0)
         {
+            self::$last_error = "Invalid image dimensions";
             return null;
         }
         
         $new_pic_file = File::Upload($uploadArray, $index);
         
+        if(!$new_pic_file)
+        {
+            self::$last_error = File::$last_error;
+            return null;
+        }
+        
         $new_pic_blob = $new_pic_file->blobid;
         
-        // calculate aspect ratio and decide which dimension to limit to the max
-        $aspect = $w/$h;
+        // fit the image inside a MAXIMUM_DIMENSION square
         
-        $limiter = max($w, $h);
-        $scale_factor =  self::MAXIMUM_DIMENSION / $limiter;
+        $scale_factor =  self::ScaleThumbnail($w, $h);
         
-        // no thumbnail creation if the image is smaller than the threshold
+        // no thumbnail is created if the image is smaller than the square
         
         if($scale_factor > 1)
         {
+            // set thumbnail file to the same file
             $new_pic_thumb_blob = $new_pic_file->blobid;
         }
+        
         // otherwise, generate a thumbnail, store it as a File and return its blobid
+        
         else
         {
             $tw = intval($w*$scale_factor);

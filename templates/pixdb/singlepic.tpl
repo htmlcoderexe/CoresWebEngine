@@ -1,2 +1,3 @@
+<a href="/pixdb/">Back</a>
 <h3>{%w%} x {%h%} </h2>
-<img src="/files/stream/{%blobid%}/image.{%ext%}" />
+<img class="singleimage" src="/files/stream/{%blobid%}/{%blobid%}.{%ext%}" />

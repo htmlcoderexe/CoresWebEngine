@@ -287,3 +287,32 @@ label.formlabel
     width: 6em;
     display: inline-block;
 }
+
+.picturelist
+{
+    display: flex;
+    gap: 2px;
+    flex-flow: row wrap;
+}
+
+.thumbnail
+{
+    width: 256px;
+    height: 256px;
+    border: solid #00C000 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.thumbnail img
+{
+    margin: auto;
+    display: block;
+    padding: 6px;
+}
+
+.singleimage
+{
+    max-width: 100%;
+}
