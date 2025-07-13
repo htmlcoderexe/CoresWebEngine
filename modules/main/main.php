@@ -25,19 +25,16 @@ function ModuleAction_main_iframe()
 
 function ModuleAction_main_tag($params)
 {
-    $command = array_shift($params);
-    if($command=="suggest")
-    {
+    return Module::SPLIT_ROUTE;
+}
+
+function ModuleAction_main_tag_suggest($params)
+{
+    
         $evatype = count($params) > 1 ? $params[0] : "";
         $prefix = count($params) > 1 ? $params[1] : $params [0];
         $suggestions = Tag::GetSuggestions($prefix, $evatype);
         EngineCore::RawModeOn();
         HTTPHeaders::ContentType("application/json");
         echo "[\"" . implode("\", \"", $suggestions) . "\"]";
-    }
-    else
-    {
-        echo "fuck [$command] and fuck";
-        var_dump($params);
-    }
 }

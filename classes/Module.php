@@ -6,6 +6,8 @@ class Module
     public $funcprefix="ModuleAction";
     private $immafaultyshit=false;
     
+    public const SPLIT_ROUTE = 7;
+    
     public static function DemandProperty($propname,$dname="",$desc="")
     {
         if(!EVA::GetPropertyId($propname))
@@ -29,6 +31,10 @@ class Module
         EngineCore::Write2Debug("Failure. Table is not correct.");
     }
     
+    public static function SplitRoute()
+    {
+        
+    }
     function __construct($name)
     {
         $filename=MODULE_DIR.basename($name)."/main.php";
@@ -58,7 +64,13 @@ class Module
         }
         else
         {
-                call_user_func($funcname,$params);
+            $result = call_user_func($funcname,$params);
+            
+            if($result == self::SPLIT_ROUTE)
+            {
+                $next_level = array_shift($params);
+                $this->PerformAction($action . "_" . $next_level, $params);
+            }
         }
     }
 }
