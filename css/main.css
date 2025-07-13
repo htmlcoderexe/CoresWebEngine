@@ -311,7 +311,7 @@ label.formlabel
     background-color: #101010;
 }
 
-.suggestable_box a.selected_suggestion
+.suggestable_box a.selected_suggestion, .suggestable_box a:hover
 {
     color: #000000;
     background-color: #108010;
