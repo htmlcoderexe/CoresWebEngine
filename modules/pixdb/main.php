@@ -29,6 +29,14 @@ function ModuleAction_pixdb_showall($params)
     ModuleFunction_pixbd_list_thumbnail($pic_ids);
 }
 
+function ModuleAction_pixdb_tag($params)
+{
+    $tag=$params[0];
+    $pic_ids = Tag::Find("picture", $tag);
+    ModuleFunction_pixbd_list_thumbnail($pic_ids);
+    
+}
+
 function ModuleAction_pixdb_showpic($params)
 {
     $id = intval(array_shift($params));
@@ -42,9 +50,14 @@ function ModuleAction_pixdb_showpic($params)
     $tpl->tokens['blobid'] = $pic->blob_id;
     $tpl->tokens['w'] = $pic->width;
     $tpl->tokens['h'] = $pic->height;
+    $tpl->tokens['id'] = $pic->id;
     $tpl->tokens['ext'] = $pic->extension;
+    $tags = Tag::GetTags($pic->id);
+    $tpl->tokens['tags'] = $tags;
     EngineCore::SetPageContent($tpl->process(true));
 }
+
+
 
 function ModuleAction_pixdb_upload($params)
 {

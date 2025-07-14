@@ -23,18 +23,8 @@ function ModuleAction_main_iframe()
     die();
 }
 
+require "tag.php";
 function ModuleAction_main_tag($params)
 {
     return Module::SPLIT_ROUTE;
-}
-
-function ModuleAction_main_tag_suggest($params)
-{
-    
-        $evatype = count($params) > 1 ? $params[0] : "";
-        $prefix = count($params) > 1 ? $params[1] : $params [0];
-        $suggestions = Tag::GetSuggestions($prefix, $evatype);
-        EngineCore::RawModeOn();
-        HTTPHeaders::ContentType("application/json");
-        echo "[\"" . implode("\", \"", $suggestions) . "\"]";
 }

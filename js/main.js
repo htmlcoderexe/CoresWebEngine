@@ -147,6 +147,16 @@ function displaySuggestions(recipient, suggestions)
     
 }
 
+function addTag(id)
+{
+    var source = document.getElementById(id);
+    if(!source)
+    {
+        return;
+    }
+    
+}
+
 function doKeyboardNav(e)
 {
     var suggestbox = document.getElementById("suggestbox");

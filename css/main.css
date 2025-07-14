@@ -319,6 +319,48 @@ label.formlabel
 }
 
 
+a.tag::before
+{
+    content: "🏷";
+}
+
+a.tagsubject::before
+{
+    content: "📒";
+}
+
+
+a.tagobject::before
+{
+    content: "📦";
+}
+
+a.tagperson::before
+{
+    content: "👤";
+}
+
+a.tagwebsite::before
+{
+    content: "📰";
+}
+
+a.tagtype::before
+{
+    content: "⚙";
+}
+
+a.tagmention::before
+{
+    content: "⚙";
+}
+
+a.tagusername::before
+{
+    content: "@";
+    font-weight: bold;
+}
+
 
 .picturelist
 {

@@ -1,3 +1,5 @@
+<a href="/pixdb/">Main page</a>
+<br />
 <a href="/pixdb/upload">Upload new image</a>
 <br />
 <br />
