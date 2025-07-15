@@ -80,3 +80,26 @@ function ModuleAction_pixdb_upload($params)
         }
     }
 }
+
+function ModuleAction_pixdb_bulkupload($params)
+{
+    if(EngineCore::POST("uploading")!="yes")
+    {
+        $max = ini_get("max_file_uploads");
+        EngineCore::SetPageContent((new TemplateProcessor("pixdb/uploadbulk,max=$max"))->process(true));
+    }
+    else
+    {
+        $pic=Picture::FromUpload($_FILES['picupload']);
+        if($pic)
+        {
+            EngineCore::GTFO("/pixdb/showpic/".$pic->id);
+        }
+        else
+        {
+            $err = Picture::$last_error;
+            EngineCore::WriteUserError("Failed to upload: $err", "error");
+            EngineCore::FromWhenceYouCame();
+        }
+    }
+}
