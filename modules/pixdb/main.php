@@ -2,7 +2,7 @@
 
 require_once("Picture.php");
 
-function ModuleFunction_pixbd_list_thumbnail($idlist)
+function ModuleFunction_pixbd_list_thumbnail($idlist, $extratext="")
 {
     $pics = [];
     foreach($idlist as $id)
@@ -15,6 +15,7 @@ function ModuleFunction_pixbd_list_thumbnail($idlist)
     }
     $tpl = new TemplateProcessor("pixdb/thumbnailview");
     $tpl->tokens['pictures'] = $pics;
+    $tpl->tokens['extra_text'] = $extratext;
     EngineCore::SetPageContent($tpl->process(true));
 }
 
@@ -33,7 +34,7 @@ function ModuleAction_pixdb_tag($params)
 {
     $tag=$params[0];
     $pic_ids = Tag::Find("picture", $tag);
-    ModuleFunction_pixbd_list_thumbnail($pic_ids);
+    ModuleFunction_pixbd_list_thumbnail($pic_ids, "Searching by tag [$tag]");
     
 }
 
@@ -81,7 +82,7 @@ function ModuleAction_pixdb_upload($params)
     }
 }
 
-function ModuleAction_pixdb_bulkupload($params)
+function ModuleAction_pixdb_uploadbulk($params)
 {
     if(EngineCore::POST("uploading")!="yes")
     {
@@ -90,16 +91,27 @@ function ModuleAction_pixdb_bulkupload($params)
     }
     else
     {
-        $pic=Picture::FromUpload($_FILES['picupload']);
-        if($pic)
+        for($i=0;$i<count($_FILES['picupload']['name']);$i++)
         {
-            EngineCore::GTFO("/pixdb/showpic/".$pic->id);
+            $pic=Picture::FromUpload($_FILES['picupload'], $i);
+            if($pic)
+            {
+                if(EngineCore::POST("applytags","")=="true")
+                {
+                    foreach(EngineCore::POST("new_tags",[]) as $newtag)
+                    {
+                        Tag::Attach($pic->id, $newtag);
+                    }
+                }
+                EngineCore::GTFO("/pixdb/");
+            }
+            else
+            {
+                $err = Picture::$last_error;
+                EngineCore::WriteUserError("Failed to upload: $err", "error");
+                EngineCore::GTFO("/pixdb/");
+            }
         }
-        else
-        {
-            $err = Picture::$last_error;
-            EngineCore::WriteUserError("Failed to upload: $err", "error");
-            EngineCore::FromWhenceYouCame();
-        }
+        die();
     }
 }

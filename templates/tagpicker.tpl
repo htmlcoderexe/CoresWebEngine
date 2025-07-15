@@ -41,12 +41,9 @@ function addTag(id, inputname)
     source.value="";
 }
 </script>
-    <div id="tagger">
-        
         <div class="suggestable_input_container">
             <input data-suggestionsource="/main/tag/suggest/" oninput="doSuggest(this);" onkeydown="doKeyboardNav(event);" onblur="" id="tag_input" name="tag_input" size=20 /><button type="button" onclick="addTag('tag_input','{%inputname|tag%}');">Add tag</button>
         </div>
         <br />
         <div id="tags_container"></div>
-    </div>
  

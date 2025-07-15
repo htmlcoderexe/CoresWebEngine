@@ -3,6 +3,8 @@
 <a href="/pixdb/upload">Upload new image</a>
 <br />
 <br />
+<div class="extra_text">{%extra_text|%}</div>
+<span class="user_error">{#foreach|{#errors|error#}|{:*:}<br />#}</span><br />
 <div class="picturelist">
     {#foreach|{%pictures%}|
 <div class="thumbnail">

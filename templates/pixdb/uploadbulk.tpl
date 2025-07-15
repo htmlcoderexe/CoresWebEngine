@@ -7,19 +7,19 @@ function checkcount(el)
     if(count > {%max%})
     {
         upbutt.disabled = true;
-        warn.style.visibility = "";
+        warn.style.display = "block";
     }
     else
     {
         upbutt.disabled = false;
-        warn.style.visibility = "hidden";
+        warn.style.display = "none";
     }
 }
 
 
 function toggletagger(el)
 {
-    
+    document.getElementById('tagger').style.display = el.checked ? "inherit" : "none";
 }
 </script>
 
@@ -28,7 +28,10 @@ function toggletagger(el)
 <form action="/pixdb/uploadbulk/" method="POST" enctype="multipart/form-data">
     <label for="createalbum">Create an album</label><input type="checkbox" name="createalbum" id="createalbum" value="true" /><br />
     <label for="applytags">Apply tags to the images</label><input type="checkbox" name="applytags" id="applytags" value="true" onchange="toggletagger(this);" /><br />
-    {{tagpicker|inputname=new_tags}}
+    
+    <div id="tagger" style="display:none;">
+        {{tagpicker|inputname=new_tags}}
+    </div>
     <input name="picupload[]" multiple onchange="checkcount(this);" type="file" accept=".jpg,.jpeg,.png,.gif" />
     <input type="hidden" name="uploading" value="yes" />
     <button id="uploadbutton" type="submit" disabled>Upload</button><br />
