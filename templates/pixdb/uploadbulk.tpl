@@ -16,10 +16,19 @@ function checkcount(el)
     }
 }
 
+
+function toggletagger(el)
+{
+    
+}
 </script>
+
 <h3>Select up to {%max%} images to upload:</h3>
 <span class="user_error">{#foreach|{#errors|error#}|{:*:}<br />#}</span>
 <form action="/pixdb/uploadbulk/" method="POST" enctype="multipart/form-data">
+    <label for="createalbum">Create an album</label><input type="checkbox" name="createalbum" id="createalbum" value="true" /><br />
+    <label for="applytags">Apply tags to the images</label><input type="checkbox" name="applytags" id="applytags" value="true" onchange="toggletagger(this);" /><br />
+    {{tagpicker|inputname=new_tags}}
     <input name="picupload[]" multiple onchange="checkcount(this);" type="file" accept=".jpg,.jpeg,.png,.gif" />
     <input type="hidden" name="uploading" value="yes" />
     <button id="uploadbutton" type="submit" disabled>Upload</button><br />
