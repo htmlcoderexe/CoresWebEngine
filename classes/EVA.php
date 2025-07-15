@@ -301,7 +301,7 @@ class EVA
             $filter =["parent_id"=>$id];
             if($child_type)
             {
-                ["child_type"]=$child_type;
+                $filter["child_type"]=$child_type;
             }
             $q = DBHelper::Select("eva_mappings", ["child_id"], $filter);
             $child_list = DBHelper::GetList($q);
@@ -320,7 +320,7 @@ class EVA
             $filter =["child_id"=>$id];
             if($parent_type)
             {
-                ["parent_type"]=$parent_type;
+                $filter["parent_type"]=$parent_type;
             }
             $q = DBHelper::Select("eva_mappings", ["parent_id"], $filter);
             $parent_list = DBHelper::GetList($q);
