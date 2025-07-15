@@ -24,7 +24,7 @@ function loadTag(tag)
 
 function addTag(id, button)
 {
-    button.enabled = false;
+    button.disabled = true;
     var source = document.getElementById(id);
     if(!source)
     {
@@ -37,7 +37,7 @@ function addTag(id, button)
     {
         if(ajax.readyState===4)
         {
-            button.enabled = true;
+            button.disabled = false;
             if(ajax.status === 200)
             {
                 try
