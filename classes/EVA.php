@@ -5,6 +5,10 @@ class EVA
 	public $type;
 	public $attributes;
 	public $proplist;
+        public $children;
+        public $dirty;
+        private $eraselist;
+        
         
         public const OWNER_NOBODY = 0;
         public const OWNER_CURRENT = -1;
@@ -31,14 +35,18 @@ class EVA
             $this->type=$data[0]['type'];
             $this->proplist=EVA::GetPropList($id);
             $this->attributes=EVA::GetFullObject($this->proplist);
+            $this->eraselist = [];
+            $this->dirty = false;
 	}
 	
         /**
          * Creates a new EVA object of a specified type
          * @param string $type Object typename
          * @param int $owner Sets the owner of the created object. -1 uses current uid and 0 uses nobody.
-         * @param array $blueprint List of attributes to preload on the object.
-         * @return \EVA
+         * @param array $blueprint List of attributes to preload on the object as a flat array,
+         * or an associative array of the form
+         * ['attribute name'] => ['attribute value']
+         * @return \EVA The created object
          */
 	public static function CreateObject($type,$owner = self::OWNER_NOBODY,$blueprint=[])
 	{
@@ -72,14 +80,15 @@ class EVA
                     $object->AddAttribute($attribute,$value);
                 }
             }
+            $object->Save();
             return $object;
 	}
         
         /**
-         * Creates a new EVA property
-         * @param type $name
-         * @param type $dname
-         * @param type $desc
+         * Creates a new EVA attribute.
+         * @param string $name Name used to refer to the attribute.
+         * @param string $dname Friendly display name.
+         * @param string $desc Description of the property.
          */
         public static function CreateProperty($name,$dname,$desc)
         {
@@ -89,9 +98,9 @@ class EVA
         
 	
         /**
-         * Find a property ID
-         * @param string $propname
-         * @return int|bool ID of the property if it exists or false otherwise
+         * Find an attribute's internal ID
+         * @param string $propname Attribute name
+         * @return int|bool ID of the attribute if it exists or false otherwise
          */
         public static function GetPropertyId($propname)
 	{
@@ -101,7 +110,21 @@ class EVA
 		return DBHelper::RunScalar($query, [$propname]);
 	}
         
-	//gets
+        
+        //=========BEGIN Attribute Manipulation=========
+        //
+        //      These functions are directly writing to the
+        //      database and are mostly used internally
+        //      by the object instance functions
+        
+	/**
+         * Retrieves a list of attribute/value pairs for a given object.
+         * @param int $id EVA object ID to fetch.
+         * @return array An array of associative arrays of the form:
+         * ['name'] => "attribute name",
+         * ['value'] => "attribute value"
+         * This can be passed to EVA::GetFullObject to get an associative array.
+         */
 	public static function GetPropList($id)
 	{
             $stmt = "
@@ -114,7 +137,7 @@ class EVA
             $props=DBHelper::RunTable($stmt,[$id]);
             if(count($props)==0)
             {
-                return null;
+                return [];
             }
             return $props;
 	
@@ -136,7 +159,14 @@ class EVA
 		(SELECT id FROM eva_properties WHERE eva_properties.name=?)";
             return DBHelper::RunList($query, [$objid,$propname], 0);
         }
-        
+        /**
+         * Writes a value to an attribute by its name
+         * If the object doesn't have the attribute, it is created.
+         * If the object has multiple values for the attribute, the first one gets overwritten.
+         * @param int $objid EVA object ID
+         * @param string $propname Property name to write
+         * @param scalar $value Value to write
+         */
         public static function WritePropByName($objid,$propname,$value)
         {
             $query="SELECT map.value, map.id
@@ -160,7 +190,16 @@ class EVA
             }
         }
         
-        
+        /**
+         * Reformats the Name/Value pair array into an associative
+         * array indexable by attribute name. Any attributes with multiple values
+         * get converted into an array containing the values.
+         * @param array $props An array of associative arrays of this structure:
+         * ['name'] => "attribute name",
+         * ['value'] => "attribute value"
+         * @return array of this structure:
+         * ['attribute name'] => "attribute value"
+         */
 	public static function GetFullObject($props)
 	{
 		
@@ -193,6 +232,12 @@ class EVA
 		return $result;
 	}
 	
+        /**
+         * Modifies the value of a specific attribute value entry.
+         * You probably want to use the SetSingleAttribute method on a specific object.
+         * @param int $id ID of the specific entry
+         * @param scalar $value the new value
+         */
 	public static function UpdateProperty($id,$value)
 	{
             
@@ -205,7 +250,7 @@ class EVA
 	}
 	
         /**
-         * Add a property assigned to a specific EVA object
+         * Adds a property assigned to a specific EVA object
          * @param int $objId EVA object ID
          * @param id $id property ID in eva_properties
          * @param string $value value to be written
@@ -224,15 +269,57 @@ class EVA
 		return DBHelper::GetLastId();
 	}
         
-        
+        /**
+         * Deletes a specific attribute value entry by ID.
+         * You want to use the EraseAttribute method on the actual object.
+         * @used-by EVA::EraseAttribute
+         * @param int $entryId ID of the specific attribute value entry.
+         */
         public static function DeleteAttribute($entryId)
         {
             DBHelper::Delete("eva_property_values",['id'=>$entryId]);
         }
         
-	
+        //=========END Attribute Manipulation===========
+        
+        //=========BEGIN Children list Manipulation=====
+        //
+        //      Functions here deal with linking 
+        //      objects to each other as parent/child
+        //
+        //
+        
         /**
-         * Get EVA objects that have a specific property set to a specific value, filtered by object type.
+         * Gets all children of this object, optionally filtered by type
+         * Only direct links are retrieved without recursion.
+         * @param int $id object ID to retrieve children from
+         * @param string $child_type type of child object to filter by
+         * @return array of IDs of found children.
+         */
+        public static function GetChildren($id, $child_type="")
+        {
+            $filter =["parent_id"=>$id];
+            if($child_type)
+            {
+                ["child_type"]=$child_type;
+            }
+            $q = DBHelper::Select("eva_mappings", ["child_id"], $filter);
+            $child_list = DBHelper::GetList($q);
+            return $child_list;
+        }
+        
+	//=========END Children list Manipulation=======
+        
+        //=========BEGIN Search and Aggregation=========
+        //      
+        //      These functions allow for searching
+        //      and querying the objects through the
+        //      database itself instead of loading
+        //      each object separately
+        //
+        
+        /**
+         * Gets EVA objects that have a specific property set to a specific value, filtered by object type.
          * @param string $property Name of the target property
          * @param string $value Value to be searched for
          * @param string $type Object type to filter by
@@ -251,6 +338,18 @@ class EVA
 		";
             return DBHelper::RunList($query,[$value,$type,$property]);
 	}
+        
+        /**
+         * Gets an array of all objects of a specific type containing
+         * the value of that property per objects. Each item looks like this:
+         * {
+         *      ['object_id'] => 10,
+         *      ['value'] => 'some value'
+         * }
+         * @param string $property name of the property to aggregate
+         * @param string $type object type
+         * @return an array of arrays each with 'object_id' and 'value'
+         */
 	public static function GetKVA($property,$type)
 	{
             $query ="
@@ -265,19 +364,44 @@ class EVA
             return DBHelper::RunTable($query,[$type,$property]);
 	}
         
-        
+        /**
+         * Gets a list of IDs of all objects of a given type
+         * @param string Object type to return $type
+         * @return array of object IDs
+         */
         public static function GetAllOfType($type)
         {
             $q=DBHelper::Select("eva_objects",["id"],["type"=>$type]);
             return DBHelper::RunList($q,[$type]);
         }
         
-	
+        
+	//=========END Search and Aggregation===========
+        
+        //=========BEGIN Instance methods===============
+        //      
+        //      These operate on the actual objects
+        //      retrieved from the database.
+        //      The changes made to the object
+        //      are only written to the database 
+        //      with the Save() method.
+        //
+        
+	/**
+         * Retrieves indices in the object's $proplist with a matching name
+         * @param string $name name of the attribute to find
+         * @return int[] list of indices in $proplist containing the matching attribute
+         */
 	public function FindAttribute($name)
 	{
 		return array_keys(array_column($this->proplist,'name'),$name);
 	}
 	
+        /**
+         * Checks whether this object has a specific attribute set.
+         * @param string $name Name of the attribute to find.
+         * @return bool True if the attribute was found, false otherwise.
+         */
 	public function HasAttribute($name)
 	{
 		$result=$this->FindAttribute($name);
@@ -286,16 +410,26 @@ class EVA
 		//return isset($this->attributes[$name]);
 	}
 	
+        /**
+         * Checks whether this object has multiple values of a given attribute
+         * @param string $name attribute name
+         * @return bool True if the given attribute exists and has multiple values, false otherwise.
+         */
 	public function HasMultiple($name)
 	{
 		return is_array($this->attributes[$name]);
 	}
-	
+	// not sure if this is used meaningfully...
 	public function GetAttribute($name)
 	{
 		return isset($this->attributes[$name]);
 	}
 	
+        /**
+         * Gets a single value of a given attribute. If there are multiple, the first one is retrieved.
+         * @param string $name attribute name.
+         * @return null|string Value if found.
+         */
 	public function GetSingleAttribute($name)
 	{
             if (!$this->HasAttribute($name)) 
@@ -306,7 +440,13 @@ class EVA
 	}
 	
         
-        
+        /**
+         * Assigns a single value to a specific attribute. Fails if the attribute has multiple values.
+         * @param string $name Attribute name to assign.
+         * @param scalar $value Value to assign.
+         * @param bool $nocreate If set to true, the method will also fail if the attribute doesn't exist yet.
+         * @return bool True if the attribute has been set/created, false otherwise.
+         */
 	public function SetSingleAttribute($name,$value,$nocreate=false)
 	{
 		//$this->proplist[$name]=$value;
@@ -321,50 +461,68 @@ class EVA
 			return false;
 		}
 		$this->proplist[$props[0]]['value']=$value;
+                $this->dirty = true;
 		return true;
 	}
-	
+	/**
+         * Removes a specific attribute from the object, optionally only if matching a value (other than false)
+         * @param string $name Attribute name to remove.
+         * @param mixed $value If set to anything other than boolean false, only attribute values matching this value will be removed.
+         */
         public function EraseAttribute($name,$value=false)
         {
+            // find entries matching the attribute name
             $props=$this->FindAttribute($name);
+            // go through each one and remove
             foreach($props as $prop)
             {
+                // keep attributes matching the given value if set
                 if(($value!==false) && $value!==$this->proplist[$prop]['value'])
                 {
                     continue;
                 }
+                // add the assignment entry ID to the erase list and set dirty bit
                 $entryId=$this->proplist[$prop]['pid'];
-                //var_dump($this);
-                self::DeleteAttribute($entryId);
+                $entryValue=$this->proplist[$prop]['value'];
+                $this->eraselist[]= $entryId;
+                $this->dirty = true;
+                // remove from the flat proplist
                 unset($this->proplist[$prop]);
+                // remove from the attributes hashmap
                 if(isset($this->attributes[$name]))
                 {
+                    // if it has multiple values, find the correct one to erase
                     if(is_array($this->attributes[$name]))
                     {
-                        $indices=array_keys($this->attributes[$name],$value);
-                        foreach($indices as $index)
-                        {
-                            unset($this->attributes[$name][$index]);
-                        }
+                        // find one value matching the one found in $proplist - guaranteed to exist since we're here
+                        $indices=array_keys($this->attributes[$name],$entryValue);
+                        // nuke it
+                        unset($this->attributes[$name][$indices[0]]);
+                        // if that was the last value, remove the whole array
                         if(count($this->attributes[$name])===0)
                         {
                             unset($this->attributes[$name]);
                         }
+                        // otherwise renumber the array to close the hole
+                        else
+                        {
+                            $this->attributes[$name] = array_values($this->attributes[$name]);
+                        }
                     }
+                    // if just one value, nuke it
                     else
                     {
                         unset($this->attributes[$name]);
                     }
                 }
-                //var_dump($this);
-                //die();
             }
+            // renumber the proplist to close the holes
             $this->proplist=array_values($this->proplist);
         }
         
         
         /**
-         * Explicitly append a volatile attribute
+         * Explicitly appends a volatile attribute
          * @param type $name
          * @param type $value
          */
@@ -380,33 +538,37 @@ class EVA
 		$this->proplist[]=$attr;
 	}
         
-        
-        public function GetChildren($child_type)
-        {
-            $q = DBHelper::Select("eva_mappings", ["child_id"], ["parent_type"=>$this->type,
-                "child_type"=>$child_type,
-                "parent_id"=>$this->id]);
-            $child_list = DBHelper::GetList($q);
-            return $child_list;
-        }
-        
-	
+	/**
+         * Commits the changes to the live object to the database
+         */
 	public function Save()
 	{
-		for($i=0;$i<count($this->proplist);$i++)
-		{
-			$id=(int)$this->proplist[$i]['pid'];
-			$value=$this->proplist[$i]['value'];
-			if($id==-1)
-			{
-				
-				$id=EVA::AppendProperty($this->id,$this->proplist[$i]['propertyId'],$value);
-				$this->proplist[$i]['pid']=$id;
-			}
-			else
-			{
-				EVA::UpdateProperty($id,$value);
-			}
-		}
+            // updates and additions first
+            for($i=0;$i<count($this->proplist);$i++)
+            {
+                $id=(int)$this->proplist[$i]['pid'];
+                $value=$this->proplist[$i]['value'];
+                // an ID of "-1" indicates there's no entry for this assignment yet, create it
+                if($id==-1)
+                {
+                    $id=EVA::AppendProperty($this->id,$this->proplist[$i]['propertyId'],$value);
+                    // reflect the change in the object
+                    $this->proplist[$i]['pid']=$id;
+                }
+                // update the existing assignment directly by ID
+                else
+                {
+                    EVA::UpdateProperty($id,$value);
+                }
+            }
+            // perform erases on the list, if any
+            foreach($this->eraselist as $entryId)
+            {                
+                self::DeleteAttribute($entryId);
+            }
+            // clear the erase list
+            $this->eraselist = [];
+            // clear the dirty bit
+            $this->dirty = false;
 	}
 }
