@@ -59,6 +59,11 @@ class HTTPHeaders
         header("Location: $url");
     }
     
+    public static function CacheDuration($seconds)
+    {
+        header("Cache-Control: max-age=" . (string) intval($seconds));
+    }
+    
     /**
      * 
      * @param string $header

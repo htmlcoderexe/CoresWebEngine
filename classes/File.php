@@ -183,6 +183,8 @@ class File
         $fileinfo=new File($fileids[0]);
         // set content-type
         HTTPHeaders::ContentType($fileinfo->type);
+        // cache for a day
+        HTTPHeaders::CacheDuration(86400);
         $size = $fileinfo->filesize;
         // check the actual file's size and log a warning if there's a mismatch
         $realsize= filesize($filename);
