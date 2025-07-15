@@ -55,6 +55,7 @@ function ModuleAction_main_tag_add($params)
     if(Tag::Attach($evaid,$tag))
     {
         echo '{"responseCode": "OK"}';
+        die();
     }
         echo '{"responseCode": "NoChange"}';
     die();
