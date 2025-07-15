@@ -299,12 +299,14 @@ class EVA
         public static function GetChildren($id, $child_type="")
         {
             $filter =["parent_id"=>$id];
+            $params = [$id];
             if($child_type)
             {
                 $filter["child_type"]=$child_type;
+                $params[]= $child_type;
             }
             $q = DBHelper::Select("eva_mappings", ["child_id"], $filter);
-            $child_list = DBHelper::GetList($q);
+            $child_list = DBHelper::RunList($q,$params);
             return $child_list;
         }
         
@@ -318,12 +320,14 @@ class EVA
         public static function GetParents($id, $parent_type="")
         {
             $filter =["child_id"=>$id];
+            $params = [$id];
             if($parent_type)
             {
                 $filter["parent_type"]=$parent_type;
+                $params[]= $parent_type;
             }
             $q = DBHelper::Select("eva_mappings", ["parent_id"], $filter);
-            $parent_list = DBHelper::GetList($q);
+            $parent_list = DBHelper::RunList($q,$params);
             return $parent_list;
         }
         
