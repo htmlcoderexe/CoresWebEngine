@@ -321,7 +321,7 @@ label.formlabel
 
 a.tag::before
 {
-    content: "🏷";
+    content: "\00FE0F🏷";
 }
 
 a.tagsubject::before
@@ -347,12 +347,22 @@ a.tagwebsite::before
 
 a.tagtype::before
 {
-    content: "⚙";
+    content: "\00FE0F⚙";
 }
 
 a.tagmention::before
 {
-    content: "⚙";
+    content: "💬";
+}
+
+a.taggame::before
+{
+    content: "🎮";
+}
+
+a.tagmeme::before
+{
+    content: "🧬";
 }
 
 a.tagusername::before
