@@ -27,6 +27,8 @@ function ModuleAction_pixdb_default($params)
 function ModuleAction_pixdb_showall($params)
 {
     $pic_ids = EVA::GetAllOfType("picture");
+    // show newest first
+    $pic_ids = array_reverse($pic_ids);
     ModuleFunction_pixbd_list_thumbnail($pic_ids);
 }
 
