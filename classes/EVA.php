@@ -308,6 +308,122 @@ class EVA
             return $child_list;
         }
         
+        /**
+         * Gets all parents of this object, optionally filtered by type
+         * Only direct links are retrieved without recursion.
+         * @param int $id object ID to retrieve parents from
+         * @param string $parent_type type of parent object to filter by
+         * @return array of IDs of found parents.
+         */
+        public static function GetParents($id, $parent_type="")
+        {
+            $filter =["child_id"=>$id];
+            if($parent_type)
+            {
+                ["parent_type"]=$parent_type;
+            }
+            $q = DBHelper::Select("eva_mappings", ["parent_id"], $filter);
+            $parent_list = DBHelper::GetList($q);
+            return $parent_list;
+        }
+        
+        /**
+         * Adds a child to a parent object.
+         * @param int $parent Parent object's ID
+         * @param int $child Child object's ID
+         * @return bool True if the relationship exists now, false otherwise.
+         */
+        public static function AddRelation($parent, $child)
+        {
+            $grandparents = self::GetParents($parent);
+            $parents = self::GetParents($child);
+            // if the reverse relationship already exists, fail
+            if(in_array($child, $grandparents))
+            {
+                return false;
+            }
+            // return true, but do nothing if the relationship already exists
+            if(in_array($parent, $parents))
+            {
+                return true;
+            }
+            // load and verify both objects
+            $eva_child = new EVA($child);
+            $eva_parent = new EVA($parent);
+            // if either or both are invalid, fail
+            if($eva_child->id < 1 || $eva_parent->id < 1)
+            {
+                return false;
+            }
+            // all good, write to db
+            DBHelper::Insert("eva_mappings",[$eva_parent->type, $eva_child->type, $eva_parent->id, $eva_child->id]);
+            return true;
+        }
+        
+        /**
+         * Removes a parent/child relation.
+         * @param int $parent Parent object's ID
+         * @param int $child Child object's ID
+         */
+        public static function RemoveRelation($parent, $child)
+        {
+            DBHelper::Delete("eva_mappings",['parent_id'=>$parent,['child_id']=>$child]);
+        }
+        
+        // helper methods to be used on instances
+        // take effect immediately unlike other modifications
+        
+        /**
+         * Adds an object as a child of itself.
+         * @param int $id Object ID to add.
+         */
+        public function Adopt($id)
+        {
+            self::AddRelation($this->id, $id);
+        }
+        
+        /**
+         * Removes itself as a child of a specific object.
+         * @param int $id Parent object ID to remove from.
+         */
+        public function Emancipate($id)
+        {
+            self::RemoveRelation($id, $this->id);
+        }
+        
+        /**
+         * Removes a child from itself.
+         * @param int $id Child object ID to remove.
+         */
+        public function Disown($id)
+        {
+            self::RemoveRelation($this->id, $id);
+        }
+        
+        /**
+         * Removes all parents from this object.
+         */
+        public function Orphan()
+        {
+            $parents = self::GetParents($this->id);
+            foreach($parents as $parent)
+            {
+                $this->Emancipate($parent);
+            }
+        }
+        
+        /**
+         * Removes all children from this object.
+         */
+        public function DisownAll()
+        {
+            $children = self::GetChildren($this->id);
+            foreach($children as $child)
+            {
+                $this->Disown($child);
+            }
+        }
+        
 	//=========END Children list Manipulation=======
         
         //=========BEGIN Search and Aggregation=========
