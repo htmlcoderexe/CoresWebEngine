@@ -60,7 +60,7 @@ function ModuleAction_pixdb_showpic($params)
 
 
 
-function ModuleAction_pixdb_upload($params)
+function ModuleAction_pixdb_uploadsingle($params)
 {
     if(EngineCore::POST("uploading")!="yes")
     {
@@ -82,7 +82,7 @@ function ModuleAction_pixdb_upload($params)
     }
 }
 
-function ModuleAction_pixdb_uploadbulk($params)
+function ModuleAction_pixdb_upload($params)
 {
     if(EngineCore::POST("uploading")!="yes")
     {
