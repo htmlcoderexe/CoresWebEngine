@@ -435,6 +435,25 @@ class EVA
         //
         
         /**
+         * Checks if a given EVA object exists.
+         * @param int $id ID to check.
+         * @param string $type If specified, also checks if the object is of this type.
+         * @return bool True if the object exists, false otherwise.
+         */
+        public static function Exists($id, $type="")
+        {
+            $where = ['id'=>$id];
+            $params = [$id];
+            if($type)
+            {
+                $where['type'] = $type;
+                $params[] = $type;
+            }
+            $q= DBHelper::Select("eva_objects", "id", $where);
+            return (bool)DBHelper::RunList($q, $params);
+        }
+        
+        /**
          * Gets EVA objects that have a specific property set to a specific value, filtered by object type.
          * @param string $property Name of the target property
          * @param string $value Value to be searched for
