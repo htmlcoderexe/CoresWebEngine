@@ -73,26 +73,6 @@ function TemplateProcessorBuiltin_lipsum($charcount = 100)
     return substr($lipsum, 0, $charcount);
 }
 
-function TemplateProcessorBuiltin_maptodb($template, $query, $fallbacktemplate = "")
-{
-    return "Unimplemented!";
-    $tpl = new TemplateProcessor($template);
-    $data = DBHelper::GetArray($query);
-    $buffer = "";
-    if($fallbacktemplate != "" && count($data) == 0)
-    {
-        $tpl = new TemplateProcessor($fallbacktemplate);
-        return $tpl->process(true);
-    }
-    for($i = 0; $i < count($data); $i++)
-    {
-        $tpl->tokens = array_merge($tpl->tokens, $data[$i]);
-        $buffer .= $tpl->process(true);
-        $tpl->reset();
-    }
-    return $buffer;
-}
-
 function TemplateProcessorBuiltin_isloggedin()
 {
     return (User::GetCurrentUser()->username != "Guest") ? "true" : "false";

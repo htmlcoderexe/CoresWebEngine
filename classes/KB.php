@@ -13,8 +13,7 @@ class KB
 	public static function ListProjects()
 	{
 		$buffer="";
-                $stmt = DBHelper::$DBLink->prepare("SELECT id,name FROM KB_projects");
-		$projectlist=DBHelper::GetArray($stmt);
+		$projectlist=DBHelper::RunTable(DBHelper::Select('KB_projects',['id','name']),[]);
 		foreach($projectlist as $project)
 		{
 			$buffer.= $project['name']."<br />";

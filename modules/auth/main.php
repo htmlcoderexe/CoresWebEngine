@@ -49,7 +49,8 @@ function ModuleAction_auth_activate($params)
 	if(isset($params[0]) && $params[0]!="")
 	{
 		$code=mysql_real_escape_string($params[0]);
-		$results=DBHelper::GetList("SELECT user_id FROM user_activation WHERE code='$code'");
+                $q=DBHelper::Select('user_activation',['user_id'],['code'=>$code]);
+		$results=DBHelper::RunList($q,[$code]);
 		if(count($results)!=0)
 		{
 			$user=new User(User::GetUsername($results[0]));
@@ -71,8 +72,8 @@ function ModuleAction_auth_activate($params)
 			{
 				$code=mysql_real_escape_string($_SESSION['acode']);
 				unset($_SESSION['acode']);
-				DBHelper::GetArray("DELETE FROM user_activation WHERE code='$code'");
-				(new User(EngineCore::POST('username')))->Enable();
+				DBHelper::Delete("user_activation",['code'=>$code]);
+                                (new User(EngineCore::POST('username')))->Enable();
 				EngineCore::GTFO("/");
 				
 			}
@@ -98,10 +99,9 @@ function ModuleAction_auth_recover($params)
 		return;
 	}
 	$eml=mysql_real_escape_string($_POST['email']);
-	$q=DBHelper::GetOneRow("SELECT user_id 
-	FROM userinfo 
-	WHERE mail_address='$eml'");
-	$uid=$q['user_id'];
+	$q=DBHelper::Select('userinfo',['user_id'],['mail_address'=>$eml]);
+        $row = DBHelper::RunRow($q,[$eml]);
+	$uid=$row['user_id'];
 	$uname=User::GetUsername($uid);
 	if($uname!="Guest")
 	{
@@ -109,7 +109,7 @@ function ModuleAction_auth_recover($params)
 		
 		
 		
-		AuthHelper::RequestRecover($uname,$email);
+		AuthHelper::RequestRecover($uname,$eml);
 	}
 	else
 	{

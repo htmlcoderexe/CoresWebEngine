@@ -37,7 +37,7 @@ class AuthHelper
 			$_SESSION['signuperror']="Bad email";
 			return false;
 		}
-		if(DBHelper::ValueExists("userinfo","mail_address",$e))
+		if(DBHelper::Count("userinfo","mail_address",['mail_address'=>$e])>0)
 		{
 			$_SESSION['signuperror']="E-mail already registered. <a href=\"/auth/recover\">Reset password?</a>";
 			return false;
@@ -120,17 +120,13 @@ class AuthHelper
 			return false;
 		}
 		$hash=password_hash($password1, PASSWORD_DEFAULT);
-                $stmt = DBHelper::$DBLink->prepare("SELECT user_id FROM user_recovery WHERE code=?");
-                $stmt->bindParam(1, $code);
-		$results=DBHelper::GetList($stmt);
+                $q=DBHelper::Select('user_recovery', ['user_id'], ['code'=>$code]);
+		$results=DBHelper::RunList($q,[$code]);
 		if(count($results)!=0)
 		{
 			$uid=(int)$results[0];
 			//set the new password
-                        $stmt = DBHelper::$DBLink->prepare("UPDATE users SET passwordhash = ? WHERE id = ?");
-                        $stmt->bindParam(1,$hash);
-                        $stmt->bindParam(2,$uid);
-			DBHelper::GetArray($stmt);
+                        DBHelper::Update("users",['passwordhash'=>$hash],['id'=>$uid]);
 			$autpl=new TemplateProcessor("resetSuccess");
 			EngineCore::AddPageContent($autpl->process(true));
 			return true;

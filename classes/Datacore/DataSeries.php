@@ -13,11 +13,8 @@ class DataSeries
 	public function __construct($id)
 	{
 		$this->id=(int)$id;
-		$r=DBHelper::GetOneRow("
-		SELECT id,study_id,description
-		FROM datacore_series
-		WHERE id={$this->id}
-		");
+                $q=DBHelper::Select('datacore_series',['id','study_id','description'],['id'=>$this->id]);
+		$r=DBHelper::RunRow($q,[$this->id]);
 		$this->studyid=$r['study_id'];
 		$this->description=$r['description'];
 		$this->GetDataPoints();
@@ -30,12 +27,8 @@ class DataSeries
 			return $this->datapoints;
 		}
 		$this->datapoints=Array();
-		$points=DBHelper::GetArray("
-		SELECT id,value,timestamp 
-		FROM datacore_datapoints 
-		WHERE series_id={$this->id}
-		ORDER BY timestamp ASC
-		");
+                $q = DBHelper::Select("datacore_datapoints",['id','value','timestamp'],['series_id'=>$this->id],['timestamp'=>'ASC']);
+                $points = DBHelper::RunList($q,[$this->id]);
 		$c=count($points);
 		if($c>0)
 		{

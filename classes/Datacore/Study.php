@@ -10,11 +10,8 @@ class Study
 	public function __construct($id)
 	{
 		$this->id=(int)$id;
-		$r=DBHelper::GetOneRow("
-		SELECT id,title,description,groupid	
-		FROM datacore_studies
-		WHERE id={$this->id}
-		");
+                $q=DBHelper::Select('datacore_studies', ['id','title','description','groupid'], ['id'=>$this->id]);
+		$r=DBHelper::RunRow($q,[$this->id]);
 		$this->name=$r['title'];
 		$this->description=$r['description'];
 		$this->GetDataSeries();
@@ -27,7 +24,8 @@ class Study
 			return $this->dataseries;
 		}
 		$this->dataseries=Array();
-		$serieslist=DBHelper::GetList("SELECT id FROM datacore_series WHERE study_id={$this->id}");
+                $q=DBHelper::Select('datacore_series',['id'],['study_id'=>$this->id]);
+		$serieslist=DBHelper::RunList($q,[$this->id]);
 		$c=count($serieslist);
 		for($i=0;$i<$c;$i++)
 		{

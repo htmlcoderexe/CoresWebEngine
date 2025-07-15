@@ -20,7 +20,8 @@ class KB_Page
         $id=$this->id;
         $stmt = DBHelper::$DBLink->prepare("SELECT id,page_updated,page_affected FROM kb_page_dependencies WHERE page_updated=?");
         $stmt->bindParam(1,$id);
-        $pages=DBHelper::GetArray($stmt);
+        $q = DBHelper::Select("kb_page_dependencies",['id','page_updated','page_affected'], ['page_updated'=>$id]);
+        $pages=DBHelper::RunTable($q,[$id]);
         return $pages;
     }
     public function CheckUpdate()
@@ -62,9 +63,8 @@ class KB_Page
     public static function GetSpecificRevision($id)
     {
         //note, this does not check if any revision belongs to the page yet.
-        $stmt = DBHelper::$DBLink->prepare("SELECT id,content_raw,content_html FROM kb_page_revisions WHERE id=? ORDER BY timestamp DESC");
-        $stmt->bindParam(1, $id);
-        $rev=DBHelper::GetOneRow($stmt);
+        $q=DBHelper::Select("kb_page_revisions",['id','content_raw','content_html'],['id'=>$id],['timestamp'=>'DESC']);
+        $rev=DBHelper::RunRow($q,[$id]);
         return $rev['content_html'];
     }
     public static function process_links($input)
