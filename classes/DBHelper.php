@@ -17,20 +17,15 @@ class DBHelper
     public const VERIFICATION_TABLE_MISSING=2;
     public static PDO $DBLink;
     public static $DEBUG=false;
-    /*
-      public static function Q($query)
-      {
-      $res=mysql_query($query);
-      $err=mysql_error();
-      if($err!="")
-      {
-      Utility::debug($query);
-      Utility::debug( $err );
-      }
-      }
-      // */
-    // FIXED-ISH
 
+
+    //=========BEGIN Helper functions==============
+    //
+    //      These functions help with formatting
+    //      function params into proper SQL.
+    //
+    
+    
     /**
      * Flattens out an assoc array like ['key'] => ['value'] into 'key', 'value'
      * @param type $dictionary
@@ -48,7 +43,7 @@ class DBHelper
     }
 
     /**
-     * Creates the string containing placeholders chained by AND from an array of value assignments
+     * Creates the string containing placeholders chained by ',' from an array of value assignments
      * @param array $set An associative array of value assignments ['column'] => ['value']
      * @return string The complete assignment string
      */
@@ -89,6 +84,18 @@ class DBHelper
         return $whereclause;
     }
     
+    /**
+     * Formats a SELECT query.
+     * @param string $table Table to SELECT from.
+     * @param string[] $fields Fields to SELECT.
+     * @param array $where An associative array of WHERE clauses of the form
+     * ['field'=>'value'].
+     * @param array $orderby Fields to ORDER BY, as an associative array of ['field'=>'mode']
+     * with mode being either ASC or DESC 
+     * @param int $limit If not 0, limit the results to this number.
+     * @param int $offset If not 0, start the results at this number.
+     * @return string A fully formatted SELECT query with placeholders.
+     */
     public static function Select($table,$fields,$where,$orderby=[],$limit=0,$offset=0)
     {
         $q="SELECT ". implode(",",$fields) . " FROM $table ".(count($where)>0?"WHERE ":"").self::Where($where);
@@ -113,29 +120,24 @@ class DBHelper
         return $q;
     }
     
-    /**
-     * Runs a prepared statement and discards the result
-     * @param string $query The query to prepare and run
-     * @param array $params Array of params to bind
-     */
-    public static function RunVoid($query, $params)
-    {
-        // prep the statement
-        $stmt = DBHelper::$DBLink->prepare($query);
-        // bind all params
-        for($i = 0; $i < count($params); $i++)
-        {
-            $stmt->bindParam($i + 1, $params[$i]);
-        }
-        // run the thing
-        $stmt->execute();
-    }
+    //=========END Helper functions================
+    
+    
+    
+    //=========BEGIN Generic query execution=======
+    //
+    //      These functions all perform take a query
+    //      and an array of params to bind and 
+    //      return various types of objects for
+    //      convenience of use.
+    //
+
     
     /**
-     * Runs a prepared statement and returns the object for further inquiry (affected rows etc)
+     * Prepares and runs a query and returns the statement object for further use.
      * @param string $query The query to prepare and run
      * @param array $params Array of params to bind
-     * @return PDOStatement
+     * @return PDOStatement The statement object which can then be used for fetching results or repeated queries.
      */
     public static function RunStmt($query, $params): PDOStatement
     {
@@ -160,9 +162,8 @@ class DBHelper
         return $stmt;
     }
     
-    
     /**
-     * Run a query and get the results
+     * Runs a query and gets the results
      * @param string $query The query to prepare and run
      * @param array $params Array of params to bind
      * @return array An array of rows (each an assoc array of column=>value)
@@ -172,8 +173,9 @@ class DBHelper
         $stmt = self::RunStmt($query,$params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+    
     /**
-     * Run a query and get a single row
+     * Runs a query and gets a single row
      * @param string $query The query to prepare and run
      * @param array $params Array of params to bind
      * @return array An assoc array of column=>value
@@ -184,8 +186,9 @@ class DBHelper
         $stmt = self::RunStmt($query,$params);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+    
     /**
-     * Run a query and get a single column as a list
+     * Runs a query and gets a single column as a list
      * @param string $query The query to prepare and run
      * @param array $params Array of params to bind
      * @param int the column to return
@@ -198,7 +201,7 @@ class DBHelper
     }
     
     /**
-     * Run a query and get a single value
+     * Runs a query and gets a single value
      * @param string $query The query to prepare and run
      * @param array $params Array of params to bind
      * @param int the column to return
@@ -210,18 +213,51 @@ class DBHelper
         return $stmt->fetch(PDO::FETCH_COLUMN, $column);
     }
     
+    /**
+     * Runs a query and discards the result
+     * @param string $query The query to prepare and run
+     * @param array $params Array of params to bind
+     */
+    public static function RunVoid($query, $params)
+    {
+        // prep the statement
+        $stmt = DBHelper::$DBLink->prepare($query);
+        // bind all params
+        for($i = 0; $i < count($params); $i++)
+        {
+            $stmt->bindParam($i + 1, $params[$i]);
+        }
+        // run the thing
+        $stmt->execute();
+    }
+    
+    //=========END Generic query execution=========
+    
+    
+    
+    //=========BEGIN Specific queries==============
+    //
+    //      These functions perform specific tasks
+    //      and return relevant information
+    //
+    
     
     /**
-     * Deletes from a table. 
-     * @param string $table The table to delete from
-     * @param array $where An associative array of WHERE conditions ['column'] => ['value']
-     * @todo make this return an int indicating number of rows deleted / -1 on fail
+     * Inserts values into the table
+     * @param type $table Name of the table
+     * @param type $values Array of values to insert
+     * @return type TODO something to indicate success or fail
      */
-    public static function Delete($table, $where)
+    public static function Insert($table, $values)
     {
-        // get the param values
-        $params = array_values($where);
-        DBHelper::RunStmt("DELETE FROM $table WHERE " . self::Where($where), $params);
+        if(count($values) < 1)
+        {
+            return;
+        }
+        $valuesstring = "(";
+        $valuesstring .= str_repeat("?,", count($values) - 1);
+        $valuesstring .= "?)";
+        self::RunStmt("INSERT into $table VALUES $valuesstring", $values);
     }
 
     /**
@@ -236,14 +272,63 @@ class DBHelper
         $params = array_merge(array_values($assignments), array_values($where));
         DBHelper::RunStmt("UPDATE $table SET " . self::Set($assignments) . " WHERE " . self::Where($where), $params);
     }
-
+    
+    /**
+     * Deletes from a table. 
+     * @param string $table The table to delete from.
+     * @param array $where An associative array of WHERE conditions ['column'] => ['value']
+     * @todo make this return an int indicating number of rows deleted / -1 on fail
+     */
+    public static function Delete($table, $where)
+    {
+        $params = array_values($where);
+        DBHelper::RunStmt("DELETE FROM $table WHERE " . self::Where($where), $params);
+    }
+    
+    /**
+     * SELECTS then COUNTS, returning the number of rows returned.
+     * @param string $table Table to search.
+     * @param string $column Column to count.
+     * @param array $where An associative array of WHERE conditions ['column'] => ['value']
+     * @return int The number of rows matching the WHERE conditions.
+     */
     public static function Count($table, $column, $where)
     {
         $query = "SELECT COUNT($column) FROM $table WHERE " . self::Where($where);
         $params = array_values($where);
         return self::RunScalar($query,$params,0);
     }
+
+    /**
+     * Returns the last inserted ID.
+     * @return int The last inserted ID.
+     */
+    public static function GetLastId()
+    {
+        return DBHelper::$DBLink->lastInsertId();
+    }
     
+    //=========END Specific queries================
+    
+    
+    
+    //=========BEGIN System functions==============
+    //
+    //      These functions are mostly used
+    //      to manage tables and other
+    //      system-wide actions best restricted
+    //      from regular users.
+
+    
+    /**
+     * Checks if a table matching the specifications exists, also caches the result.
+     * The first three params are identical to DBHelper::MakeTable().
+     * @param string $name Name of the table.
+     * @param array $fields Associative array of ['fieldname'=>'fieldtype'], with standard DB types.
+     * @param bool $useID If true, includes an 'id' column used as primary key.
+     * @param bool $useCache If false, does not check for cached results and does not cache this result.
+     * @return int Status of the verification as defined in constants.
+     */
     public static function VerifyTable($name,$fields,$useID,$useCache)
     {
         if($useCache)
@@ -314,6 +399,12 @@ class DBHelper
         
     }
     
+    /**
+     * Creates a table using specified schema.
+     * @param string $name Table name.
+     * @param array $fields Associative array of ['fieldname'=>'fieldtype'], with standard DB types.
+     * @param bool $useID If true, includes an 'id' column used as primary key.
+     */
     public static function MakeTable($name,$fields,$useID)
     {
         $query="CREATE TABLE $name (";
@@ -338,107 +429,9 @@ class DBHelper
         self::RunStmt($query, []);
     }
     
+    //=========END System functions================
+
     
-    //DEPRECATED
-    public static function GetArray($stmt)
-    {
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        $stmt->execute();
-        $data = [];
-        foreach($stmt as $row)
-        {
-            $data[] = $row;
-        }
-        $err = $stmt->errorCode();
-        if($err !== "   ")
-        {
-            //    Utility::debug($query);
-            EngineCore::Write2Debug($err);
-        }
-        return $data;
-    }
-
-    //DEPRECATED
-    public static function GetList($query)
-    {
-        $data = Array();
-        $results = DBHelper::GetArray($query);
-        $c = count($results);
-        for($i = 0; $i < $c; $i++)
-        {
-            $data[] = array_values($results[$i])[0];
-        }
-        return $data;
-    }
-
-    //DEPRECATED
-    public static function GetCount($table, $column, $where = "")
-    {
-        $whereclause = "";
-        if($where !== "")
-        {
-            $whereclause = "WHERE " . $where;
-        }
-        $stmt = DBHelper::$DBLink->prepare("SELECT COUNT(?) FROM ? $whereclause");
-        $stmt->bindParam(1, $column);
-        $stmt->bindParam(2, $table);
-        $count = DBHelper::GetList($stmt)[0];
-        return $count;
-    }
-
-    //DEPRECATED
-    public static function GetOneRow($query)
-    {
-        $data = DBHelper::GetArray($query);
-        return $data[0];
-    }
-
-    /**
-     * Inserts values into the table
-     * @param type $table Name of the table
-     * @param type $values Array of values to insert
-     * @return type TODO something to indicate success or fail
-     */
-    public static function Insert($table, $values)
-    {
-        //for each value to insert
-        //$values=DBHelper::BracketRoll($values);
-        if(count($values) < 1)
-        {
-            return;
-        }
-        $valuesstring = "(";
-        $valuesstring .= str_repeat("?,", count($values) - 1);
-        $valuesstring .= "?)";
-        self::RunStmt("INSERT into $table VALUES $valuesstring", $values);
-    }
-
-    //FIXED
-    public static function ValueExists($table, $column, $value)
-    {
-        $count = self::Count($table, $column, [$column => $value]);
-        return ($count > 0);
-    }
-
-    //FIXED
-    public static function GetLastId()
-    {
-        return DBHelper::$DBLink->lastInsertId();
-    }
 }
 
 DBHelper::$DBLink = new PDO('mysql:host=' . DB_SERVER . ';dbname=' . MAIN_DATABASE, DB_USER, DB_PASS);
-
-/*
- * /**
-         * @todo move the error checking code somewhere more general
-         *
-        
-        $err = $stmt->errorCode();
-        if($err !== "   ")
-        {
-            Utility::debug($err);
-        }
-        
-        //////////////////////////////////////////////
- */
