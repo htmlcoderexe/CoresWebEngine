@@ -12,6 +12,8 @@ class HTTPHeaders
         200 => "OK",
         206 => "Partial Content",
         
+        304 => "Not Modified",
+        
         404 => "Not Found",
         416 => "Requested Range Not Satisfiable"
     ];
