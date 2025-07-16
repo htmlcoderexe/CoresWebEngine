@@ -57,7 +57,7 @@ class JobScheduler
             {
                 $filepath = File::GetFilePath($job['params']);
                 $result =[];
-                $cmd = "tesseract " . $filepath . " stdout ";
+                $cmd = "tesseract " . $filepath . " stdout -l eng+rus+pol+nor+nld";
                 exec($cmd,$result);
                 $text = implode("\r\n",$result);
                 $eid = EVA::GetByProperty("blobid",$job['params'],"picture");
