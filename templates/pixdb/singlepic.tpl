@@ -84,7 +84,7 @@ function addTag(id, button)
 }
 </script>
 <a href="/pixdb/">Back</a>
-<h3>{%w%} x {%h%} </h2>
+<h3>{%w%} x {%h%} </h3>
 <div class="tags_container" id="tags_container">
     {#foreach|{%tags%}|<a class="tag{$tagtype|{:*:}$}" href="/pixdb/tag/{:*:}">{$tagbare|{:*:}$}</a> #}
 </div>
@@ -93,3 +93,7 @@ function addTag(id, button)
 </div>
 <br />
 <img class="singleimage" src="/files/stream/{%blobid%}/{%blobid%}.{%ext%}" />
+<br />
+<h3>Image text:</h3>
+{#ifeq|{%text|%}||<span class="information">Text pending...</span>|#}
+<pre class="imagetext">{%text|%}</pre>

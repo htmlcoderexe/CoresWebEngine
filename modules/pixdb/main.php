@@ -57,6 +57,7 @@ function ModuleAction_pixdb_showpic($params)
     $tpl->tokens['ext'] = $pic->extension;
     $tags = Tag::GetTags($pic->id);
     $tpl->tokens['tags'] = $tags;
+    $tpl->tokens['text'] = $pic->text;
     EngineCore::SetPageContent($tpl->process(true));
 }
 
@@ -105,6 +106,7 @@ function ModuleAction_pixdb_upload($params)
                         Tag::Attach($pic->id, $newtag);
                     }
                 }
+                JobScheduler::Schedule("tesseract",$pic->blob_id);
                 EngineCore::GTFO("/pixdb/");
             }
             else

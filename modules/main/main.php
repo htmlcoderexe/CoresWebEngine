@@ -28,3 +28,8 @@ function ModuleAction_main_tag($params)
 {
     return Module::SPLIT_ROUTE;
 }
+
+function ModuleAction_main_crankjobs($params)
+{
+    JobScheduler::DoJob();
+}
