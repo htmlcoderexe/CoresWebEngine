@@ -198,6 +198,11 @@ class File
             HTTPHeaders::EnableBytes();
             HTTPHeaders::Range($size);
             HTTPHeaders::Length($size);
+            if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE']))
+            {
+                HTTPHeader::Status(304);
+                die();
+            }
             fpassthru($file);
         }
         else
