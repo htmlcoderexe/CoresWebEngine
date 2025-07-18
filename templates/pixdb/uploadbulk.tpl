@@ -17,17 +17,18 @@ function checkcount(el)
 }
 
 
-function toggletagger(el)
+function toggle(id, el)
 {
-    document.getElementById('tagger').style.display = el.checked ? "inherit" : "none";
+    document.getElementById(id).style.display = el.checked ? "inherit" : "none";
 }
 </script>
 
 <h3>Select up to {%max%} images to upload:</h3>
 <span class="user_error">{#foreach|{#errors|error#}|{:*:}<br />#}</span>
 <form action="/pixdb/upload/" method="POST" enctype="multipart/form-data">
-    <label for="createalbum">Create an album</label><input type="checkbox" name="createalbum" id="createalbum" value="true" /><br />
-    <label for="applytags">Apply tags to the images</label><input type="checkbox" name="applytags" id="applytags" value="true" onchange="toggletagger(this);" /><br />
+    <label for="createalbum">Create an album</label><input type="checkbox" name="createalbum" id="createalbum" value="true" onchange="toggle('albumopts',this);" /><br />
+    <div id="albumopts" style="display:none;"><label for="albumtitle">Album title:</label><input name="albumtitle" /></div>
+    <label for="applytags">Apply tags to the images</label><input type="checkbox" name="applytags" id="applytags" value="true" onchange="toggle('tagger',this);" /><br />
     
     <div id="tagger" style="display:none;">
         {{tagpicker|inputname=new_tags}}

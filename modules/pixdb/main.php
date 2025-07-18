@@ -1,6 +1,7 @@
 <?php
 
 require_once("Picture.php");
+require_once("PictureSet.php");
 
 function ModuleFunction_pixbd_list_thumbnail($idlist, $extratext="")
 {
@@ -61,6 +62,18 @@ function ModuleAction_pixdb_showpic($params)
     EngineCore::SetPageContent($tpl->process(true));
 }
 
+function ModuleAction_pixdb_viewalbum($params)
+{
+    $id=intval(array_shift($params));
+    $a = PictureSet::Load($id);
+    if(!$a)
+    {
+        die();
+    }
+    $pic_ids = $a->pictures;
+    ModuleFunction_pixbd_list_thumbnail($pic_ids, "{$a->title}");
+}
+
 
 
 function ModuleAction_pixdb_uploadsingle($params)
@@ -94,6 +107,7 @@ function ModuleAction_pixdb_upload($params)
     }
     else
     {
+        $pic_ids = [];
         for($i=0;$i<count($_FILES['picupload']['name']);$i++)
         {
             $pic=Picture::FromUpload($_FILES['picupload'], $i);
@@ -107,15 +121,33 @@ function ModuleAction_pixdb_upload($params)
                     }
                 }
                 JobScheduler::Schedule("tesseract",$pic->blob_id);
-                EngineCore::GTFO("/pixdb/");
+                $pic_ids[]= $pic->id;
             }
             else
             {
                 $err = Picture::$last_error;
                 EngineCore::WriteUserError("Failed to upload: $err", "error");
-                EngineCore::GTFO("/pixdb/");
             }
         }
+        if(!$pic_ids) // epic fail
+        {
+            EngineCore::GTFO("/pixdb/");
+            die();
+        }
+        if(EngineCore::POST("createalbum",'')=="true")
+        {
+            $a = PictureSet::Create(EngineCore::POST("albumtitle",''), EngineCore::POST("albumdescription",''), $pic_ids);
+            if($a)
+            {
+                EngineCore::GTFO("/pixdb/viewalbum/".$a->id);
+            }
+            else
+            {
+                EngineCore::GTFO("/pixdb/");
+            }
+            die();
+        }
+        EngineCore::GTFO("/pixdb/");
         die();
     }
 }
