@@ -453,7 +453,7 @@ class EVA
                 $where['type'] = $type;
                 $params[] = $type;
             }
-            $q= DBHelper::Select("eva_objects", "id", $where);
+            $q= DBHelper::Select("eva_objects", ["id"], $where);
             return (bool)DBHelper::RunList($q, $params);
         }
         
