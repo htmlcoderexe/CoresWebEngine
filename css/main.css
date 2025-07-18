@@ -321,7 +321,7 @@ label.formlabel
 
 a.tag::before
 {
-    content: "\00FE0F🏷";
+    content: "🏷\00FE0F";
 }
 
 a.tagsubject::before
@@ -347,7 +347,7 @@ a.tagwebsite::before
 
 a.tagtype::before
 {
-    content: "\00FE0F⚙";
+    content: "⚙\00FE0F";
 }
 
 a.tagmention::before
