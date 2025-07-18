@@ -31,5 +31,5 @@ function ModuleAction_main_tag($params)
 
 function ModuleAction_main_crankjobs($params)
 {
-    JobScheduler::DoJob();
+    JobScheduler::CrankJobs();
 }
