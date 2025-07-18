@@ -381,8 +381,6 @@ a.tagusername::before
 
 .thumbnail
 {
-    width: 256px;
-    height: 256px;
     border: solid #00C000 6px;
     display: flex;
     justify-content: center;
@@ -391,8 +389,9 @@ a.tagusername::before
 
 .thumbnail img
 {
-    margin: auto;
-    display: block;
+    width: 20vw;
+    height: 20vw;
+    object-fit: contain;
     padding: 6px;
 }
 
