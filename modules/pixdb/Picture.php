@@ -98,7 +98,7 @@ class Picture
         $ext = pathinfo($filename)['extension'];
         $fname = pathinfo($filename)['filename'];
         // this will keep "to be attempted" types for later
-        $types = ['png','gif','jpeg'];
+        $types = ['png','gif','jpeg',"webp"];
         // init image var
         $image = null;
         // try to create image based on upload extension first
@@ -115,6 +115,12 @@ class Picture
             {
                 $image = @imagecreatefromgif($tempname);
                 $types = array_diff($types, ['gif']);
+                break;
+            }
+            case "webp":
+            {
+                $image = @imagecreatefromwebp($tempname);
+                $types = array_diff($types, ['webp']);
                 break;
             }
             case "jpg":
