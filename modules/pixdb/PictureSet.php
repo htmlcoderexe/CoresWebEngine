@@ -66,6 +66,10 @@ class PictureSet
             {
                 $eva->Adopt($pictureID);
             }
+            else
+            {
+                Logger::log("PictureSet::Create: Skipping invalid PictureID [$pictureID].",Logger::TYPE_WARNING,"PictureSet: Invalid PictureID");
+            }
         }
         $eva->Save();
         return PictureSet::Load($eva->id);

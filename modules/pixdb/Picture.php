@@ -33,7 +33,7 @@ class Picture
     public function __construct($id)
     {
         $eva = new EVA($id);
-        $this->id = $eva->id;
+        $this->id = intval($eva->id);
         if($this->id == 0)
         {
             return;

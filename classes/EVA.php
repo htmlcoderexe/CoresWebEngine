@@ -344,11 +344,15 @@ class EVA
             // if the reverse relationship already exists, fail
             if(in_array($child, $grandparents))
             {
+                
+                Logger::log("EVA::AddRelation: [$child] is a parent of [$parent]",Logger::TYPE_WARNING,"EVA Object Parenting");
+           
                 return false;
             }
             // return true, but do nothing if the relationship already exists
             if(in_array($parent, $parents))
-            {
+            {   Logger::log("$child is already a child of $parent",Logger::TYPE_WARNING,"EVA Object Parenting");
+           
                 return true;
             }
             // load and verify both objects
@@ -357,6 +361,8 @@ class EVA
             // if either or both are invalid, fail
             if($eva_child->id < 1 || $eva_parent->id < 1)
             {
+                Logger::log("Either [$child] ({$eva_child->id}) or [$parent] ({$eva_child->id}) invalid.",Logger::TYPE_WARNING,"EVA Object Parenting");
+           
                 return false;
             }
             // all good, write to db
