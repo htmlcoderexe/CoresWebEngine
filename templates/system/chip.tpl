@@ -42,7 +42,71 @@
                 PlaySong(params);
                 break;
             }
+            case "volup":
+            {
+                VolumeUp(params);
+                break;
+            }
+            case "voldown":
+            {
+                VolumeDown(params);
+                break;
+            }
+            case "volset":
+            {
+                VolumeSet(params);
+                break;
+            }
+            case "pause":
+            {
+                PauseSong(params);
+                break;
+            }
+            case "play":
+            {
+                Play(params);
+                break;
+            }
         }
+    }
+    
+    function PauseSong(params)
+    {
+        var player = document.getElementById('chipsound');
+        if(!player)
+            return;
+        player.pause();
+    }
+    function Play(params)
+    {
+        var player = document.getElementById('chipsound');
+        if(!player)
+            return;
+        player.play();
+    }
+    
+    function VolumeUp(params)
+    {
+        var player = document.getElementById('chipsound');
+        if(!player)
+            return;
+        player.volume+=0.05;
+        
+    }
+    
+    function VolumeDown(params)
+    {
+        var player = document.getElementById('chipsound');
+        if(!player)
+            return;
+        player.volume-=0.05;
+    }
+    function VolumeSet(params)
+    {
+        var player = document.getElementById('chipsound');
+        if(!player)
+            return;
+        player.volume=params;
     }
     
     function PlaySong(params)
@@ -61,6 +125,7 @@
         player.fastSeek(songPos);
         player.play();
     }
+    VolumeSet(0.5);
     setInterval(CheckForCommands, 1000);
 </script>
     <audio id="chipsound">

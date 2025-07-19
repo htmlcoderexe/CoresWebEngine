@@ -72,3 +72,15 @@ function ModuleAction_music_toscreen($params)
         die();
     }
 }
+
+function ModuleAction_music_pcommand($params)
+{
+    $command = array_shift($params);
+    $safelist = ['volup','voldown','play','pause'];
+    if(in_array($command,$safelist))
+    {
+        Chip::SendCommand("screen",$command,"");
+    }
+    EngineCore::FromWhenceYouCame();
+    die();
+}
