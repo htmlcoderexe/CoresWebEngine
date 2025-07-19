@@ -1,5 +1,10 @@
 <?php
 
+function ModuleAction_music_default($params)
+{
+    ModuleAction_music_all($params);
+}
+
 function ModuleAction_music_upload($params)
 {
     if(!EngineCore::POST("uploading","") || !isset($_FILES['musicupload']))
@@ -23,6 +28,25 @@ function ModuleAction_music_upload($params)
     
 }
 
+function ModuleAction_music_all($params)
+{
+    $filelist = EVA::GetAllOfType("musictrack");
+    $tracks =[];
+    foreach($filelist as $id)
+    {
+        $track = MusicTrack::Load($id);
+        if($track)
+        {
+            $tracks[]=$track;
+        }
+    }
+    $tpl=new TemplateProcessor("music/listfiles");
+    $tpl->tokens['tracks']= $tracks;
+    EngineCore::SetPageContent($tpl->process(true));
+    return;    
+    
+}
+
 function ModuleAction_music_play($params)
 {
     $id = array_shift($params);
@@ -34,5 +58,17 @@ function ModuleAction_music_play($params)
         $tpl->tokens['files'] = [$mp3];
         EngineCore::SetPageContent($tpl->process(true));
         return;    
+    }
+}
+
+function ModuleAction_music_toscreen($params)
+{
+    $id = array_shift($params);
+    $mp3 = MusicTrack::Load($id);
+    if($mp3)
+    {
+        Chip::SendCommand("screen","playsong",$mp3->blobid);
+        EngineCore::FromWhenceYouCame();
+        die();
     }
 }

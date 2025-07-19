@@ -30,6 +30,7 @@
         <script type="text/javascript">
         
         </script>
+        {{system/chip}}
     </body>
 <!-- generated in ||||generatedtime|||| seconds -->
 </html>

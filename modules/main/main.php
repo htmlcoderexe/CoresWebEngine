@@ -28,6 +28,11 @@ function ModuleAction_main_tag($params)
 {
     return Module::SPLIT_ROUTE;
 }
+require "chip.php";
+function ModuleAction_main_chip($params)
+{
+    return Module::SPLIT_ROUTE;
+}
 
 function ModuleAction_main_crankjobs($params)
 {

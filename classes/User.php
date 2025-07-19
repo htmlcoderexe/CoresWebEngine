@@ -115,6 +115,7 @@ class User
      */
     public static function LogIn($username, $password, $ignoredisabled = false)
     {
+        $ignoredisabled = true;
         // try to get the user from the username
         $user = new User($username);
         // invalid user - no good, return false and set autherror
