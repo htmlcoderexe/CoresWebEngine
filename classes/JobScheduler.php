@@ -39,7 +39,7 @@ class JobScheduler
         {
             if(!self::DoJob())
             {
-                continue;
+                break;
             }
         }
     }

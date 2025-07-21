@@ -36,8 +36,23 @@ function ModuleAction_main_chip($params)
 
 function ModuleAction_main_crankjobs($params)
 {
+    set_time_limit(0);
+    $time_start = hrtime(true);
     echo "<pre>";
     JobScheduler::CrankJobs();
-    MusicTrack::Ingest("mp3");
-    echo "</pre>";
+    flush();
+    $time_max = $time_start + 60000000000;
+    while(hrtime(true)<$time_max)
+    {
+        $idling = !MusicTrack::Ingest("mp3");
+        flush();
+        if($idling)
+        {
+            break;
+        }
+    }
+    
+    $time_final = hrtime(true);
+    $diff = ($time_final-$time_start)/1000000;
+    echo "Completed in $diff milliseconds.</pre>";
 }

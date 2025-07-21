@@ -143,7 +143,7 @@ class MusicTrack
         if(!$filename)
         {
             echo "no new files to ingest, quitting<br />";
-            return;
+            return false;
         }
         $filepath = File::GetIngestedFilePath($dir, $filename);
         echo "found &lt;$filename&gt;<br />";
@@ -152,7 +152,7 @@ class MusicTrack
         {
             echo "very bad mp3<br />";
             File::RejectFile($dir, $filename);
-            return;
+            return true;
         }
         $file = File::IngestFile($dir, $filename);
         $tags = self::GetInfo(File::GetFilePath($file->blobid));
@@ -166,7 +166,7 @@ class MusicTrack
         $eva->AddAttribute("blobid", $file->blobid);
         $eva->AddAttribute("media.duration", $duration);
         $eva->Save();
-        echo "&lt;$filename&gt; added as {$eva->id}.";
-        return;
+        echo "&lt;$filename&gt; added as {$eva->id}.<br />";
+        return true;
     }
 }
