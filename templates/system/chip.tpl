@@ -125,8 +125,11 @@
         player.fastSeek(songPos);
         player.play();
     }
-    VolumeSet(0.5);
-    setInterval(CheckForCommands, 1000);
 </script>
     <audio id="chipsound">
     </audio>
+<script type="text/javascript">
+    
+    VolumeSet(0.5);
+    setInterval(CheckForCommands, 1000);
+    </script>

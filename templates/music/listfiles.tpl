@@ -1,5 +1,7 @@
 <a href="/music/pcommand/play">▶</a> | <a href="/music/pcommand/pause">⏸</a> | <a href="/music/pcommand/voldown">🔉</a> | <a href="/music/pcommand/volup">🔊</a> 
 
+<br />
+<a href="/music/upload">Upload</a><br />
 {#foreach|{%tracks%}|
 <div class="musictrack">
 <span><a href="/music/play/{:id:}">{#ifeq|{:artist:}|||{:artist:} - #}{:title:}  - {:duration:}</a></span><br />
