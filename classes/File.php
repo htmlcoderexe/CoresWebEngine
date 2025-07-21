@@ -115,7 +115,7 @@ class File
         rename($filepath, self::GetIngestedFilePath($dir, self::INGEST_FAIL_DIR).DIRECTORY_SEPARATOR.$filename);
     }
     
-    public static function SelectNextFile($dir, $ignoredupehash = false)
+    public static function FetchNextFile($dir)
     {
         $ingest_path = FILESTORE_PATH.DIRECTORY_SEPARATOR.self::INGEST_BASE_DIR.DIRECTORY_SEPARATOR.$dir;
         if(!is_dir($ingest_path))
@@ -133,22 +133,38 @@ class File
             $filename = $entry;
             break;
         }
-        if(!$filename)
+        return $filename;
+    }
+    
+    public static function SelectNextFile($dir, $ignoredupehash = false)
+    {
+        // try getting a filename
+        while($filename=self::FetchNextFile($dir))
         {
-            return "";
+            $filepath = self::GetIngestedFilePath($dir, $filename);
+            // return it if not dupe checking
+            if($ignoredupehash)
+            {
+                return $filename;
+            }
+            // else check for dupes
+            // hash the file
+            $hash = self::DoHash($filepath);
+            // get the size to reduce chances of collisions between actually different files
+            $fsize = filesize($filepath);
+            // if dupe found, reject the file and get next filename
+            if(self::FindDupe($hash,$fsize))
+            {
+                self::RejectFile($dir, $filename);
+                continue;
+            }
+            // if no duplicates, return this filename
+            else
+            {
+                return $filename;
+            }
         }
-        $filepath = self::GetIngestedFilePath($dir, $filename);
-        if($ignoredupehash)
-        {
-            return $filename;
-        }
-        $hash = self::DoHash($filepath);
-        $fsize = filesize($filepath);
-        if(self::FindDupe($hash,$fsize))
-        {
-            self::RejectFile($dir, $filename);
-            return "";
-        }
+        // will return "" normally
         return $filename;
     }
     
