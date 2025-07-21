@@ -2,6 +2,7 @@
 define("FILESTORE_PATH","filestore");
 
         Module::DemandProperty("filename","Filename","Name of a file");
+        Module::DemandProperty("hash", "Hash", "Hash value associated with the object's data.");
         Module::DemandProperty("mimetype","MIME Type","Indicates the media type of associated content.");
         Module::DemandProperty("file.extension","File Extension","The last part of a file name used by some operating systems to quickly determine the type of the file without examining its contents.");
         Module::DemandProperty("filesize","File size");
@@ -19,6 +20,7 @@ class File
     public $prev;
     public $type;
     public $filesize;
+    public $hash;
     private $evaobj;
     
     public static $last_error;
@@ -35,8 +37,11 @@ class File
     
     public const BUFFER_SIZE = 8192;
     public const BLOBID_LENGTH = 16;
+    public const HASH_ALGO = "sha256";
+    public const INGEST_BASE_DIR = "ingest";
+    public const INGEST_FAIL_DIR = ".failed";
     
-    public function __construct($fileid)
+    public function __construct($fileid, $nohash = false)
     {
         $id = (int) $fileid;
         $f = new EVA($id);
@@ -48,6 +53,15 @@ class File
         $this->blobid=$f->attributes['blobid'];
         $this->fullname=$this->fname.".".$this->filext;
         $this->evaobj = $f;
+        if(!isset($f->attributes['hash']) && !$nohash)
+        {
+            $this->UpdateHash();
+        }
+        else
+        {
+            $this->hash = $f->attributes['hash'] ?? "";
+        }
+        
     }
     
     public function GetFileHandle($mode = "w+")
@@ -56,11 +70,104 @@ class File
         return $handle;
     }
     
-    public function UpdateSize($size)
+    public function UpdateSize()
     {
-        $this->filesize = $size;
-        $this->evaobj->SetSingleAttribute("filesize", $size);
+        $this->filesize = filesize(File::GetFilePath($this->blobid));
+        $this->evaobj->SetSingleAttribute("filesize", $this->filesize);
         $this->evaobj->Save();
+    }
+    
+    public function UpdateHash()
+    {
+        $this->hash = File::DoHash(File::GetFilePath($this->blobid));
+        $this->evaobj->SetSingleAttribute("hash", $this->hash);
+        $this->evaobj->Save();
+    }
+    
+    public static function DoHash($filename,$algo=self::HASH_ALGO)
+    {
+        if(!file_exists($filename))
+        {
+            return $algo.":";
+        }
+        return $algo.":".hash_file($algo,$filename);
+    }
+    
+    public static function GetIngestedFilePath($dir, $filename)
+    {
+        return FILESTORE_PATH.DIRECTORY_SEPARATOR.self::INGEST_BASE_DIR.DIRECTORY_SEPARATOR.$dir. DIRECTORY_SEPARATOR.$filename;
+    }
+    
+    public static function IngestFile($dir,$filename)
+    {
+        $filepath = self::GetIngestedFilePath($dir, $filename);
+        $file = File::New($filename);
+        $targetpath = File::GetFilePath($file->blobid);
+        rename($filepath, $targetpath);
+        $file->UpdateHash();
+        $file->UpdateSize();
+        return $file;
+    }
+    
+    public static function RejectFile($dir, $filename)
+    {
+        $filepath = self::GetIngestedFilePath($dir, $filename);
+        rename($filepath, self::GetIngestedFilePath($dir, self::INGEST_FAIL_DIR).DIRECTORY_SEPARATOR.$filename);
+    }
+    
+    public static function SelectNextFile($dir, $ignoredupehash = false)
+    {
+        $ingest_path = FILESTORE_PATH.DIRECTORY_SEPARATOR.self::INGEST_BASE_DIR.DIRECTORY_SEPARATOR.$dir;
+        if(!is_dir($ingest_path))
+        {
+            return "";
+        }
+        $dirhandle = opendir($ingest_path);
+        $filename ="";
+        while(false !== ($entry = readdir($dirhandle)))
+        {
+            if(in_array($entry,['.','..',self::INGEST_FAIL_DIR]))
+            {
+                continue;
+            }
+            $filename = $entry;
+            break;
+        }
+        if(!$filename)
+        {
+            return "";
+        }
+        $filepath = self::GetIngestedFilePath($dir, $filename);
+        if($ignoredupehash)
+        {
+            return $filename;
+        }
+        $hash = self::DoHash($filepath);
+        $fsize = filesize($filepath);
+        if(self::FindDupe($hash,$fsize))
+        {
+            self::RejectFile($dir, $filename);
+            return "";
+        }
+        return $filename;
+    }
+    
+    public static function FindDupe($hash, $size)
+    {
+        $files = EVA::GetByProperty("hash", $hash, "file");
+        if($files)
+        {
+            foreach($files as $file)
+            {
+                $fsize=EVA::LoadPropFromDB($file,"filesize")[0];
+                if(intval($fsize) == $size)
+                {
+                    return EVA::LoadPropFromDB($file, "blobid");
+                }
+                
+            }
+        }
+        return "";
     }
     
     public static function GetByBlobID($blobid)
@@ -127,7 +234,7 @@ class File
         $fileobj->AddAttribute("blobid",$blobname);
         $fileobj->AddAttribute("timestamp",time());
         $fileobj->Save();
-        return new File($fileobj->id);
+        return new File($fileobj->id,true);
         
     }
     

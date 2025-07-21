@@ -33,11 +33,14 @@ class JobScheduler
         {
             EngineCore::RawModeOn();
             echo "too many jobs running...";
-            die();
+            return;
         }
         for($i = 0;$i<$jobs_to_do;$i++)
         {
-            self::DoJob();
+            if(!self::DoJob())
+            {
+                continue;
+            }
         }
     }
     
@@ -48,7 +51,8 @@ class JobScheduler
         if(!$job)
         {
             EngineCore::RawModeOn();
-            die("no jobs");
+            echo"no jobs<br />";
+            return false;
         }
         DBHelper::Update("scheduled_jobs",['state'=>1],['id'=>$job['id']]);
         switch($job['jobtype'])
@@ -68,5 +72,6 @@ class JobScheduler
                 break;
             }
         }
+        return true;
     }
 }

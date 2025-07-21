@@ -38,9 +38,9 @@ class MusicTrack
         $eva = new EVA($id);
         $result = new MusicTrack();
         $result->eva = $eva;
-        $result->title = $eva->attributes['title'];
-        $result->artist = $eva->attributes['artist'];
-        $result->album = $eva->attributes['album'];
+        $result->title = $eva->attributes['title'] ?? '';
+        $result->artist = $eva->attributes['artist'] ?? '';
+        $result->album = $eva->attributes['album'] ?? '';
         $result->duration = $eva->attributes['media.duration'];
         $result->blobid = $eva->attributes['blobid'];
         $result->id = $id;
@@ -66,12 +66,12 @@ class MusicTrack
     
     public static function GetInfo($filename)
     {
+        $cmd = "ffprobe -loglevel error -show_entries format_tags=title,artist,album -of default=noprint_wrappers=1:nokey=0 ";
+        $cmd.= escapeshellarg($filename);
         if(!file_exists($filename))
         {
             return [];
         }
-        $cmd = "ffprobe -loglevel error -show_entries format_tags=title,artist,album -of default=noprint_wrappers=1:nokey=0 ";
-        $cmd.= escapeshellarg($filename);
         $output = [];
         $info = [
             'title'=>'',
@@ -110,13 +110,9 @@ class MusicTrack
                     }
                 }
             }
-            if(!$any_tags)
-            {
-                return [];
-            }
             return $info;
         }
-        return [];
+        return $info;
     }
     
     public static function CreateFromFile($blobid)
@@ -138,5 +134,39 @@ class MusicTrack
         $eva->AddAttribute("media.duration", $duration);
         $eva->Save();
         return self::Load($eva->id);
+    }
+    
+    public static function Ingest($dir)
+    {
+        echo "ingesting from $dir...<br />";
+        $filename = File::SelectNextFile($dir);
+        if(!$filename)
+        {
+            echo "no new files to ingest, quitting<br />";
+            return;
+        }
+        $filepath = File::GetIngestedFilePath($dir, $filename);
+        echo "found &lt;$filename&gt;<br />";
+        $duration = self::FindDuration($filepath);
+        if(!$duration)
+        {
+            echo "very bad mp3<br />";
+            File::RejectFile($dir, $filename);
+            return;
+        }
+        $file = File::IngestFile($dir, $filename);
+        $tags = self::GetInfo(File::GetFilePath($file->blobid));
+        echo "getting tags from &lt;{$file->blobid}&gt;...<br />";
+        
+        if(!$tags['title'])
+        {
+            $tags['title'] = $filename;
+        }
+        $eva = EVA::CreateObject("musictrack", EVA::OWNER_CURRENT,$tags);
+        $eva->AddAttribute("blobid", $file->blobid);
+        $eva->AddAttribute("media.duration", $duration);
+        $eva->Save();
+        echo "&lt;$filename&gt; added as {$eva->id}.";
+        return;
     }
 }

@@ -36,5 +36,8 @@ function ModuleAction_main_chip($params)
 
 function ModuleAction_main_crankjobs($params)
 {
+    echo "<pre>";
     JobScheduler::CrankJobs();
+    MusicTrack::Ingest("mp3");
+    echo "</pre>";
 }
