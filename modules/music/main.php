@@ -56,9 +56,31 @@ function ModuleAction_music_play($params)
         
         $tpl=new TemplateProcessor("music/play");
         $tpl->tokens['files'] = [$mp3];
+        $tpl->tokens['id'] = $id;
         EngineCore::SetPageContent($tpl->process(true));
         return;    
     }
+}
+function ModuleAction_music_getsong($params)
+{
+    $id = array_shift($params);
+    $mp3 = MusicTrack::Load($id);
+    $song =[];
+    if($mp3)
+    {
+        $song = [
+            "title" => $mp3->title,
+            "file" => $mp3->blobid,
+            "length" => $mp3->duration,
+            "artist" => $mp3->artist,
+            "album" => $mp3->artist,
+            "id" => $mp3->id
+        ];
+    }
+    EngineCore::RawModeOn();
+    HTTPHeaders::ContentType("application/json");
+    echo json_encode($song);
+    die;    
 }
 
 function ModuleAction_music_toscreen($params)

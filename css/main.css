@@ -9,6 +9,28 @@
   unicode-range: U+0-FF, U+131, U+152-153, U+2C6, U+2DA, U+2DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
 }
 
+@font-face {
+  font-family: "HD44780 5x8";
+  font-style: normal;
+  font-weight: 700;
+  src: local("HD44780 5x8"), local("HD44780 5x8") format("woff2");
+  /**/
+  src: local("HD44780 5x8"), local("HD44780 5x8"), url("/assets-site/hd44780-5x8.otf.woff2") format("woff2");
+  /**/
+  unicode-range: U+0-FF, U+131, U+152-153, U+2C6, U+2DA, U+2DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+
+@font-face {
+  font-family: "Curved Seven Segment";
+  font-style: normal;
+  font-weight: 700;
+  src: local("Curved Seven Segment"), local("Curved Seven Segment") format("woff2");
+  /**/
+  src: local("Curved Seven Segment"), local("Curved Seven Segment"), url("/assets-site/curved-seven-segment.otf.woff2") format("woff2");
+  /**/
+  unicode-range: U+0-FF, U+131, U+152-153, U+2C6, U+2DA, U+2DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+
 *, *::before, *::after
 {
     box-sizing: border-box;
