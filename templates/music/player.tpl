@@ -1,4 +1,63 @@
 <script type="text/javascript">
+    
+    class CoresPlayer
+    {
+        id = "";
+        playlist = [];
+        current_track = 0;
+        library = [];
+        #current_time_indicator;
+        #duration_indicator;
+        #seekbar;
+        #volume_backlight;
+        #volume_thumb;
+        #playpausebutton;
+        #audio;
+        #song_display;
+        #title_animation_counter = 0;
+        
+        constructor(id)
+        {
+            // create the player elements
+            // attach to the indicated div
+            var root = document.getElementById(id);
+            root.classList.add("coresplayer");
+            // time display
+            var timescreen = document.createElement("div");
+            timescreen.classList.add("playertime");
+            this.#current_time_indicator = document.createElement("span");
+            this.#duration_indicator = document.createElement("span");
+            this.#current_time_indicator.append("--:--");
+            this.#duration_indicator.append("--:--");
+            timescreen.appendChild(this.#current_time_indicator);
+            timescreen.appendChild(document.createElement("br"));
+            timescreen.appendChild(this.#duration_indicator);
+            root.appendChild(timescreen);
+            // seek bar
+            var seek_container = document.createElement("div");
+            seek_container.classList.add("coresplayer_scrubber_track");
+            seek_container.addEventListener("mousemove",(e)=>{
+                this.#processScrubber(e);
+            });
+            this.#seekbar = document.createElement("span");
+            this.#seekbar.classList.add("coresplayer_scrubber_fill");
+            this.#seekbar.innerHTML = "&nbsp;";
+            seek_container.appendChild(this.#seekbar);
+            root.append(seek_container);
+            // song display
+            this.#song_display = document.createElement("div");
+            this.#song_display.classList.add("coresplayer_song_title");
+            root.append(this.#song_display);
+            // buttons
+            
+            
+            // volume control
+            
+            
+            
+        }
+    }
+    
     playlist_offset = 0;
     playlist = [];
     
@@ -75,33 +134,6 @@
         }
     }
     
-    function PlayerStop()
-    {
-        player.pause();
-        player.fastSeek(0);
-    }
-    
-    function PlayerPause()
-    {
-        player.pause();
-    }
-    function PlayerPlay()
-    {
-        player.play();
-    }
-    
-    function PlayerTogglePlay()
-    {
-        if(player.paused)
-        {
-            player.play();
-        }
-        else
-        {
-            player.pause();
-        }
-    }
-    
     function VolumeUp(params)
     {
         var player = document.getElementById('chipsound');
@@ -142,6 +174,36 @@
         player.fastSeek(songPos);
         player.play();
     }
+    
+    
+    
+    
+    function PlayerStop()
+    {
+        player.pause();
+        player.fastSeek(0);
+    }
+    
+    function PlayerPause()
+    {
+        player.pause();
+    }
+    function PlayerPlay()
+    {
+        player.play();
+    }
+    
+    function PlayerTogglePlay()
+    {
+        if(player.paused)
+        {
+            player.play();
+        }
+        else
+        {
+            player.pause();
+        }
+    }
     function PlayerSeek(e)
     {
         if(e.buttons !=1)
@@ -152,6 +214,27 @@
         var percent = e.offsetX / bar.clientWidth;
         player.fastSeek(player.duration * percent);
     }
+    
+    function PlayerNext()
+    {
+        playlist_offset++;
+        if(playlist_offset >= playlist.length)
+        {
+            playlist_offset = 0;
+        }
+        PlayerSetSong(playlist_offset);
+    }
+    function PlayerPrevious()
+    {
+        playlist_offset--;
+        if(playlist_offset < 0)
+        {
+            playlist_offset = playlist.length-1;
+        }
+        PlayerSetSong(playlist_offset);
+    }
+    
+    
     function PlayerVolume(e)
     {
         if(e.buttons !=1)
@@ -171,6 +254,10 @@
         var percent = read / bar.clientHeight;
         player.volume = 1-percent;
     }
+    
+    
+    
+    
     
     function PlayerUpdateTime()
     {
@@ -228,25 +315,6 @@
         });
         
         PlayerUpdateVolume();
-    }
-    
-    function PlayerNext()
-    {
-        playlist_offset++;
-        if(playlist_offset >= playlist.length)
-        {
-            playlist_offset = 0;
-        }
-        PlayerSetSong(playlist_offset);
-    }
-    function PlayerPrevious()
-    {
-        playlist_offset--;
-        if(playlist_offset < 0)
-        {
-            playlist_offset = playlist.length-1;
-        }
-        PlayerSetSong(playlist_offset);
     }
     
     function AnimateSongTitle()
@@ -526,7 +594,27 @@
         
     }
 </style>
+<template id="cores_music_player">
+    
+    <div class="playertime"><span class="cores_player_current_time">--:--</span><br /><span class="cores_player_total_time">--:--</span></div>
+    <div class="cores_player_scrubber"><span class="cores_player_scrubberpos">&nbsp;</span></div>
+    <div class="cores_player_current_song">Unknown Artist</div>
+    <div class="cores_player_playercontrols"><button>&#x23f9;&#xfe0e;</button><button>&#x23ee;&#xfe0e;</button><button class="cores_player_playpausebutton">&#x23ef;&#xfe0e;</button><button>&#x23ed;&#xfe0e;</button></div>
+    <div class="cores_player_volumecontrol"><span class="cores_player_volumeticks">11 -&nbsp;&nbsp;- 11<br />
+    10 -&nbsp;&nbsp;- 10<br />
+    &nbsp;9 -&nbsp;&nbsp;- 9<br />
+    &nbsp;8 -&nbsp;&nbsp;- 8<br />
+    &nbsp;7 -&nbsp;&nbsp;- 7<br />
+    &nbsp;6 -&nbsp;&nbsp;- 6<br />
+    &nbsp;5 -&nbsp;&nbsp;- 5<br />
+    &nbsp;4 -&nbsp;&nbsp;- 4<br />
+    &nbsp;3 -&nbsp;&nbsp;- 3<br />
+    &nbsp;2 -&nbsp;&nbsp;- 2<br />
+    &nbsp;1 -&nbsp;&nbsp;- 1<br />
+    &nbsp;0 -&nbsp;&nbsp;- 0<br />    
+        </span><span class="cores_player_volumetrack">&nbsp;</span><span class="cores_player_volumebg">&nbsp;</span><span class="cores_player_volumethumb">&nbsp;</span></div>
 
+</template>
 <div id="musicplayer">
     <div class="playertime"><span id="player_current_time">--:--</span><br /><span id="player_total_time">--:--</span></div>
     <div class="scrubber" onmousemove="PlayerSeek(event);"><span id="scrubberpos">&nbsp;</span></div>
