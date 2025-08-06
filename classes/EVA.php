@@ -510,6 +510,45 @@ class EVA
 	}
         
         /**
+         * Gets an array of all objects of a specific type containing
+         * the value of that property per objects. Each item looks like this:
+         * {
+         *      ['object_id'] => 10,
+         *      ['value'] => 'some value'
+         * }
+         * @param string $property name of the property to aggregate
+         * @param string $type object type
+         * @return an array of arrays each with 'object_id' and 'value'
+         */
+	public static function GetAsTable($propertylist,$type)
+	{
+            $proplist = "?". str_repeat(",?", count($propertylist)-1);
+            $query ="
+		SELECT DISTINCT object_id,eva_properties.name,value FROM eva_property_values
+		INNER JOIN eva_objects
+		ON eva_objects.id = object_id
+		INNER JOIN eva_properties 
+		ON eva_properties.id =property_id
+		WHERE eva_objects.type=? and eva_properties.name IN ($proplist)
+		
+		";
+            $args=$propertylist;
+            array_unshift($args,$type);
+            $result = DBHelper::RunTable($query,$args);
+            $output = [];
+            foreach($result as $entry)
+            {
+                if(!isset($output[$entry['object_id']]))
+                {
+                    $output[$entry['object_id']] = array_fill_keys($propertylist,'');
+                }
+                $output[$entry['object_id']][$entry['name']] = $entry['value'];
+            }
+            
+            return $output;
+	}
+        
+        /**
          * Gets a list of IDs of all objects of a given type
          * @param string Object type to return $type
          * @return array of object IDs

@@ -61,6 +61,27 @@ function ModuleAction_music_play($params)
         return;    
     }
 }
+
+function ModuleAction_music_getlibrary($params)
+{
+    $list = EVA::GetAsTable(["title","artist","blobid","album","media.duration"], "musictrack");
+    $output = [];
+    foreach($list as $id=>$entry)
+    {
+        $song = [];
+        $song['id'] = $id;
+        $song['title'] = $entry['title'];
+        $song['length'] = $entry['media.duration'];
+        $song['artist'] = $entry['artist'];
+        $song['album'] = $entry['album'];
+        $song['file'] = $entry['blobid'];
+        $output[]=$song;
+    }
+    EngineCore::RawModeOn();
+    HTTPHeaders::ContentType("application/json");
+    echo json_encode($output);
+    die;    
+}
 function ModuleAction_music_getsong($params)
 {
     $id = array_shift($params);

@@ -2,62 +2,358 @@
     
     class CoresPlayer
     {
+        
+        static player_template_id = "cores_music_player";
+        static libraryUrl = "/music/getlibrary";
+        
         id = "";
         playlist = [];
-        current_track = 0;
+        currentIndex = 0;
         library = [];
+        currentTrack;
+        
+        
+        #audio;
+        
         #current_time_indicator;
         #duration_indicator;
-        #seekbar;
+        
+        #seek_bar;
+        #seek_fill;
+        
         #volume_backlight;
         #volume_thumb;
+        #volume_bar;
+        
         #playpausebutton;
-        #audio;
+        
         #song_display;
         #title_animation_counter = 0;
+        
+        
         
         constructor(id)
         {
             // create the player elements
             // attach to the indicated div
-            var root = document.getElementById(id);
-            root.classList.add("coresplayer");
+            const root = document.getElementById(id);
+            this.id = id;
+            root.classList.add("cores_player");
+            
+            const tpl = document.getElementById(CoresPlayer.player_template_id).content.cloneNode(true);
+            
             // time display
-            var timescreen = document.createElement("div");
-            timescreen.classList.add("playertime");
-            this.#current_time_indicator = document.createElement("span");
-            this.#duration_indicator = document.createElement("span");
-            this.#current_time_indicator.append("--:--");
-            this.#duration_indicator.append("--:--");
-            timescreen.appendChild(this.#current_time_indicator);
-            timescreen.appendChild(document.createElement("br"));
-            timescreen.appendChild(this.#duration_indicator);
-            root.appendChild(timescreen);
+            let clocks = tpl.querySelectorAll(".cores_player_time span");
+            this.#current_time_indicator = clocks[0];
+            this.#duration_indicator = clocks[1];
             // seek bar
-            var seek_container = document.createElement("div");
-            seek_container.classList.add("coresplayer_scrubber_track");
-            seek_container.addEventListener("mousemove",(e)=>{
-                this.#processScrubber(e);
+            this.#seek_bar = tpl.querySelector(".cores_player_scrubber");
+            this.#seek_bar.addEventListener("mousemove",(e)=>{
+                this.#process_scrubber(e);
             });
-            this.#seekbar = document.createElement("span");
-            this.#seekbar.classList.add("coresplayer_scrubber_fill");
-            this.#seekbar.innerHTML = "&nbsp;";
-            seek_container.appendChild(this.#seekbar);
-            root.append(seek_container);
+            this.#seek_fill = tpl.querySelector(".cores_player_scrubber_fill");
             // song display
-            this.#song_display = document.createElement("div");
-            this.#song_display.classList.add("coresplayer_song_title");
-            root.append(this.#song_display);
+            this.#song_display = tpl.querySelector(".cores_player_song_title");
             // buttons
-            
-            
+            let buttons = tpl.querySelector(".cores_player_buttons").childNodes;
+            buttons[0].addEventListener("click",(e)=>{
+                this.stop();
+            });
+            buttons[1].addEventListener("click",(e)=>{
+                this.#previous_button();
+            });
+            this.#playpausebutton = buttons[2];
+            buttons[2].addEventListener("click",(e)=>{
+                this.togglePlay();
+            });
+            buttons[3].addEventListener("click",(e)=>{this.#next_button();});
             // volume control
+            this.#volume_bar = tpl.querySelector(".cores_player_volumecontrol");
+            this.#volume_bar.addEventListener("mousemove",(e)=>{
+                this.#process_volumecontrol(e);
+            });
+            this.#volume_backlight = tpl.querySelector(".cores_player_volumebg");
+            this.#volume_thumb = tpl.querySelector(".cores_player_volumethumb");
+            // audio piece
+            this.#audio = tpl.querySelector("audio");
+            this.#audio.addEventListener("timeupdate",(e)=>{
+                this.#update_time(this);
+            });
+            this.#audio.addEventListener("seeking",(e)=>{
+                this.#update_time(this);
+            });
+            this.#audio.addEventListener("volumechange",(e)=>{
+                this.#update_volume(this);
+            });
+
+            this.#audio.addEventListener("playing",(e)=>{
+                this.#playpausebutton.classList.add('pressed');
+            });
+            this.#audio.addEventListener("pause",(e)=>{
+                this.#playpausebutton.classList.remove('pressed');
+            });
+            this.#update_volume();
             
             
+            // assemble, append and attach
+            let element = null;
+            while(element = tpl.firstElementChild)
+            {
+                root.append(element);
+            }
+            
+            setInterval(this.#animate_song_display, 500,this);
             
         }
+        
+        // exposed control actions
+        
+        play()
+        {
+            this.#audio.play();
+        }
+        
+        pause()
+        {
+            this.#audio.pause();
+        }
+        
+        stop()
+        {
+            this.#audio.pause();
+            this.seek(0);
+        }
+        
+        seek(position)
+        {
+            this.#audio.fastSeek(position);
+        }
+        
+        next = ()=>
+        {
+            console.log("fucking fuck fuck shit next");
+            console.log(this);
+            this.currentIndex++;
+            if(this.currentIndex>=this.playlist.length)
+            {
+                this.currentIndex = 0;
+            }
+            this.playItem(this.currentIndex);
+        };
+        
+        previous = ()=>
+        {
+            console.log("fucking fuck fuck shit previous");
+            console.log(this);
+            this.currentIndex--;
+            if(this.currentIndex<0)
+            {
+                this.currentIndex = this.playlist.length-1;
+            }
+            this.playItem(this.currentIndex);
+        };
+        
+        togglePlay()
+        {
+            if(this.#audio.paused)
+            {
+                this.play();
+            }
+            else
+            {
+                this.pause();
+            }
+        }
+        
+        playItem(offset, forcePlay = false)
+        {
+            console.log("fucking fuck fuck shit playItem");
+            console.log(this);
+            var song = this.playlist[offset];
+            console.log(this.playlist);
+            console.log(offset);
+            console.log(song);
+            this.currentTrack = song;
+            this.#title_animation_counter = 0;
+            this.#audio.src = "/files/stream/" + song.file + "/" + song.file + ".mp3";
+            this.#audio.load();
+            this.#audio.fastSeek(0);
+            if(!forcePlay)
+            {
+                this.play();
+            }
+        }
+        
+        set volume(new_volume)
+        {
+            this.#audio.volume = new_volume;
+        }
+        get volume()
+        {
+            return this.#audio.volume;
+        }
+        
+        
+        // exposed getters
+        
+        get duration()
+        {
+            return this.#audio.duration;
+        }
+        
+        get currentTime()
+        {
+            return this.#audio.currentTime;
+        }
+        
+        
+        // UI input
+        
+        #previous_button = () => {
+            console.log("fucking fuck fuck shit #previous_button");
+            console.log(this);
+            this.previous();
+        };
+        #next_button = () => {
+            console.log("fucking fuck fuck shit #next_button");
+            console.log(this);
+            this.next();
+        };
+        #stop_button = () => {
+            this.stop();
+        };
+        #playpause_button = () => {
+            this.togglePlay();
+        };
+        
+        #process_scrubber = (e) =>
+        {
+            if(e.target!==this.#seek_bar)
+            {
+                return;
+            }
+            if(e.buttons !=1)
+            {
+                return;
+            }
+            var percent = e.offsetX / this.#seek_bar.clientWidth;
+            this.seek(this.duration * percent);
+        }
+        
+        #process_volumecontrol = (e) =>
+        {
+            if(e.target!==this.#volume_bar)
+            {
+                return;
+            }
+            if(e.buttons !=1)
+            {
+                return;
+            }
+            var read = e.offsetY;
+            if(read<0)
+            {
+                read = 0;
+            }
+            if(read> this.#volume_bar.clientHeight)
+            {
+                read = this.#volume_bar.clientHeight;
+            }
+            var percent = read / this.#volume_bar.clientHeight;
+            this.volume = 1-percent;
+        }
+        
+        // UI output
+        
+        #update_time = () =>
+        {
+            let str_current = "--:--";
+            let str_duration = "--:--";
+            let pct = 0;
+            try
+            {
+                str_current = new Date(1000 * this.currentTime)
+                        .toISOString().substring(14, 19);
+                str_duration = new Date(1000 * this.duration)
+                        .toISOString().substring(14, 19);
+                pct = (this.currentTime/this.duration) * 100;                
+            }
+            catch(ex)
+            {
+                console.log(this.currentTime);
+                console.log(this.duration);
+            }
+            this.#current_time_indicator.textContent = str_current;
+            this.#duration_indicator.textContent = str_duration;
+            this.#seek_fill.style.width = pct + "%";
+        }
+        
+        #update_volume = (e) =>
+        {
+            this.#volume_backlight.style.height = this.volume*100 + "%";
+            this.#volume_thumb.style.bottom = ((this.volume * this.#volume_bar.clientHeight)-4)+"px"; 
+        }
+        
+        #animate_song_display = (e) =>
+        {
+            var displaywidth = 21;
+            if(!this.playlist)
+                {
+                    this.#song_display.textContent = "Insert disc";
+                    return;
+                }
+            console.log(this);
+            let title = this.currentTrack.title + " ";
+            if(title.length <= displaywidth)
+            {
+                this.#song_display.textContent = title;
+                return;
+            }
+            if(this.#title_animation_counter >= title.length)
+            {
+                this.#title_animation_counter = 0;
+            }
+            var end_offset = this.#title_animation_counter + displaywidth;
+            var display_title = title.substring(this.#title_animation_counter, end_offset);
+            if(this.#title_animation_counter+end_offset>title.length)
+            {
+                var start_offset = (this.#title_animation_counter+end_offset) - title.length ;
+                display_title+=title.substring(0,start_offset);
+            }
+            console.log(display_title);
+            this.#title_animation_counter++;
+            this.#song_display.textContent = display_title;
+        }
+        
+        // other actions
+        
+        loadLibrary()
+        {
+            fetch(CoresPlayer.libraryUrl)
+                .then((response)=>{
+                if(response.ok)
+                {
+                    response.json().then((data)=>{
+                        this.library = data;
+                        this.playlist = data;
+                        if(this.onReady)
+                        {
+                            this.onReady();
+                        }
+                    });
+                }
+            });
+        }
+        
+        playRandom()
+        {
+            let rnd = Math.floor(Math.random() * this.library.length);
+            //rnd = 3
+            this.playItem(rnd);
+        }
+        
     }
-    
+    //window.p = Player;
     playlist_offset = 0;
     playlist = [];
     
@@ -406,7 +702,7 @@
         position:relative;
         z-index: 1;
     }
-    #musicplayer .playertime
+    .cores_player_time
     {
         background-color: black;
         border: 5px solid #007000;
@@ -426,7 +722,7 @@
         text-align: center;
         position: relative;
     }
-    #musicplayer .playertime span
+    .cores_player_time span
     {
         
         font-size: 2.5rem;
@@ -436,7 +732,7 @@
         user-select: none;
         
     }
-    .scrubber
+    .cores_player_scrubber
     {
         background-color:#002000;
         height: 6px;
@@ -451,7 +747,7 @@
         left: 9.6rem;
         position: absolute;
     }
-    #scrubberpos
+    .cores_player_scrubber_fill
     {
         background-color: #00F000;
         display:inline-block;
@@ -460,14 +756,9 @@
         user-select: none;
     }
     
-    #volumecontrol
+    .cores_player_volumecontrol
     {
         background-color:#101010;
-        aaborder: 1px solid #007000;
-        /*height: 6px;
-        border-top-color: #00B000;
-        border-bottom-color: #004000;
-        border-radius: 2px;*/
         padding:2px;
         overflow:visible;
         width: 24px;
@@ -477,7 +768,7 @@
         height: 7rem;
     }
     
-    #volumebg
+    .cores_player_volumebg
     {
         bottom: 0;
         height:100%;
@@ -492,7 +783,7 @@
         left:10px;
         border-radius: 4px;
     }
-    #volumetrack
+    .cores_player_volumetrack
     {
         bottom: 0;
         height:100%;
@@ -507,7 +798,7 @@
         left:10px;
         border-radius: 4px;
     }
-    #volumethumb
+    .cores_player_volumethumb
     {
         height:8px;
         width: 1rem;
@@ -528,7 +819,7 @@
         z-index: 3;
         
     }
-    #volumeticks
+    .cores_player_volumeticks
     {
         position: absolute;
         z-index: 2;
@@ -542,7 +833,7 @@
         top:-2px;
     }
     
-    #player_current_song
+    .cores_player_song_title
     {
         font-family: "HD44780 5x8";
         display: block;
@@ -565,7 +856,7 @@
         pointer-events: none;
         user-select: none;
     }
-    .playercontrols
+    .cores_player_buttons
     {
         
         position: absolute;
@@ -596,10 +887,10 @@
 </style>
 <template id="cores_music_player">
     
-    <div class="playertime"><span class="cores_player_current_time">--:--</span><br /><span class="cores_player_total_time">--:--</span></div>
-    <div class="cores_player_scrubber"><span class="cores_player_scrubberpos">&nbsp;</span></div>
-    <div class="cores_player_current_song">Unknown Artist</div>
-    <div class="cores_player_playercontrols"><button>&#x23f9;&#xfe0e;</button><button>&#x23ee;&#xfe0e;</button><button class="cores_player_playpausebutton">&#x23ef;&#xfe0e;</button><button>&#x23ed;&#xfe0e;</button></div>
+    <div class="cores_player_time"><span class="cores_player_current_time">--:--</span><br /><span class="cores_player_total_time">--:--</span></div>
+    <div class="cores_player_scrubber"><span class="cores_player_scrubber_fill">&nbsp;</span></div>
+    <div class="cores_player_song_title">Unknown Artist</div>
+    <div class="cores_player_buttons"><button>&#x23f9;&#xfe0e;</button><button>&#x23ee;&#xfe0e;</button><button class="cores_player_playpausebutton">&#x23ef;&#xfe0e;</button><button>&#x23ed;&#xfe0e;</button></div>
     <div class="cores_player_volumecontrol"><span class="cores_player_volumeticks">11 -&nbsp;&nbsp;- 11<br />
     10 -&nbsp;&nbsp;- 10<br />
     &nbsp;9 -&nbsp;&nbsp;- 9<br />
@@ -613,9 +904,9 @@
     &nbsp;1 -&nbsp;&nbsp;- 1<br />
     &nbsp;0 -&nbsp;&nbsp;- 0<br />    
         </span><span class="cores_player_volumetrack">&nbsp;</span><span class="cores_player_volumebg">&nbsp;</span><span class="cores_player_volumethumb">&nbsp;</span></div>
-
+    <audio preload="metadata"></audio>
 </template>
-<div id="musicplayer">
+<!--<div id="musicplayer">
     <div class="playertime"><span id="player_current_time">--:--</span><br /><span id="player_total_time">--:--</span></div>
     <div class="scrubber" onmousemove="PlayerSeek(event);"><span id="scrubberpos">&nbsp;</span></div>
     <div id="player_current_song">Unknown Artist</div>
@@ -633,10 +924,18 @@
     &nbsp;1 -&nbsp;&nbsp;- 1<br />
     &nbsp;0 -&nbsp;&nbsp;- 0<br />    
         </span><span id="volumetrack">&nbsp;</span><span id="volumebg">&nbsp;</span><span id="volumethumb">&nbsp;</span></div>
+</div>-->
+<div id="musicplayer">
 </div>
-
 <script type="text/javascript">
-
-    ConnectPlayer('player');
-    setInterval(AnimateSongTitle, 500);
+    player = new CoresPlayer('musicplayer');
+    player.onReady = ()=>{
+        console.log(player);
+        console.log(this);
+        player.playRandom();
+        player.stop();
+    };
+    player.loadLibrary();
+    //ConnectPlayer('player');
+    //setInterval(AnimateSongTitle, 500);
 </script>

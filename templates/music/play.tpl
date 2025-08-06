@@ -8,5 +8,5 @@
 #}
 {{music/player}}
 <script type="text/javascript">
-PlayerEnqueue({%id%}, true);    
+//PlayerEnqueue({%id%}, true);    
 </script>
