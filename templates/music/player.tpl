@@ -21,10 +21,12 @@
         
         _seek_bar;
         _seek_fill;
+        _seek_moving;
         
         _volume_backlight;
         _volume_thumb;
         _volume_bar;
+        _volume_moving;
         
         _playpausebutton;
         
@@ -51,8 +53,8 @@
             this._duration_indicator = clocks[1];
             // seek bar
             this._seek_bar = tpl.querySelector(".cores_player_scrubber");
-            this._seek_bar.addEventListener("mousemove",(e)=>{
-                this._process_scrubber(e);
+            this._seek_bar.addEventListener("pointerdown",(e)=>{
+                this._begin_seek_grab(e);
             });
             this._seek_fill = tpl.querySelector(".cores_player_scrubber_fill");
             // song display
@@ -75,8 +77,8 @@
             buttons[4].addEventListener("click",(e)=>{this._random_button();});
             // volume control
             this._volume_bar = tpl.querySelector(".cores_player_volumecontrol");
-            this._volume_bar.addEventListener("mousemove",(e)=>{
-                this._process_volumecontrol(e);
+            this._volume_bar.addEventListener("pointerdown",(e)=>{
+                this._begin_volume_grab(e);
             });
             this._volume_backlight = tpl.querySelector(".cores_player_volumebg");
             this._volume_thumb = tpl.querySelector(".cores_player_volumethumb");
@@ -102,6 +104,14 @@
                 this._playpausebutton.classList.remove('pressed');
             });
             
+            
+            document.addEventListener("pointermove",(e)=>{
+                this._process_volumecontrol(e);
+                this._process_scrubber(e);
+            });
+            document.addEventListener("pointerup",(e)=>{
+                this._process_release_grab(e);
+            });
             
             // assemble, append and attach
             let element = null;
@@ -265,25 +275,34 @@
         
         _process_scrubber = (e) =>
         {
-            if(e.target!==this._seek_bar)
+            
+            if(!this._seek_moving)
             {
                 return;
             }
-            if(e.buttons !=1)
+            var read = e.offsetX;
+            if(read<0)
             {
-                return;
+                read =0;
             }
-            var percent = e.offsetX / this._seek_bar.clientWidth;
+            if(read>this._seek_bar.clientWidth)
+            {
+                read = this._seek_bar.clientWidth;
+            }
+            
+            var percent = read / this._seek_bar.clientWidth;
             this.seek(this.duration * percent);
         }
         
+        _process_release_grab = (e) =>
+        {
+            this._volume_moving = false;
+            this._seek_moving = false;
+        };
+        
         _process_volumecontrol = (e) =>
         {
-            if(e.target!==this._volume_bar)
-            {
-                return;
-            }
-            if(e.buttons !=1)
+            if(!this._volume_moving)
             {
                 return;
             }
@@ -298,6 +317,17 @@
             }
             var percent = read / this._volume_bar.clientHeight;
             this.volume = 1-percent;
+            e.preventDefault();
+            console.log(e);
+        }
+        
+        _begin_volume_grab = (e) =>
+        {
+            this._volume_moving = true;
+        }
+        _begin_seek_grab = (e) =>
+        {
+            this._seek_moving = true;
         }
         
         // UI output
@@ -361,7 +391,7 @@
                     this._song_display.textContent = "Insert disc";
                     return;
                 }
-            console.log(this);
+            //console.log(this);
             let title = this.currentTrack.title + " ";
             if(title.length <= displaywidth)
             {
@@ -379,7 +409,7 @@
                 var start_offset = (this._title_animation_counter+displaywidth) - title.length ;
                 display_title+=title.substring(0,start_offset);
             }
-            console.log(display_title);
+            //console.log(display_title);
             this._title_animation_counter++;
             this._song_display.textContent = display_title;
         }
@@ -522,6 +552,7 @@
         top: 4rem;
         left: 9.6rem;
         position: absolute;
+        touch-action: none;
     }
     .cores_player_scrubber_fill
     {
@@ -542,6 +573,7 @@
         left: 31rem;
         position: absolute;   
         height: 7rem;
+        touch-action: none;
     }
     
     .cores_player_volumebg
