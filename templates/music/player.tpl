@@ -1,10 +1,26 @@
+
+<div id="musicplayer">
+</div>
+<div id="debugga" style="border-style:solid;border-width:1px;border-color:green;overflow:scroll;height:200px;"></div>
 <script type="text/javascript">
     
+    document.getElementById('debugga').append("initializing.........\r\n<br />");
+    
+</script>
+<script type="text/javascript">
+    document.getElementById('debugga').append("initializing2.........\r\n<br />");
+    function fake_console(o)
+    {
+        document.getElementById('debugga').append(o+"\r\n<br />");
+        console.log(o);
+    }
+    fake_console("starting cores_player class");
+    //*
     class CoresPlayer
     {
-        
-        static player_template_id = "cores_music_player";
-        static libraryUrl = "/music/getlibrary";
+    /*    
+        player_template_id = "cores_music_player";
+        libraryUrl = "/music/getlibrary";
         
         id = "";
         playing = false;
@@ -34,33 +50,259 @@
         _title_animation_counter = 0;
         
         _playlist_container;
-        
-        
+    
+    }
+    fake_console("variables cores_player class");
+    
+    /*/
+    
+    //*    
         
         constructor(id)
         {
+            // OKAY so Firefox FUCKING 68
+            // does NOT support fields
+            // so let's do this through the ass okay!
+            
+            this.player_template_id = "cores_music_player";
+            this.libraryUrl = "/music/getlibrary";
+            this._title_animation_counter = 0;
+            this.playing = false;
+            this.playlist = [];
+            this.currentIndex = 0;
+            this.library = [];
+            
+            // and now for the methods probably
+            
+            // wtf
+            
+            this.next = ()=>
+            {
+                fake_console("fucking fuck fuck shit next");
+                fake_console(this);
+                fake_console(this.currentIndex);
+                this.currentIndex++;
+                if(this.currentIndex>=this.playlist.length)
+                {
+                    this.currentIndex = 0;
+                }
+                this.playItem(this.currentIndex);
+            };
+
+            this.previous = ()=>
+            {
+                fake_console("fucking fuck fuck shit previous");
+                fake_console(this);
+                fake_console(this.currentIndex);
+                this.currentIndex--;
+                if(this.currentIndex<0)
+                {
+                    this.currentIndex = this.playlist.length-1;
+                }
+                this.playItem(this.currentIndex);
+            };
+
+            this._previous_button = () => {
+                fake_console("fucking fuck fuck shit _previous_button");
+                fake_console(this);
+                this.previous();
+            };
+            this._next_button = () => {
+                fake_console("fucking fuck fuck shit _next_button");
+                fake_console(this);
+                this.next();
+            };
+            this._stop_button = () => {
+                this.stop();
+            };
+            this._playpause_button = () => {
+                this.togglePlay();
+            };
+            this._random_button = () => {
+                this.playRandom();
+            };
+            this._play_track = (e) => {
+                this.playItem(e.target.dataset.index);
+            };
+
+            this._process_scrubber = (e) =>
+            {
+
+                if(!this._seek_moving)
+                {
+                    return;
+                }
+                var read = e.offsetX;
+                if(read<0)
+                {
+                    read =0;
+                }
+                if(read>this._seek_bar.clientWidth)
+                {
+                    read = this._seek_bar.clientWidth;
+                }
+
+                var percent = read / this._seek_bar.clientWidth;
+                this.seek(this.duration * percent);
+                e.preventDefault();
+            };
+
+            this._process_release_grab = (e) =>
+            {
+                this._volume_moving = false;
+                this._seek_moving = false;
+            };
+
+            this._process_volumecontrol = (e) =>
+            {
+                if(!this._volume_moving)
+                {
+                    return;
+                }
+                var read = e.offsetY;
+                if(read<0)
+                {
+                    read = 0;
+                }
+                if(read> this._volume_bar.clientHeight)
+                {
+                    read = this._volume_bar.clientHeight;
+                }
+                var percent = read / this._volume_bar.clientHeight;
+                this.volume = 1-percent;
+                e.preventDefault();
+                fake_console(e);
+            };
+            this._update_time = () =>
+            {
+                let str_current = "--:--";
+                let str_duration = "--:--";
+                let pct = 0;
+                try
+                {
+                    str_current = new Date(1000 * this.currentTime)
+                            .toISOString().substring(14, 19);
+                    str_duration = new Date(1000 * this.duration)
+                            .toISOString().substring(14, 19);
+                    pct = (this.currentTime/this.duration) * 100;                
+                }
+                catch(ex)
+                {
+                    fake_console(this.currentTime);
+                    fake_console(this.duration);
+                }
+                this._current_time_indicator.textContent = str_current;
+                this._duration_indicator.textContent = str_duration;
+                this._seek_fill.style.width = pct + "%";
+            };
+
+            this._update_volume = () =>
+            {
+                this._volume_backlight.style.height = this.volume*100 + "%";
+                this._volume_thumb.style.bottom = ((this.volume * this._volume_bar.clientHeight)-4)+"px";
+                fake_console(this._volume_bar.clientHeight);
+                fake_console(this.volume);
+                fake_console("FUCK YOUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU!!!!!!!!!!!!!!!!!!!!!");
+            };
+
+            this.enqueue = (id) =>
+            {
+                let song = this.library.find((track)=>track.id == id);
+                if(!song)
+                {
+                    return;
+                }
+                let row = document.createElement("span");
+                row.dataset.index=this.playlist.length;
+                row.dataset.songId=song.id;
+                row.dataset.playing="no";
+                row.textContent = ((this.playlist.length + 1) + " ").padStart(4, "0") + song.title;
+                row.addEventListener("click", this._play_track);
+                this._playlist_container.append(row);
+                fake_console(this.playlist);
+                this.playlist.push(song);
+
+            };
+
+            this._animate_song_display = (e) =>
+            {
+                var displaywidth = 21;
+                if(!this.playlist)
+                    {
+                        this._song_display.textContent = "Insert disc";
+                        return;
+                    }
+                //fake_console(this);
+                let title = this.currentTrack.title + " ";
+                if(title.length <= displaywidth)
+                {
+                    this._song_display.textContent = title;
+                    return;
+                }
+                if(this._title_animation_counter >= title.length)
+                {
+                    this._title_animation_counter = 0;
+                }
+                var end_offset = this._title_animation_counter + displaywidth;
+                var display_title = title.substring(this._title_animation_counter, end_offset);
+                if(this._title_animation_counter+displaywidth>title.length)
+                {
+                    var start_offset = (this._title_animation_counter+displaywidth) - title.length ;
+                    display_title+=title.substring(0,start_offset);
+                }
+                //fake_console(display_title);
+                this._title_animation_counter++;
+                this._song_display.textContent = display_title;
+            };
+
+            this.playRandom = () =>
+            {
+                let rnd = Math.floor(Math.random() * this.library.length);
+                //rnd = 4
+                this.playItem(rnd);
+            };
+        
+        this._begin_volume_grab = (e) =>
+        {
+            this._volume_moving = true;
+        };
+        this._begin_seek_grab = (e) =>
+        {
+            this._seek_moving = true;
+        };
+            
+       
+       
+            ////////////////////////////////////////////////////////////////////
+            
+            
+            
             // create the player elements
             // attach to the indicated div
             const root = document.getElementById(id);
             this.id = id;
             root.classList.add("cores_player");
             
-            const tpl = document.getElementById(CoresPlayer.player_template_id).content.cloneNode(true);
-            
+            const tpl = document.getElementById(this.player_template_id).content.cloneNode(true);
+            fake_console(tpl);
             // time display
             let clocks = tpl.querySelectorAll(".cores_player_time span");
             this._current_time_indicator = clocks[0];
             this._duration_indicator = clocks[1];
+            fake_console("clock");
             // seek bar
             this._seek_bar = tpl.querySelector(".cores_player_scrubber");
             this._seek_bar.addEventListener("pointerdown",(e)=>{
                 this._begin_seek_grab(e);
             });
             this._seek_fill = tpl.querySelector(".cores_player_scrubber_fill");
+            fake_console("seek");
             // song display
             this._song_display = tpl.querySelector(".cores_player_song_title");
+            fake_console("display");
             // playlist
             this._playlist_container = tpl.querySelector(".cores_player_playlist");
+            fake_console("playlist");
             // buttons
             let buttons = tpl.querySelector(".cores_player_buttons").childNodes;
             buttons[0].addEventListener("click",(e)=>{
@@ -75,6 +317,7 @@
             });
             buttons[3].addEventListener("click",(e)=>{this._next_button();});
             buttons[4].addEventListener("click",(e)=>{this._random_button();});
+            fake_console("buttons");
             // volume control
             this._volume_bar = tpl.querySelector(".cores_player_volumecontrol");
             this._volume_bar.addEventListener("pointerdown",(e)=>{
@@ -82,6 +325,7 @@
             });
             this._volume_backlight = tpl.querySelector(".cores_player_volumebg");
             this._volume_thumb = tpl.querySelector(".cores_player_volumethumb");
+            fake_console("volume");
             // audio piece
             this._audio = tpl.querySelector("audio");
             this._audio.addEventListener("timeupdate",(e)=>{
@@ -103,7 +347,7 @@
             this._audio.addEventListener("pause",(e)=>{
                 this._playpausebutton.classList.remove('pressed');
             });
-            
+            fake_console("audio");
             
             document.addEventListener("pointermove",(e)=>{
                 this._process_volumecontrol(e);
@@ -112,7 +356,7 @@
             document.addEventListener("pointerup",(e)=>{
                 this._process_release_grab(e);
             });
-            
+            fake_console("document events wired");
             // assemble, append and attach
             let element = null;
             while(element = tpl.firstElementChild)
@@ -121,8 +365,10 @@
             }
             
             this._update_volume();
-            setInterval(this._animate_song_display, 500,this);
             
+            fake_console("done assembling");
+            setInterval(this._animate_song_display, 500,this);
+            fake_console("updater started");
         }
         
         // exposed control actions
@@ -150,32 +396,6 @@
             this._audio.fastSeek(position);
         }
         
-        next = ()=>
-        {
-            console.log("fucking fuck fuck shit next");
-            console.log(this);
-            console.log(this.currentIndex);
-            this.currentIndex++;
-            if(this.currentIndex>=this.playlist.length)
-            {
-                this.currentIndex = 0;
-            }
-            this.playItem(this.currentIndex);
-        };
-        
-        previous = ()=>
-        {
-            console.log("fucking fuck fuck shit previous");
-            console.log(this);
-            console.log(this.currentIndex);
-            this.currentIndex--;
-            if(this.currentIndex<0)
-            {
-                this.currentIndex = this.playlist.length-1;
-            }
-            this.playItem(this.currentIndex);
-        };
-        
         togglePlay()
         {
             if(this._audio.paused)
@@ -192,12 +412,12 @@
         
         playItem(offset, forcePlay = false)
         {
-            console.log("fucking fuck fuck shit playItem");
-            console.log(this);
+            fake_console("fucking fuck fuck shit playItem");
+            fake_console(this);
             var song = this.playlist[offset];
-            console.log(this.playlist);
-            console.log(offset);
-            console.log(song);
+            fake_console(this.playlist);
+            fake_console(offset);
+            fake_console(song);
             this.currentTrack = song;
             this.currentIndex = offset;
             for(const row of this._playlist_container.children)
@@ -206,10 +426,10 @@
                 if(row.dataset.index == this.currentIndex)
                 {
                     row.dataset.playing = "yes";
-                    row.scrollIntoView();
+                    row.scrollIntoView({block: "center",container:"nearest"});
                 }
             }
-            console.log(this.currentIndex);
+            fake_console(this.currentIndex);
             this._title_animation_counter = 0;
             this._audio.src = "/files/stream/" + song.file + "/" + song.file + ".mp3";
             this._audio.load();
@@ -250,175 +470,14 @@
         
         // UI input
         
-        _previous_button = () => {
-            console.log("fucking fuck fuck shit _previous_button");
-            console.log(this);
-            this.previous();
-        };
-        _next_button = () => {
-            console.log("fucking fuck fuck shit _next_button");
-            console.log(this);
-            this.next();
-        };
-        _stop_button = () => {
-            this.stop();
-        };
-        _playpause_button = () => {
-            this.togglePlay();
-        };
-        _random_button = () => {
-            this.playRandom();
-        };
-        _play_track = (e) => {
-            this.playItem(e.target.dataset.index);
-        };
-        
-        _process_scrubber = (e) =>
-        {
-            
-            if(!this._seek_moving)
-            {
-                return;
-            }
-            var read = e.offsetX;
-            if(read<0)
-            {
-                read =0;
-            }
-            if(read>this._seek_bar.clientWidth)
-            {
-                read = this._seek_bar.clientWidth;
-            }
-            
-            var percent = read / this._seek_bar.clientWidth;
-            this.seek(this.duration * percent);
-        }
-        
-        _process_release_grab = (e) =>
-        {
-            this._volume_moving = false;
-            this._seek_moving = false;
-        };
-        
-        _process_volumecontrol = (e) =>
-        {
-            if(!this._volume_moving)
-            {
-                return;
-            }
-            var read = e.offsetY;
-            if(read<0)
-            {
-                read = 0;
-            }
-            if(read> this._volume_bar.clientHeight)
-            {
-                read = this._volume_bar.clientHeight;
-            }
-            var percent = read / this._volume_bar.clientHeight;
-            this.volume = 1-percent;
-            e.preventDefault();
-            console.log(e);
-        }
-        
-        _begin_volume_grab = (e) =>
-        {
-            this._volume_moving = true;
-        }
-        _begin_seek_grab = (e) =>
-        {
-            this._seek_moving = true;
-        }
-        
         // UI output
         
-        _update_time = () =>
-        {
-            let str_current = "--:--";
-            let str_duration = "--:--";
-            let pct = 0;
-            try
-            {
-                str_current = new Date(1000 * this.currentTime)
-                        .toISOString().substring(14, 19);
-                str_duration = new Date(1000 * this.duration)
-                        .toISOString().substring(14, 19);
-                pct = (this.currentTime/this.duration) * 100;                
-            }
-            catch(ex)
-            {
-                console.log(this.currentTime);
-                console.log(this.duration);
-            }
-            this._current_time_indicator.textContent = str_current;
-            this._duration_indicator.textContent = str_duration;
-            this._seek_fill.style.width = pct + "%";
-        }
-        
-        _update_volume = () =>
-        {
-            this._volume_backlight.style.height = this.volume*100 + "%";
-            this._volume_thumb.style.bottom = ((this.volume * this._volume_bar.clientHeight)-4)+"px";
-            console.log(this._volume_bar.clientHeight);
-            console.log(this.volume);
-            console.log("FUCK YOUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU!!!!!!!!!!!!!!!!!!!!!");
-        }
-        
-        enqueue = (id) =>
-        {
-            let song = this.library.find((track)=>track.id == id);
-            if(!song)
-            {
-                return;
-            }
-            let row = document.createElement("span");
-            row.dataset.index=this.playlist.length;
-            row.dataset.songId=song.id;
-            row.dataset.playing="no";
-            row.textContent = ((this.playlist.length + 1) + " ").padStart(4, "0") + song.title;
-            row.addEventListener("click", this._play_track);
-            this._playlist_container.append(row);
-            console.log(this.playlist);
-            this.playlist.push(song);
-            
-        };
-        
-        _animate_song_display = (e) =>
-        {
-            var displaywidth = 21;
-            if(!this.playlist)
-                {
-                    this._song_display.textContent = "Insert disc";
-                    return;
-                }
-            //console.log(this);
-            let title = this.currentTrack.title + " ";
-            if(title.length <= displaywidth)
-            {
-                this._song_display.textContent = title;
-                return;
-            }
-            if(this._title_animation_counter >= title.length)
-            {
-                this._title_animation_counter = 0;
-            }
-            var end_offset = this._title_animation_counter + displaywidth;
-            var display_title = title.substring(this._title_animation_counter, end_offset);
-            if(this._title_animation_counter+displaywidth>title.length)
-            {
-                var start_offset = (this._title_animation_counter+displaywidth) - title.length ;
-                display_title+=title.substring(0,start_offset);
-            }
-            //console.log(display_title);
-            this._title_animation_counter++;
-            this._song_display.textContent = display_title;
-        }
         
         // other actions
         
         loadLibrary()
         {
-            fetch(CoresPlayer.libraryUrl)
+            fetch(this.libraryUrl)
                 .then((response)=>{
                 if(response.ok)
                 {
@@ -436,13 +495,6 @@
                     });
                 }
             });
-        }
-        
-        playRandom = () =>
-        {
-            let rnd = Math.floor(Math.random() * this.library.length);
-            //rnd = 4
-            this.playItem(rnd);
         }
         
         
@@ -494,7 +546,8 @@
         ajax.open("GET",url,true);
         ajax.send(null);
     }
-</script>
+    //*/
+</script>-->
 <style type="text/css">
     #musicplayer
     {
@@ -787,13 +840,11 @@
     &nbsp;0 -&nbsp;&nbsp;- 0<br />    
         </span><span id="volumetrack">&nbsp;</span><span id="volumebg">&nbsp;</span><span id="volumethumb">&nbsp;</span></div>
 </div>-->
-<div id="musicplayer">
-</div>
 <script type="text/javascript">
     player = new CoresPlayer('musicplayer');
     player.onReady = ()=>{
-        console.log(player);
-        console.log(this);
+        fake_console(player);
+        fake_console(this);
         player.playRandom();
         player.stop();
     };
