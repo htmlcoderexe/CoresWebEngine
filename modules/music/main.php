@@ -2,7 +2,16 @@
 
 function ModuleAction_music_default($params)
 {
-    ModuleAction_music_all($params);
+    ModuleAction_music_player($params);
+}
+
+function ModuleAction_music_player($params)
+{
+     $tpl=new TemplateProcessor("music/player");
+        //$tpl->tokens['files'] = [$mp3];
+        //$tpl->tokens['id'] = $id;
+        EngineCore::SetPageContent($tpl->process(true));
+        return;  
 }
 
 function ModuleAction_music_upload($params)
