@@ -7,28 +7,31 @@
         static libraryUrl = "/music/getlibrary";
         
         id = "";
+        playing = false;
         playlist = [];
         currentIndex = 0;
         library = [];
         currentTrack;
         
         
-        #audio;
+        _audio;
         
-        #current_time_indicator;
-        #duration_indicator;
+        _current_time_indicator;
+        _duration_indicator;
         
-        #seek_bar;
-        #seek_fill;
+        _seek_bar;
+        _seek_fill;
         
-        #volume_backlight;
-        #volume_thumb;
-        #volume_bar;
+        _volume_backlight;
+        _volume_thumb;
+        _volume_bar;
         
-        #playpausebutton;
+        _playpausebutton;
         
-        #song_display;
-        #title_animation_counter = 0;
+        _song_display;
+        _title_animation_counter = 0;
+        
+        _playlist_container;
         
         
         
@@ -44,55 +47,60 @@
             
             // time display
             let clocks = tpl.querySelectorAll(".cores_player_time span");
-            this.#current_time_indicator = clocks[0];
-            this.#duration_indicator = clocks[1];
+            this._current_time_indicator = clocks[0];
+            this._duration_indicator = clocks[1];
             // seek bar
-            this.#seek_bar = tpl.querySelector(".cores_player_scrubber");
-            this.#seek_bar.addEventListener("mousemove",(e)=>{
-                this.#process_scrubber(e);
+            this._seek_bar = tpl.querySelector(".cores_player_scrubber");
+            this._seek_bar.addEventListener("mousemove",(e)=>{
+                this._process_scrubber(e);
             });
-            this.#seek_fill = tpl.querySelector(".cores_player_scrubber_fill");
+            this._seek_fill = tpl.querySelector(".cores_player_scrubber_fill");
             // song display
-            this.#song_display = tpl.querySelector(".cores_player_song_title");
+            this._song_display = tpl.querySelector(".cores_player_song_title");
+            // playlist
+            this._playlist_container = tpl.querySelector(".cores_player_playlist");
             // buttons
             let buttons = tpl.querySelector(".cores_player_buttons").childNodes;
             buttons[0].addEventListener("click",(e)=>{
                 this.stop();
             });
             buttons[1].addEventListener("click",(e)=>{
-                this.#previous_button();
+                this._previous_button();
             });
-            this.#playpausebutton = buttons[2];
+            this._playpausebutton = buttons[2];
             buttons[2].addEventListener("click",(e)=>{
                 this.togglePlay();
             });
-            buttons[3].addEventListener("click",(e)=>{this.#next_button();});
+            buttons[3].addEventListener("click",(e)=>{this._next_button();});
+            buttons[4].addEventListener("click",(e)=>{this._random_button();});
             // volume control
-            this.#volume_bar = tpl.querySelector(".cores_player_volumecontrol");
-            this.#volume_bar.addEventListener("mousemove",(e)=>{
-                this.#process_volumecontrol(e);
+            this._volume_bar = tpl.querySelector(".cores_player_volumecontrol");
+            this._volume_bar.addEventListener("mousemove",(e)=>{
+                this._process_volumecontrol(e);
             });
-            this.#volume_backlight = tpl.querySelector(".cores_player_volumebg");
-            this.#volume_thumb = tpl.querySelector(".cores_player_volumethumb");
+            this._volume_backlight = tpl.querySelector(".cores_player_volumebg");
+            this._volume_thumb = tpl.querySelector(".cores_player_volumethumb");
             // audio piece
-            this.#audio = tpl.querySelector("audio");
-            this.#audio.addEventListener("timeupdate",(e)=>{
-                this.#update_time(this);
+            this._audio = tpl.querySelector("audio");
+            this._audio.addEventListener("timeupdate",(e)=>{
+                this._update_time(this);
             });
-            this.#audio.addEventListener("seeking",(e)=>{
-                this.#update_time(this);
+            this._audio.addEventListener("durationchange",(e)=>{
+                this._update_time(this);
             });
-            this.#audio.addEventListener("volumechange",(e)=>{
-                this.#update_volume(this);
+            this._audio.addEventListener("seeking",(e)=>{
+                this._update_time(this);
+            });
+            this._audio.addEventListener("volumechange",(e)=>{
+                this._update_volume(this);
             });
 
-            this.#audio.addEventListener("playing",(e)=>{
-                this.#playpausebutton.classList.add('pressed');
+            this._audio.addEventListener("playing",(e)=>{
+                this._playpausebutton.classList.add('pressed');
             });
-            this.#audio.addEventListener("pause",(e)=>{
-                this.#playpausebutton.classList.remove('pressed');
+            this._audio.addEventListener("pause",(e)=>{
+                this._playpausebutton.classList.remove('pressed');
             });
-            this.#update_volume();
             
             
             // assemble, append and attach
@@ -102,7 +110,8 @@
                 root.append(element);
             }
             
-            setInterval(this.#animate_song_display, 500,this);
+            this._update_volume();
+            setInterval(this._animate_song_display, 500,this);
             
         }
         
@@ -110,29 +119,32 @@
         
         play()
         {
-            this.#audio.play();
+            this.playing = true;
+            this._audio.play();
         }
         
         pause()
         {
-            this.#audio.pause();
+            this.playing = false;
+            this._audio.pause();
         }
         
         stop()
         {
-            this.#audio.pause();
+            this.pause();
             this.seek(0);
         }
         
         seek(position)
         {
-            this.#audio.fastSeek(position);
+            this._audio.fastSeek(position);
         }
         
         next = ()=>
         {
             console.log("fucking fuck fuck shit next");
             console.log(this);
+            console.log(this.currentIndex);
             this.currentIndex++;
             if(this.currentIndex>=this.playlist.length)
             {
@@ -145,6 +157,7 @@
         {
             console.log("fucking fuck fuck shit previous");
             console.log(this);
+            console.log(this.currentIndex);
             this.currentIndex--;
             if(this.currentIndex<0)
             {
@@ -155,7 +168,7 @@
         
         togglePlay()
         {
-            if(this.#audio.paused)
+            if(this._audio.paused)
             {
                 this.play();
             }
@@ -164,6 +177,8 @@
                 this.pause();
             }
         }
+        
+        
         
         playItem(offset, forcePlay = false)
         {
@@ -174,23 +189,39 @@
             console.log(offset);
             console.log(song);
             this.currentTrack = song;
-            this.#title_animation_counter = 0;
-            this.#audio.src = "/files/stream/" + song.file + "/" + song.file + ".mp3";
-            this.#audio.load();
-            this.#audio.fastSeek(0);
-            if(!forcePlay)
+            this.currentIndex = offset;
+            for(const row of this._playlist_container.children)
+            {
+                row.dataset.playing ="no";
+                if(row.dataset.index == this.currentIndex)
+                {
+                    row.dataset.playing = "yes";
+                    row.scrollIntoView();
+                }
+            }
+            console.log(this.currentIndex);
+            this._title_animation_counter = 0;
+            this._audio.src = "/files/stream/" + song.file + "/" + song.file + ".mp3";
+            this._audio.load();
+            this._audio.fastSeek(0);
+            if(forcePlay || this.playing)
             {
                 this.play();
+            }
+            else
+            {
+                this.play();
+                this.stop();
             }
         }
         
         set volume(new_volume)
         {
-            this.#audio.volume = new_volume;
+            this._audio.volume = new_volume;
         }
         get volume()
         {
-            return this.#audio.volume;
+            return this._audio.volume;
         }
         
         
@@ -198,37 +229,43 @@
         
         get duration()
         {
-            return this.#audio.duration;
+            return this._audio.duration;
         }
         
         get currentTime()
         {
-            return this.#audio.currentTime;
+            return this._audio.currentTime;
         }
         
         
         // UI input
         
-        #previous_button = () => {
-            console.log("fucking fuck fuck shit #previous_button");
+        _previous_button = () => {
+            console.log("fucking fuck fuck shit _previous_button");
             console.log(this);
             this.previous();
         };
-        #next_button = () => {
-            console.log("fucking fuck fuck shit #next_button");
+        _next_button = () => {
+            console.log("fucking fuck fuck shit _next_button");
             console.log(this);
             this.next();
         };
-        #stop_button = () => {
+        _stop_button = () => {
             this.stop();
         };
-        #playpause_button = () => {
+        _playpause_button = () => {
             this.togglePlay();
         };
+        _random_button = () => {
+            this.playRandom();
+        };
+        _play_track = (e) => {
+            this.playItem(e.target.dataset.index);
+        };
         
-        #process_scrubber = (e) =>
+        _process_scrubber = (e) =>
         {
-            if(e.target!==this.#seek_bar)
+            if(e.target!==this._seek_bar)
             {
                 return;
             }
@@ -236,13 +273,13 @@
             {
                 return;
             }
-            var percent = e.offsetX / this.#seek_bar.clientWidth;
+            var percent = e.offsetX / this._seek_bar.clientWidth;
             this.seek(this.duration * percent);
         }
         
-        #process_volumecontrol = (e) =>
+        _process_volumecontrol = (e) =>
         {
-            if(e.target!==this.#volume_bar)
+            if(e.target!==this._volume_bar)
             {
                 return;
             }
@@ -255,17 +292,17 @@
             {
                 read = 0;
             }
-            if(read> this.#volume_bar.clientHeight)
+            if(read> this._volume_bar.clientHeight)
             {
-                read = this.#volume_bar.clientHeight;
+                read = this._volume_bar.clientHeight;
             }
-            var percent = read / this.#volume_bar.clientHeight;
+            var percent = read / this._volume_bar.clientHeight;
             this.volume = 1-percent;
         }
         
         // UI output
         
-        #update_time = () =>
+        _update_time = () =>
         {
             let str_current = "--:--";
             let str_duration = "--:--";
@@ -283,46 +320,68 @@
                 console.log(this.currentTime);
                 console.log(this.duration);
             }
-            this.#current_time_indicator.textContent = str_current;
-            this.#duration_indicator.textContent = str_duration;
-            this.#seek_fill.style.width = pct + "%";
+            this._current_time_indicator.textContent = str_current;
+            this._duration_indicator.textContent = str_duration;
+            this._seek_fill.style.width = pct + "%";
         }
         
-        #update_volume = (e) =>
+        _update_volume = () =>
         {
-            this.#volume_backlight.style.height = this.volume*100 + "%";
-            this.#volume_thumb.style.bottom = ((this.volume * this.#volume_bar.clientHeight)-4)+"px"; 
+            this._volume_backlight.style.height = this.volume*100 + "%";
+            this._volume_thumb.style.bottom = ((this.volume * this._volume_bar.clientHeight)-4)+"px";
+            console.log(this._volume_bar.clientHeight);
+            console.log(this.volume);
+            console.log("FUCK YOUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU!!!!!!!!!!!!!!!!!!!!!");
         }
         
-        #animate_song_display = (e) =>
+        enqueue = (id) =>
+        {
+            let song = this.library.find((track)=>track.id == id);
+            if(!song)
+            {
+                return;
+            }
+            let row = document.createElement("span");
+            row.dataset.index=this.playlist.length;
+            row.dataset.songId=song.id;
+            row.dataset.playing="no";
+            row.textContent = ((this.playlist.length + 1) + " ").padStart(4, "0") + song.title;
+            row.addEventListener("click", this._play_track);
+            this._playlist_container.append(row);
+            console.log(this.playlist);
+            this.playlist.push(song);
+            
+        };
+        
+        _animate_song_display = (e) =>
         {
             var displaywidth = 21;
             if(!this.playlist)
                 {
-                    this.#song_display.textContent = "Insert disc";
+                    this._song_display.textContent = "Insert disc";
                     return;
                 }
             console.log(this);
             let title = this.currentTrack.title + " ";
             if(title.length <= displaywidth)
             {
-                this.#song_display.textContent = title;
+                this._song_display.textContent = title;
                 return;
             }
-            if(this.#title_animation_counter >= title.length)
+            if(this._title_animation_counter >= title.length)
             {
-                this.#title_animation_counter = 0;
+                this._title_animation_counter = 0;
             }
-            var end_offset = this.#title_animation_counter + displaywidth;
-            var display_title = title.substring(this.#title_animation_counter, end_offset);
-            if(this.#title_animation_counter+end_offset>title.length)
+            var end_offset = this._title_animation_counter + displaywidth;
+            var display_title = title.substring(this._title_animation_counter, end_offset);
+            if(this._title_animation_counter+displaywidth>title.length)
             {
-                var start_offset = (this.#title_animation_counter+end_offset) - title.length ;
+                var start_offset = (this._title_animation_counter+displaywidth) - title.length ;
                 display_title+=title.substring(0,start_offset);
             }
             console.log(display_title);
-            this.#title_animation_counter++;
-            this.#song_display.textContent = display_title;
+            this._title_animation_counter++;
+            this._song_display.textContent = display_title;
         }
         
         // other actions
@@ -335,7 +394,11 @@
                 {
                     response.json().then((data)=>{
                         this.library = data;
-                        this.playlist = data;
+                        var i =0;
+                        for(i=0;i<this.library.length;i++)
+                        {
+                            this.enqueue(this.library[i].id);
+                        }
                         if(this.onReady)
                         {
                             this.onReady();
@@ -345,309 +408,22 @@
             });
         }
         
-        playRandom()
+        playRandom = () =>
         {
             let rnd = Math.floor(Math.random() * this.library.length);
-            //rnd = 3
+            //rnd = 4
             this.playItem(rnd);
         }
         
-    }
-    //window.p = Player;
-    playlist_offset = 0;
-    playlist = [];
-    
-    title_offset = 0;
-    
-    function CheckForCommands()
-    {
-        var url = "/main/chip/getcommands";
-         
-        let ajax = new XMLHttpRequest();
-        ajax.onreadystatechange=function()
-        {
-            if(ajax.readyState===4)
-            {
-                if(ajax.status === 200)
-                {
-                    try
-                    {
-                        var result = JSON.parse(ajax.responseText);
-                        result.forEach((item)=>{
-                            RunCommand(item['command'],item['params']);
-                        });
-                    }
-                    catch(error)
-                    {
-
-                    }
-
-                }
-                else
-                {
-
-                }
-            }
-        };
-        ajax.open("GET",url,true);
-        ajax.send(null);
-    }
-    
-    function RunCommand(command, params)
-    {
-        switch(command)
-        {
-            case "playsong":
-            {
-                PlaySong(params);
-                break;
-            }
-            case "volup":
-            {
-                VolumeUp(params);
-                break;
-            }
-            case "voldown":
-            {
-                VolumeDown(params);
-                break;
-            }
-            case "volset":
-            {
-                VolumeSet(params);
-                break;
-            }
-            case "pause":
-            {
-                PauseSong(params);
-                break;
-            }
-            case "play":
-            {
-                Play(params);
-                break;
-            }
-        }
-    }
-    
-    function VolumeUp(params)
-    {
-        var player = document.getElementById('chipsound');
-        if(!player)
-            return;
-        player.volume+=0.05;
+        
         
     }
     
-    function VolumeDown(params)
-    {
-        var player = document.getElementById('chipsound');
-        if(!player)
-            return;
-        player.volume-=0.05;
-    }
-    function VolumeSet(params)
-    {
-        var player = document.getElementById('chipsound');
-        if(!player)
-            return;
-        player.volume=params;
-    }
-    
-    function PlaySong(params)
-    {
-        var player = document.getElementById('chipsound');
-        if(!player)
-            return;
-        var songdata = params.split(",");
-        var songID = songdata[0];
-        var songPos = 0;
-        if(songdata.length > 1)
-        {
-            songPos=songdata[1];
-        }
-        player.src = "/files/stream/" + songID + "/" + songID + ".mp3";
-        player.fastSeek(songPos);
-        player.play();
-    }
-    
-    
-    
-    
-    function PlayerStop()
-    {
-        player.pause();
-        player.fastSeek(0);
-    }
-    
-    function PlayerPause()
-    {
-        player.pause();
-    }
-    function PlayerPlay()
-    {
-        player.play();
-    }
-    
-    function PlayerTogglePlay()
-    {
-        if(player.paused)
-        {
-            player.play();
-        }
-        else
-        {
-            player.pause();
-        }
-    }
-    function PlayerSeek(e)
-    {
-        if(e.buttons !=1)
-        {
-            return;
-        }
-        var bar = e.target;
-        var percent = e.offsetX / bar.clientWidth;
-        player.fastSeek(player.duration * percent);
-    }
-    
-    function PlayerNext()
-    {
-        playlist_offset++;
-        if(playlist_offset >= playlist.length)
-        {
-            playlist_offset = 0;
-        }
-        PlayerSetSong(playlist_offset);
-    }
-    function PlayerPrevious()
-    {
-        playlist_offset--;
-        if(playlist_offset < 0)
-        {
-            playlist_offset = playlist.length-1;
-        }
-        PlayerSetSong(playlist_offset);
-    }
-    
-    
-    function PlayerVolume(e)
-    {
-        if(e.buttons !=1)
-        {
-            return;
-        }
-        var bar = e.target;
-        var read = e.offsetY;
-        if(read<0)
-        {
-            read = 0;
-        }
-        if(read> bar.clientHeight)
-        {
-            read = bar.clientHeight;
-        }
-        var percent = read / bar.clientHeight;
-        player.volume = 1-percent;
-    }
     
     
     
     
     
-    function PlayerUpdateTime()
-    {
-        
-            var ctime = document.getElementById('player_current_time');
-            var ttime = document.getElementById('player_total_time');
-            var scrubber = document.getElementById('scrubberpos');
-            var current=player.currentTime;
-            var total = player.duration;
-            try
-            {
-            ctime.innerHTML = new Date(1000 * current).toISOString().substring(14, 19);
-            ttime.innerHTML = new Date(1000 * total).toISOString().substring(14, 19);
-            var pct = (current/total) * 100;
-            scrubber.style.width = pct + "%";
-                
-            }
-            catch(ex)
-            {
-                console.log(current);
-                console.log(total);
-            }
-    }
-    
-    function PlayerUpdateVolume()
-    {
-        
-            
-            var volumefill = document.getElementById('volumebg');
-            var volumethumb = document.getElementById('volumethumb');
-            var volumebox = document.getElementById('volumecontrol');
-            volumefill.style.height = player.volume*100 + "%";
-            volumethumb.style.bottom = ((player.volume * volumebox.clientHeight)-4)+"px"; 
-    }
-    function PlayerUpdatePlayPauseButton()
-    {
-        
-    }
-    
-    function ConnectPlayer(id)
-    {
-        player = document.getElementById(id);
-        player.addEventListener("timeupdate",(e)=>{
-            PlayerUpdateTime();
-        });
-        player.addEventListener("volumechange",(e)=>{
-            PlayerUpdateVolume();
-        });
-        
-        player.addEventListener("playing",(e)=>{
-            document.getElementById('playpausebutton').classList.add('pressed');
-        });
-        player.addEventListener("pause",(e)=>{
-            document.getElementById('playpausebutton').classList.remove('pressed');
-        });
-        
-        PlayerUpdateVolume();
-    }
-    
-    function AnimateSongTitle()
-    {
-        var displaywidth = 21;
-        if(!playlist)
-            return;
-        var title = playlist[playlist_offset]['title'];
-        if(title.length <= displaywidth)
-        {
-            document.getElementById('player_current_song').innerHTML = title;
-            return;
-        }
-        title+=" ";
-        if(title_offset >= title.length)
-        {
-            title_offset = 0;
-        }
-        var end_offset = title_offset + displaywidth;
-        var display_title = title.substring(title_offset, end_offset);
-        if(display_title.length < displaywidth)
-        {
-            start_offset = displaywidth-display_title.length;
-            display_title+=title.substring(0,start_offset);
-        }
-        title_offset++;
-        document.getElementById('player_current_song').innerHTML = display_title;
-    }
-    function PlayerSetSong(offset)
-    {
-        var song = playlist[offset];
-        title_offset = 0;
-        player.src = "/files/stream/" + song.file + "/" + song.file + ".mp3";
-        player.fastSeek(0);
-        document.getElementById('player_current_song').innerHTML = song.title;
-        
-    }
     
     function PlayerEnqueue(id, playnow=false)
     {
@@ -863,26 +639,79 @@
         left: 9.6rem;
         top: 5rem;
     }
-    .playercontrols button
+    .cores_player_buttons button
     {
         display: inline-block;
-        width: 2.5rem;
-        font-size: 1.3rem;
+        width: 40px;
+        height: 34px;
+        font-size: 20px;
         border-top-color: #004000;
         border-right-color: #007000;
         border-left-color: #007000;
         border-bottom-color: #009000;
         border-bottom-width: 2px;
         text-shadow: 0 0px 6px #007000, 0px 0px 3px #00C000, 0px 0px 3px #00C000;
-        padding-top: 1px;
+        padding-top: 0;
         position:relative;
         top:0;
+        text-align:center;
     }
-    .playercontrols button.pressed
+    .cores_player_buttons button.pressed
     {
         top: 2px;
         border-bottom-width: 1px;
         
+    }
+    .cores_player_buttons button.stop
+    {
+        padding-top:4px;
+        font-size: 16px;
+    }
+    
+    .cores_player_playlist
+    {
+        font-family: "HD44780 5x8";
+        font-size:8px;
+        display: block;
+        position: relative;
+        left: 0;
+        top: 16px;
+        background-color: black;
+        border: 3px solid #007000;
+        border-top-color: #00B000;
+        border-bottom-color: #004000;
+        border-radius: 4px;
+        width: 476px;
+        height:180px;
+        display: block;
+        text-shadow: 0 1px 0px #007000, 0px 0px 2px #00C000;
+        padding: 15px;
+        padding-top: 5px;
+        margin-bottom: 16px;
+        scrollbar-color: #004000 #00a000;
+        overflow-y: scroll;
+        overflow-x: hidden;
+        line-height: 1.3;
+        scroll-snap-type: y mandatory;
+    }
+    .cores_player_playlist span
+    {
+        display:inline-block;
+        width: 100%;
+        word-break: keep-all;
+        white-space: nowrap;
+        scroll-snap-align: center;
+    }
+    .cores_player_playlist span[data-playing="yes"]
+    {
+        color: #001000;
+        background-color: #00A000;
+        /*
+        background-size: 1.140px 1.25px;
+        background-image: 
+            linear-gradient(to right, #004000 0.125px, transparent 0.1250px, transparent 1.0px, #004000 1.0px, transparent 1.0px, transparent 1.125px),
+            linear-gradient(to bottom, #004000 0.125px, transparent 0.1250px, transparent 1.0px);
+            */
     }
 </style>
 <template id="cores_music_player">
@@ -890,7 +719,7 @@
     <div class="cores_player_time"><span class="cores_player_current_time">--:--</span><br /><span class="cores_player_total_time">--:--</span></div>
     <div class="cores_player_scrubber"><span class="cores_player_scrubber_fill">&nbsp;</span></div>
     <div class="cores_player_song_title">Unknown Artist</div>
-    <div class="cores_player_buttons"><button>&#x23f9;&#xfe0e;</button><button>&#x23ee;&#xfe0e;</button><button class="cores_player_playpausebutton">&#x23ef;&#xfe0e;</button><button>&#x23ed;&#xfe0e;</button></div>
+    <div class="cores_player_buttons"><button class="stop">&#x23f9;&#xfe0e;</button><button>&#x23ee;&#xfe0e;</button><button class="cores_player_playpausebutton">&#x23ef;&#xfe0e;</button><button>&#x23ed;&#xfe0e;</button><button>&#x1f500;&#xfe0e;</button></div>
     <div class="cores_player_volumecontrol"><span class="cores_player_volumeticks">11 -&nbsp;&nbsp;- 11<br />
     10 -&nbsp;&nbsp;- 10<br />
     &nbsp;9 -&nbsp;&nbsp;- 9<br />
@@ -905,6 +734,7 @@
     &nbsp;0 -&nbsp;&nbsp;- 0<br />    
         </span><span class="cores_player_volumetrack">&nbsp;</span><span class="cores_player_volumebg">&nbsp;</span><span class="cores_player_volumethumb">&nbsp;</span></div>
     <audio preload="metadata"></audio>
+    <div class="cores_player_playlist"></div>
 </template>
 <!--<div id="musicplayer">
     <div class="playertime"><span id="player_current_time">--:--</span><br /><span id="player_total_time">--:--</span></div>
