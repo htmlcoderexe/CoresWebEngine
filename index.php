@@ -15,6 +15,7 @@ require_once CLASS_DIR."EngineCore.php";
 EngineCore::$DEBUG = true;
 ini_set("display_errors", "1");
 error_reporting(E_ALL & ~E_NOTICE);
+setlocale(LC_CTYPE, "en_US.UTF-8");
 
 global $_PAGE_CONTENT;
 global $_PAGE_SIDEBAR;

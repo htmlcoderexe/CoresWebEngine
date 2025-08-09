@@ -1,7 +1,7 @@
 
 <div id="musicplayer">
 </div>
-<div id="debugga" style="border-style:solid;border-width:1px;border-color:green;overflow:scroll;height:200px;"></div>
+<div id="debugga" style="display:none;border-style:solid;border-width:1px;border-color:green;overflow:scroll;height:200px;"></div>
 <script type="text/javascript">
     
     document.getElementById('debugga').append("initializing.........\r\n<br />");
@@ -11,7 +11,7 @@
     document.getElementById('debugga').append("initializing2.........\r\n<br />");
     function fake_console(o)
     {
-        document.getElementById('debugga').append(o+"\r\n<br />");
+        //document.getElementById('debugga').append(o+"\r\n<br />");
         console.log(o);
     }
     fake_console("starting cores_player class");
@@ -547,7 +547,7 @@
         ajax.send(null);
     }
     //*/
-</script>-->
+</script>
 <style type="text/css">
     #musicplayer
     {

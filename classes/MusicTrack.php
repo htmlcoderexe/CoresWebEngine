@@ -47,8 +47,12 @@ class MusicTrack
         return $result;
     }
     
-    public static function FindDuration($filename)
+    public static function FindDuration($filename, $verbose = false)
     {
+        if($verbose)
+        {
+            echo "[" . $filename . "]";
+        }
         if(!file_exists($filename))
         {
             return 0;
@@ -57,6 +61,11 @@ class MusicTrack
         $cmd.= escapeshellarg($filename);
         $output = [];
         exec($cmd, $output);
+        if($verbose)
+        {
+            echo $cmd;
+            echo $output;
+        }
         if($output)
         {
             return intval($output[0]);
@@ -147,7 +156,7 @@ class MusicTrack
         }
         $filepath = File::GetIngestedFilePath($dir, $filename);
         echo "found &lt;$filename&gt;<br />";
-        $duration = self::FindDuration($filepath);
+        $duration = self::FindDuration($filepath, true);
         if(!$duration)
         {
             echo "very bad mp3<br />";
