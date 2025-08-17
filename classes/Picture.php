@@ -411,4 +411,23 @@ class Picture
         // TODO: text OCR (tesseract?) and title editing (needed??)
         return self::Create($new_pic_blob, $new_pic_thumb_blob, $w, $h, $title, $text, $ext);
     }
+    
+    public static function GetGallery($picIDs)
+    {
+        
+        $pictable = EVA::GetAsTable(["blobid","thumb_blobid","picture.width","picture.height","file.extension"],"picture",$picIDs);
+        $pics = [];
+        foreach($pictable as $picid=>$picdata)
+        {
+            $pics[]=[
+                "id"=>$picid,
+                "blob_id"=>$picdata['blobid'],
+                "thumbnail_blob_id"=>$picdata['thumb_blobid'],
+                "width"=>$picdata['picture.width'],
+                "height"=>$picdata['picture.height'],
+                "extension"=>$picdata['file.extension'],
+            ];
+        }
+        return $pics;
+    }
 }

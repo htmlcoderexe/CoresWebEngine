@@ -535,16 +535,23 @@ class EVA
          * @param string $type object type
          * @return an array of arrays each with 'object_id' and 'value'
          */
-	public static function GetAsTable($propertylist,$type)
+	public static function GetAsTable($propertylist,$type, $list=[])
 	{
-            $proplist = "?". str_repeat(",?", count($propertylist)-1);
+            $itemlist = "";
+            $origlist=$propertylist;
+            if($list)
+            {
+                $itemlist = "AND object_id IN (?". str_repeat(",?", count($list)-1).")";
+                $propertylist = array_merge($propertylist, $list);
+            }
+            $proplist = "?". str_repeat(",?", count($origlist)-1);
             $query ="
 		SELECT DISTINCT object_id,eva_properties.name,value FROM eva_property_values
 		INNER JOIN eva_objects
 		ON eva_objects.id = object_id
 		INNER JOIN eva_properties 
 		ON eva_properties.id =property_id
-		WHERE eva_objects.type=? and eva_properties.name IN ($proplist)
+		WHERE eva_objects.type=? and eva_properties.name IN ($proplist) $itemlist
 		
 		";
             $args=$propertylist;
@@ -555,11 +562,11 @@ class EVA
             {
                 if(!isset($output[$entry['object_id']]))
                 {
-                    $output[$entry['object_id']] = array_fill_keys($propertylist,'');
+                    $output[$entry['object_id']] = array_fill_keys($origlist,'');
                 }
                 $output[$entry['object_id']][$entry['name']] = $entry['value'];
             }
-            
+            EngineCore::Write2Debug($query);
             return $output;
 	}
         

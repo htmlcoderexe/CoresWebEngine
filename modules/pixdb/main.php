@@ -2,15 +2,7 @@
 
 function ModuleFunction_pixbd_list_thumbnail($idlist, $extratext="")
 {
-    $pics = [];
-    foreach($idlist as $id)
-    {
-        $pic = new Picture($id);
-        if($pic->id !== 0)
-        {
-            $pics[]= $pic;
-        }
-    }
+    $pics = Picture::GetGallery($idlist);
     $tpl = new TemplateProcessor("pixdb/thumbnailview");
     $tpl->tokens['pictures'] = $pics;
     $tpl->tokens['extra_text'] = $extratext;

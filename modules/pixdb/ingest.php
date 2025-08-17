@@ -9,14 +9,7 @@ function ModuleAction_pixdb_ingest_view($params)
         EngineCore::SetPageContent("fuck");
     }
     $picIDs = EVA::GetChildren($id,"picture");
-    $pics = [];
-    foreach($picIDs as $picID)
-    {
-        if($pic = new Picture($picID))
-        {
-            $pics[]=$pic;
-        }
-    }
+    $pics = Picture::GetGallery($picIDs);
     $tpl = new TemplateProcessor("pixdb/thumbnailview");
     $tpl->tokens['pictures'] = $pics;
     $tpl->tokens['extra_text'] = "Viewing ingest results for <strong>{$ingest->foldername}</strong>.";
