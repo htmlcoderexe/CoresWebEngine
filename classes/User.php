@@ -11,6 +11,7 @@ class User
     private $groups=[];
     private $grantableperms=[];
     private $revokableperms=[];
+    private static $su = "";
     
     function __construct($username)
     {
@@ -54,6 +55,10 @@ class User
 
     public static function GetCurrentUser()
     {
+        if(self::$su)
+        {
+            return new User(self::$su);
+        }
         if(!isset($_SESSION['userid']))
         {
             return new User("Guest");
@@ -166,6 +171,17 @@ class User
     }
 
     //end auth
+    
+    public static function SetSU($name)
+    {
+        self::$su = $name;
+    }
+    
+    public static function ClearSU()
+    {
+        self::$su = "";
+    }
+    
     //Permissions
     
     /**
