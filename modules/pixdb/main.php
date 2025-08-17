@@ -1,8 +1,5 @@
 <?php
 
-require_once("Picture.php");
-require_once("PictureSet.php");
-
 function ModuleFunction_pixbd_list_thumbnail($idlist, $extratext="")
 {
     $pics = [];
@@ -150,4 +147,10 @@ function ModuleAction_pixdb_upload($params)
         EngineCore::GTFO("/pixdb/");
         die();
     }
+}
+
+require "ingest.php";
+function ModuleAction_pixdb_ingest($params)
+{
+    return Module::SPLIT_ROUTE;
 }
