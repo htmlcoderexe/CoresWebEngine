@@ -8,6 +8,7 @@
 <div class="picturelist">
     {#foreach|{%pictures%}|
 <div class="thumbnail">
+    <img src="/files/stream/{:blob_id:}/{:blob_id:}.{:extension:}" style="display:none" />
     <a href="/pixdb/showpic/{:id:}" data-imageid="{:id:}" onclick="showImage(event, {:id:});"><img src="/files/stream/{:thumbnail_blob_id:}/{:blob_id:}_thumbnail.png" width="{:thumb_width:}" height="{:thumb_height:}" /></a>
 </div>#}
 </div>
@@ -21,7 +22,7 @@ var imagelist = [];
 var captionlist = [];
 var offset =0;
 {#foreach|{%pictures%}|
-imagelist.push({ id: {:id:}, src: "/files/stream/{:blob_id:}/{:blob_id:}.{:ext:}" });#}
+imagelist.push({ id: {:id:}, src: "/files/stream/{:blob_id:}/{:blob_id:}.{:extension:}" });#}
     function showImage(e, id)
     {
         console.log("showing image ID", id);
