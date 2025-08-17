@@ -4,6 +4,9 @@ Module::DemandProperty("thumb_blobid", "Thumbnail File ID", "File ID of the thum
 Module::DemandProperty("picture.text", "Image text", "Text contained in the image, may be automatically generated.");
 Module::DemandProperty("picture.width", "Width", "Image width, in pixels.");
 Module::DemandProperty("picture.height", "Height", "Image height, in pixels.");
+Module::DemandProperty("picture.takendate", "Taken date", "Date this picture was taken on.");
+Module::DemandProperty("picture.takentime", "Taken time", "Time this picture was taken at.");
+Module::DemandProperty("filetime","File time", "Date and time when this file was likely created");
 /**
  * Description of Picture
  *
@@ -27,8 +30,10 @@ class Picture
     public $aspect_ratio;
     public $thumb_width;
     public $thumb_height;
+    public $datetaken;
+    public $filetime;
     
-    private $eva;
+    public $eva;
     
     public function __construct($id)
     {
@@ -45,11 +50,18 @@ class Picture
         $this->title = $eva->attributes["title"];
         $this->text = $eva->attributes["picture.text"];
         $this->extension = $eva->attributes["file.extension"];
-        
         // calculated properties
         
         $this->aspect_ratio = $this->width / $this->height;
         
+        if(isset($eva->attributes['picture.takendate']))
+        {
+            $this->datetaken = DateTimeImmutable::createFromFormat("YmdHis", $eva->attributes['picture.takendate'].$eva->attributes['picture.takentime']);
+        }
+        if(isset($eva->attributes['filetime']))
+        {
+            $this->filetime =$eva->attributes['filetime'];
+        }
         // here, the scale is kept even if it enlarges the image, for display purposes
         
         $scale = self::ScaleThumbnail($this->width, $this->height);
@@ -76,7 +88,7 @@ class Picture
         return self::MAXIMUM_DIMENSION / $limiter;
     }
     
-    public static function Create($blob, $thumb, $w, $h, $title, $text, $ext)
+    public static function Create($blob, $thumb, $w, $h, $title, $text, $ext,$filedate,$totaldate)
     {
         $eva = EVA::CreateObject("picture");
         $eva->AddAttribute("blobid", $blob);
@@ -86,8 +98,187 @@ class Picture
         $eva->AddAttribute("title",$title);
         $eva->AddAttribute("picture.text",$text);
         $eva->AddAttribute("file.extension",$ext);
+        $eva->AddAttribute("picture.takendate",$totaldate->format("Ymd"));
+        $eva->AddAttribute("picture.takentime",$totaldate->format("His"));
+        $eva->AddAttribute("filetime",$filedate->getTimeStamp());
         $eva->Save();
         return new Picture($eva->id);
+    }
+    
+    public static function GetImageType($filename)
+    {
+         $types = ['png','gif','jpeg'];
+        // reset the extension
+        $ext ="";
+        // try whatever formats are left
+        foreach($types as $imageformat)
+        {
+            $imagefx = "imagecreatefrom" . $imageformat;
+            $image = @$imagefx($filename);
+            // if a valid image was obtained, note the extension/format and leave the loop
+            if($image)
+            {
+                $ext = $imageformat;
+                break;
+            }
+        }
+        $type=exif_imagetype($filename);
+        if($type === IMAGETYPE_WEBP)
+        {
+            //$image = imagecreatefromwebp($filename);
+            $ext = "webp";
+        }
+        // if no valid image was found, give up
+        if($ext == "")
+        {
+            self::$last_error = "Invalid image file";
+            return null;
+        }
+        return $ext;
+    }
+    
+    public static function FromFile($blobid)
+    {
+        $past0 = (new DateTimeImmutable())->SetISODate(1600,1);
+        // this will keep "to be attempted" types for later
+        $sourcefile = File::GetFilePath($blobid);
+        $fobj = File::GetByBlobID($blobid);
+        $fname = $fobj->fname;
+        $ext = self::GetImageType($sourcefile);
+        $imagefx = "imagecreatefrom".$ext;
+        $image = @$imagefx($sourcefile);
+        // get earliest file-related dates
+        $filestat = stat($sourcefile);
+        $sourcetimes = [$filestat['atime'],$filestat['mtime'],$filestat['ctime']];
+        $candidates = [];
+        // exclude zeroes though
+        foreach($sourcetimes as $candidate)
+        {
+            if($candidate >0)
+            {
+                $candidates[]=$candidate;
+            }
+        }
+        // make a date object out of it
+        $filedate = (new DateTimeImmutable())->setTimeStamp(min($candidates));
+        
+        $totaldate = $filedate;
+        // fish for dates in EXIF
+        $metadate = $past0;
+        if($ext == "jpeg")
+        {
+            $exif = [];
+            $exif = @exif_read_data($sourcefile, null, true, false);
+            // the standard tag is this
+            if(isset($exif['EXIF']) && isset($exif['EXIF']['DateTimeOriginal']))
+            {
+                $takendate = $exif['EXIF']['DateTimeOriginal'];
+                $metadate = DateTimeImmutable::createFromFormat("Y:m:d H:i:s",$takendate);
+            }
+            // not sure if this fallback is meaningful
+            elseif(isset($exif['IDF0']) && isset($exif['IDF0']['DateTime']))
+            {
+                $takendate = $exif['IDF0']['DateTime'];
+                $metadate = DateTimeImmutable::createFromFormat("Y:m:d H:i:s",$takendate);
+            }
+            // if exif disappoints, "zero" the date
+            else
+            {
+                // somewhere in the past ok
+            }
+        }
+        // set the cached "real" date to exif date if it exists and lower than the file date
+        if($metadate != $past0)
+        {
+            $totaldate = $metadate < $filedate ? $metadate : $filedate;
+            
+        }
+        
+        // get sizes
+        $w = imagesx($image);
+        $h = imagesy($image);
+        
+        // not sure if ever happens but definitely fail in this case
+        if($w == 0 || $h == 0)
+        {
+            self::$last_error = "Invalid image dimensions";
+            return null;
+        }
+        
+        
+        // fit the image inside a MAXIMUM_DIMENSION square
+        
+        $scale_factor =  self::ScaleThumbnail($w, $h);
+        
+        // no thumbnail is created if the image is smaller than the square
+        
+        if($scale_factor > 1)
+        {
+            // set thumbnail file to the same file
+            $new_pic_thumb_blob = $blobid;
+        }
+        
+        // otherwise, generate a thumbnail, store it as a File and return its blobid
+        
+        else
+        {
+            $tw = intval($w*$scale_factor);
+            $th = intval($h*$scale_factor);
+            $thumb = imagecreatetruecolor($tw,$th);
+            imagecopyresampled($thumb,$image,0,0,0,0,$tw,$th,$w,$h);
+            $thumb_file = File::New($fname . "_thumbnail.png");
+            $hThumbFile = $thumb_file->GetFileHandle();
+            imagepng($thumb, $hThumbFile);
+            fclose($hThumbFile);
+            $thumb_file->UpdateSize();
+            $new_pic_thumb_blob = $thumb_file->blobid;
+            //$thumb_file->evaobj->Save();
+        }
+        $title = "";
+        $text = "";
+        // TODO: text OCR (tesseract?) and title editing (needed??)
+        return self::Create($blobid, $new_pic_thumb_blob, $w, $h, $title, $text, $ext,$filedate,$totaldate);
+        
+        
+        
+    }
+    /**
+     * 
+     * @param type $dir
+     * @return bool | \Picture
+     */
+    public static function Ingest($dir)
+    {
+        echo "ingesting from $dir...<br />";
+        $filename = File::SelectNextFile($dir);
+        if(!$filename)
+        {
+            echo "no new files to ingest, quitting<br />";
+            return false;
+        }
+        $filepath = File::GetIngestedFilePath($dir, $filename);
+        echo "found &lt;$filename&gt;<br />";
+        $imagetype = self::GetImageType($filepath);
+        if(!$imagetype)
+        {
+            echo "very bad image<br />";
+            File::RejectFile($dir, $filename);
+            return true;
+        }
+        $file = File::IngestFile($dir, $filename);
+        $file->filext = $imagetype;
+        $pic = self::FromFile($file->blobid);
+        if($pic)
+        {
+            //yay
+            echo "added another pic<br />";
+            return $pic;
+        }
+        else
+        {
+            echo "unfortunately, ". self::$last_error."<br />";
+        }
+        return true;
     }
     
     public static function FromUpload($uploadArray,$index = -1)
