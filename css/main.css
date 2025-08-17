@@ -421,3 +421,49 @@ a.tagusername::before
 {
     max-width: 100%;
 }
+
+
+.lightbox
+{
+    position: fixed;
+    width: 100vw;
+    height:100vh;
+    top:0;
+    left:0;
+    z-index: 30;
+    padding: 0px;
+}
+
+#lightbox_prev
+{
+    display:block;
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    width: 6vw;
+    height: 100vh;
+    background-image: linear-gradient(to left, rgb(127  127  127 / 0), rgb(127  127  127 / 1));
+}
+
+#lightbox_next
+{
+    display:block;
+    position: fixed;
+    right: 0px;
+    top: 0px;
+    width: 6vw;
+    height: 100vh;
+    background-image: linear-gradient(to right, rgb(127  127  127 / 0), rgb(127  127  127 / 1));
+}
+
+#lightbox_close
+{
+    display:block;
+    position: fixed;
+    right: 80px;
+    top: 0px;
+    width: 1vw;
+    height: 2vh;
+    font-size: 4em;
+    text-shadow: 0 0px 2px #000000, 0px 0px 3px #000000, 0px 0px 3px #000000;
+}
