@@ -52,6 +52,10 @@ require_once CLASS_DIR."Document.php";
 require_once CLASS_DIR."JobScheduler.php";
 require_once CLASS_DIR."MusicTrack.php";
 require_once CLASS_DIR."Chip.php";
+
+require_once CLASS_DIR."Picture.php";
+require_once CLASS_DIR."PictureSet.php";
+require_once CLASS_DIR."PictureIngest.php";
 header("Content-Security-Policy:  frame-ancestors 'self' ".BASE_URI);
 session_start();
 EngineCore::$CurrentUser=User::GetCurrentUser();
