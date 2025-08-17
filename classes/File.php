@@ -321,6 +321,7 @@ class File
             HTTPHeaders::EnableBytes();
             HTTPHeaders::Range($size);
             HTTPHeaders::Length($size);
+            header("Expires: " . date(DATE_RFC7231,time()+864000));
             if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE']))
             {
                 HTTPHeader::Status(304);
