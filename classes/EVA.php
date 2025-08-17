@@ -40,6 +40,21 @@ class EVA
 	}
 	
         /**
+         * Loads an EVA object from ID, optionally checking type
+         * @param int $id EVAID to load
+         * @param string $type if not empty, will check if the type matches
+         * @return null|\EVA the loaded EVA object, null if it doesn't exist or if the type is specified and doesn't match
+         */
+        public static function Load($id, $type="")
+        {
+            if(!self::Exists($id, $type))
+            {
+                return null;
+            }
+            return new EVA($id);
+        }
+        
+        /**
          * Creates a new EVA object of a specified type
          * @param string $type Object typename
          * @param int $owner Sets the owner of the created object. -1 uses current uid and 0 uses nobody.
@@ -48,7 +63,7 @@ class EVA
          * ['attribute name'] => ['attribute value']
          * @return \EVA The created object
          */
-	public static function CreateObject($type,$owner = self::OWNER_NOBODY,$blueprint=[])
+	public static function CreateObject($type,$owner = self::OWNER_CURRENT,$blueprint=[])
 	{
             if($owner === self::OWNER_CURRENT)
             {
