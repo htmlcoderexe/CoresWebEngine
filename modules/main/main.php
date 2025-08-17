@@ -41,12 +41,38 @@ function ModuleAction_main_crankjobs($params)
     echo "<pre>";
     JobScheduler::CrankJobs();
     flush();
+    
+    $picingests = EVA::GetByProperty("active", "1", "picture.ingest");
+    $ingestorobjects = [];
+    $stillrunning = [];
+    foreach($picingests as $ingestid)
+    {
+        $ingest = PictureIngest::Load($ingestid);
+        if($ingest)
+        {
+            $ingestorobjects[]=$ingest;
+        }
+    }
+    
     $time_max = $time_start + 60000000000;
+    $mp3idling = false;
     while(hrtime(true)<$time_max)
     {
-        $idling = !MusicTrack::Ingest("mp3");
-        flush();
-        if($idling)
+        if(!$mp3idling)
+        {
+            $mp3idling = !MusicTrack::Ingest("mp3");
+            flush();
+        }
+        $stillrunning = [];
+        foreach($ingestorobjects as $ingest)
+        {
+            if($ingest->Run())
+            {
+                $stillrunning[]=$ingest;
+            }
+        }
+        $ingestorobjects = $stillrunning;
+        if(count($ingestorobjects)<1 && $mp3idling)
         {
             break;
         }
