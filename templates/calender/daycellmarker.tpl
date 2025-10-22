@@ -1,1 +1,1 @@
-                    <span class="cal-event-{%marker|generic%}">&nbsp;</span>
+                    <span style="box-shadow: inset {%marker|0px 8px%} 0px 0px {%colour|#FFE000%};">&nbsp;</span>

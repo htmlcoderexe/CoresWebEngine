@@ -500,6 +500,27 @@ class EVA
 	}
         
         /**
+         * Gets EVA objects that have a specific property set to a specific value, filtered by object type.
+         * @param string $property Name of the target property
+         * @param string $value Value to be searched for
+         * @param string $type Object type to filter by
+         * @return array of matching EVA IDs if any found
+         */
+	public static function GetByPropertyPre($property,$value,$type)
+	{
+            $query ="
+		SELECT DISTINCT object_id FROM eva_property_values
+		INNER JOIN eva_objects
+		ON eva_objects.id = object_id
+		INNER JOIN eva_properties 
+		ON eva_properties.id =property_id
+		WHERE value LIKE ? and eva_objects.type=? and eva_properties.name=?
+		
+		";
+            return DBHelper::RunList($query,[$value."%",$type,$property]);
+	}
+        
+        /**
          * Gets an array of all objects of a specific type containing
          * the value of that property per objects. Each item looks like this:
          * {

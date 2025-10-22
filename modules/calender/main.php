@@ -405,27 +405,73 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     }
     $events_upcoming=[];
     $events_today=[];
+    $all_event_ids= CalendarScheduler::CheckMonth($y,$m);
+    $all_events = [];
+    if($all_event_ids)
+    {
+        $all_events = EVA::GetAsTable(["calendar.date","calendar.time","title","description","calendar.event_type"], "calendar.event",$all_event_ids);
+    }
+    //$events_today = [];
+    $upcoming = [];
+    $events_by_day = [];
+    foreach($all_events as $id=>$event)
+    {
+       $c_d = (int) (explode("-",$event['calendar.date'])[2]);
+       if(!isset($events_by_day[$c_d]))
+       {
+           $events_by_day[$c_d]=[];
+       }
+       $events_by_day[$c_d][]=$event;
+       if($c_d == $today)
+       {
+           $events_today[]=$event;
+       }
+       elseif($c_d> $today)
+       {
+           $upcoming[]=$event;
+       }
+    }
+    //*/
+    EngineCore::Dump2Debug($events_by_day);
+    EngineCore::Dump2Debug($all_event_ids);
+    EngineCore::Dump2Debug($all_events);
+    //*/
+    
+    $e_types=EVA::GetAllOfType("calendar.event.type");
+    $mapping = EVA::GetAsTable(["calendar.tagcolour"],"calendar.event.type",$e_types);
+    
+    $marker_places = ["0px 8px", "0px -8px", "8px 0px", "-8px 0px"];
+    
     for($i=0;$i<$daysthismont;$i++)
     {
         
         $actives = [];
+        /*
         $dates = CalendarScheduler::CheckDate($y,$m,str_pad($i+1,2,"0",STR_PAD_LEFT));
         if($dates)
+         * 
+         */
+        if(isset($events_by_day[$i+1]))
         {
-            $actives[]="";
-            $actives[]="adm";
+            foreach($events_by_day[$i+1] as $event)
+            {
+                $actives[]=$mapping[$event['calendar.event_type']]['calendar.tagcolour'];
+            }
 
             
         }
+        //*/
         if($isthismonth && $today == $i+1)
         {
             $t_today= new TemplateProcessor("calender/daycelltoday");
             $t_today->tokens['number']=$today;
             $output.=$t_today->process(true);
+            /*/
             foreach($dates as $date)
             {
                 $events_today[]= new CalendarEvent($date);
             }
+            //*/
         }
         else
         {
@@ -433,6 +479,7 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
             $thisdate=date_create_from_format("j m Y", ($i+1)." ".$currentmonth->format("m Y"));
             $datestring = $thisdate->format("Ymd");
             
+            /*/
             if($i+1>$today)
             {
                 foreach($dates as $date)
@@ -440,11 +487,18 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
                     $events_upcoming[]= new CalendarEvent($date);
                 }
             }
-            
-            foreach($actives as $line)
+            //*/
+            $marker_count=0;
+            foreach($actives as $marker_colour)
             {
-                $t_marker->tokens['marker']=$line;
+                if($marker_count>3)
+                {
+                    break;
+                }
+                $t_marker->tokens['marker']=$marker_places[$marker_count];
+                $t_marker->tokens['colour']=$marker_colour;
                 $divstring.=$t_marker->process(true);
+                $marker_count++;
             }
             $t_day->tokens['date']=$datestring;
             $t_day->tokens['number']=($i+1);

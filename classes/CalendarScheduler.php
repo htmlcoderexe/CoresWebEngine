@@ -20,6 +20,11 @@ class CalendarScheduler
         
     }
     
+    public static function CheckMonth($y, $m)
+    {
+        return EVA::GetByPropertyPre("calendar.date", $y."-".$m."-", "calendar.event");
+    }
+    
     
     
     public static function CheckRecurrers($y,$m,$d)
