@@ -281,7 +281,37 @@ class Picture
         return true;
     }
     
-    public static function FromUpload($uploadArray,$index = -1)
+    public static function FromUpload($uploadArray, $index = -1)
+    {
+        // get the correct temp file
+        $tempname = $index == -1 ? $uploadArray['tmp_name'] : $uploadArray['tmp_name'][$index];
+        // is it a picture?
+        $imagetype = self::GetImageType($tempname);
+        if(!$imagetype)
+        {
+            // if not, can't do anything
+            return null;
+        }
+        // check for dupes
+        $filesize = filesize($tempname);
+        $dupeBlobID = File::FindDupe(File::DoHash($tempname),$filesize);
+        if($dupeBlobID)
+        {
+            // re-use the existing file
+            return self::FromFile($dupeBlobID);
+        }
+        // upload
+        $newFile = File::Upload($uploadArray, $index);
+        if($newFile)
+        {
+            // use new file if success
+            return self::FromFile($newFile->blobid);
+        }
+        // fail...
+        return null;        
+    }
+    
+    public static function XXFromUpload($uploadArray,$index = -1)
     {
         // get uploaded filename, tempname and extension
         $filename = basename($index == -1 ? $uploadArray['name'] : $uploadArray['name'][$index]);

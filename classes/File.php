@@ -178,7 +178,7 @@ class File
                 $fsize=EVA::LoadPropFromDB($file,"filesize")[0];
                 if(intval($fsize) == $size)
                 {
-                    return EVA::LoadPropFromDB($file, "blobid");
+                    return EVA::LoadPropFromDB($file, "blobid")[0];
                 }
                 
             }
