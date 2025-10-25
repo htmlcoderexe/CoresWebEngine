@@ -12,6 +12,7 @@ class PictureSet
     public $title;
     public $description;
     public $eva;
+    public $cached_count;
     
     /**
      * Constructs a PictureSet Object from the necessary bits.
@@ -28,6 +29,7 @@ class PictureSet
         $this->pictures = $pictures;
         $this->description = $description;
         $this->eva = $eva;
+        $this->cached_count = count($pictures);
     }
     
     /**
@@ -43,6 +45,8 @@ class PictureSet
             return;
         }
         $pictures = EVA::GetChildren($id, "picture");
+        $eva->SetSingleAttribute("cached_count",count($pictures));
+        $eva->Save();
         $title = $eva->attributes['title'];
         $description = $eva->attributes['description'];
         return new PictureSet($id, $title,$description,$eva,$pictures);
@@ -60,17 +64,20 @@ class PictureSet
         $eva = EVA::CreateObject("picture_album");
         $eva->AddAttribute("title", $title);
         $eva->AddAttribute("description", $description);
+        $pic_count = 0;
         foreach($pictures as $pictureID)
         {
             if(EVA::Exists($pictureID, "picture"))
             {
                 $eva->Adopt($pictureID);
+                $pic_count++;
             }
             else
             {
                 Logger::log("PictureSet::Create: Skipping invalid PictureID [$pictureID].",Logger::TYPE_WARNING,"PictureSet: Invalid PictureID");
             }
         }
+        $eva->AddAttribute("cached_count",$pic_count);
         $eva->Save();
         return PictureSet::Load($eva->id);
     }

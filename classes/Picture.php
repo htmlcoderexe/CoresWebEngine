@@ -7,6 +7,7 @@ Module::DemandProperty("picture.height", "Height", "Image height, in pixels.");
 Module::DemandProperty("picture.takendate", "Taken date", "Date this picture was taken on.");
 Module::DemandProperty("picture.takentime", "Taken time", "Time this picture was taken at.");
 Module::DemandProperty("filetime","File time", "Date and time when this file was likely created");
+Module::DemandProperty("cached_count","Cached count", "Number of items that's cached for display in tables.");
 /**
  * Description of Picture
  *

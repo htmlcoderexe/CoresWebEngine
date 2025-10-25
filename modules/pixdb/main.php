@@ -1,6 +1,6 @@
 <?php
 
-function ModuleFunction_pixbd_list_thumbnail($idlist, $extratext="")
+function ModuleFunction_pixdb_list_thumbnail($idlist, $extratext="")
 {
     $pics = Picture::GetGallery($idlist);
     $tpl = new TemplateProcessor("pixdb/thumbnailview");
@@ -9,9 +9,26 @@ function ModuleFunction_pixbd_list_thumbnail($idlist, $extratext="")
     EngineCore::SetPageContent($tpl->process(true));
 }
 
+function ModuleAction_pixdb_albums()
+{
+    $list = EVA::GetAsTable(["title","description","cached_count"],"picture_album");
+    $data =[];
+    foreach($list as $evaid=>$props)
+    {
+        $props["id"]=$evaid;
+        $props["cached_count"]=$props["cached_count"]===""?"?":$props["cached_count"];
+        $data[]=$props;
+    }
+    $extratext="";
+    $tpl = new TemplateProcessor("pixdb/albumlist");
+    $tpl->tokens['albums'] = $data;
+    $tpl->tokens['extra_text'] = $extratext;
+    EngineCore::SetPageContent($tpl->process(true));
+}
+
 function ModuleAction_pixdb_default($params)
 {
-    ModuleAction_pixdb_showall($params);
+    ModuleAction_pixdb_albums($params);
 }
 
 function ModuleAction_pixdb_showall($params)
@@ -19,14 +36,14 @@ function ModuleAction_pixdb_showall($params)
     $pic_ids = EVA::GetAllOfType("picture");
     // show newest first
     $pic_ids = array_reverse($pic_ids);
-    ModuleFunction_pixbd_list_thumbnail($pic_ids);
+    ModuleFunction_pixdb_list_thumbnail($pic_ids);
 }
 
 function ModuleAction_pixdb_tag($params)
 {
     $tag=$params[0];
     $pic_ids = Tag::Find("picture", $tag);
-    ModuleFunction_pixbd_list_thumbnail($pic_ids, "Searching by tag [$tag]");
+    ModuleFunction_pixdb_list_thumbnail($pic_ids, "Searching by tag [$tag]");
     
 }
 
@@ -60,7 +77,7 @@ function ModuleAction_pixdb_viewalbum($params)
         die();
     }
     $pic_ids = $a->pictures;
-    ModuleFunction_pixbd_list_thumbnail($pic_ids, "{$a->title}");
+    ModuleFunction_pixdb_list_thumbnail($pic_ids, "{$a->title}");
 }
 
 
