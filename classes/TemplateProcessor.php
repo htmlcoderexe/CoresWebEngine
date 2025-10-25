@@ -367,7 +367,14 @@ class TemplateProcessor
                 {
                     case "row":
                     {
-                        $output = $this->process_nodelist($node['params'][1]);
+                        if($typed['elements'] == [])
+                        {
+                            $output ="";
+                        }
+                        else
+                        {
+                            $output = $this->process_nodelist($node['params'][1]);
+                        }
                         array_pop($this->varstack);
                         break;
                     }
