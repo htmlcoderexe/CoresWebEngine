@@ -556,8 +556,12 @@ class EVA
          * @param string $type object type
          * @return an array of arrays each with 'object_id' and 'value'
          */
-	public static function GetAsTable($propertylist,$type, $list=[])
+	public static function GetAsTable($propertylist,$type, $list=null)
 	{
+            if($list===[])
+            {
+                return [];
+            }
             $itemlist = "";
             $origlist=$propertylist;
             if($list)
