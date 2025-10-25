@@ -40,7 +40,9 @@ function ModuleAction_debug_eva($params)
         die;
     }
     EngineCore::RawModeOn();
-    var_dump(new EVA($params[0]));
+    $e=new EVA($params[0]);
+    $e->children = EVA::GetChildren($params[0]);
+    var_dump($e);
     die();
 }
 
