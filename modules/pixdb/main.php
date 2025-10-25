@@ -19,6 +19,7 @@ function ModuleAction_pixdb_albums()
         $props["cached_count"]=$props["cached_count"]===""?"?":$props["cached_count"];
         $data[]=$props;
     }
+    $data = array_reverse($data);
     $extratext="";
     $tpl = new TemplateProcessor("pixdb/albumlist");
     $tpl->tokens['albums'] = $data;
