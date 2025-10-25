@@ -27,8 +27,20 @@ function ModuleAction_debug_info()
     {
         EngineCore::FromWhenceYouCame();
         die;
+    }    phpinfo();
+
+    die();
+}
+function ModuleAction_debug_eva($params)
+{
+    $user=User::GetCurrentUser();
+    if(!$user->HasPermission("super"))
+    {
+        EngineCore::FromWhenceYouCame();
+        die;
     }
-    phpinfo();
+    EngineCore::RawModeOn();
+    var_dump(new EVA($params[0]));
     die();
 }
 

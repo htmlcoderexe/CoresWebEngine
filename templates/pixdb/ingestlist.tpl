@@ -11,7 +11,7 @@
     <tbody>
 {#foreach|{%ingests%}|      <tr>      
             <td>{:folder:}</td>
-            <td>{:active:}</td>
+            <td>{#ifeq|{:active:}|1|Yes|No#}</td>
             <td><a href="/pixdb/ingest/view/{:id:}">View</a></td>
             <td><a href="/pixdb/ingest/manage/{:id:}">Manage</a></td>
         </tr>#}

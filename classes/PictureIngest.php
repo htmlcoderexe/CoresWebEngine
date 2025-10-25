@@ -53,6 +53,14 @@ class PictureIngest
         return self::Load($eva->id);
     }
     
+    public function Save()
+    {
+        $this->eva->SetSingleAttribute('active', $this->active);
+        $this->eva->SetSingleAttribute('visibility', $this->visibility_level);
+        $this->eva->SetSingleAttribute('ingest.folder', $this->foldername);
+        $this->eva->Save();
+    }
+    
     public function Run()
     {
         User::SetSU(User::GetCurrentUser()->username);

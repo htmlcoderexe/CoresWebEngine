@@ -19,28 +19,61 @@ function ModuleAction_pixdb_ingest_create($params)
 {
     $id = EngineCore::POST("id", "");
     $foldername=basename(EngineCore::POST("foldername", ""));
-    $visibility=EngineCore::POST("visibility", "");
+    $visibility=EngineCore::POST("visibility", "0");
+    $active=EngineCore::POST("active", "0");
     if($id === "")
     {
         $tpl = new TemplateProcessor("pixdb/ingestcreate");
         EngineCore::SetPageContent($tpl->process(true));
         return;
     }
-    if($foldername==="" || strpbrk($foldername, "\\/?%*:|\"<>") !== FALSE)
+    if($id == -1)
     {
-        EngineCore::WriteUserError("Invalid directory name [".htmlspecialchars($foldername)."]", "errors");
-        EngineCore::GTFO("/pixdb/ingest/create");
-        die();
+        
+        if($foldername==="" || strpbrk($foldername, "\\/?%*:|\"<>") !== FALSE)
+        {
+            EngineCore::WriteUserError("Invalid directory name [".htmlspecialchars($foldername)."]", "errors");
+            EngineCore::GTFO("/pixdb/ingest/create");
+            die();
+        }
+        mkdir(FILESTORE_PATH. DIRECTORY_SEPARATOR . File::INGEST_BASE_DIR . DIRECTORY_SEPARATOR . PictureIngest::PICTURE_INGEST_DIR . DIRECTORY_SEPARATOR . $foldername);
+        mkdir(FILESTORE_PATH. DIRECTORY_SEPARATOR . File::INGEST_BASE_DIR . DIRECTORY_SEPARATOR . PictureIngest::PICTURE_INGEST_DIR . DIRECTORY_SEPARATOR . $foldername . DIRECTORY_SEPARATOR . ".failed");
+        $ingest = PictureIngest::Create($foldername,$visibility,true);
     }
-    mkdir(FILESTORE_PATH. DIRECTORY_SEPARATOR . File::INGEST_BASE_DIR . DIRECTORY_SEPARATOR . PictureIngest::PICTURE_INGEST_DIR . DIRECTORY_SEPARATOR . $foldername);
-    mkdir(FILESTORE_PATH. DIRECTORY_SEPARATOR . File::INGEST_BASE_DIR . DIRECTORY_SEPARATOR . PictureIngest::PICTURE_INGEST_DIR . DIRECTORY_SEPARATOR . $foldername . DIRECTORY_SEPARATOR . ".failed");
-    $ingest = PictureIngest::Create($foldername,$visibility,true);
+    else
+    {
+        $ingest = PictureIngest::Load($id);
+        if(!$ingest)
+        {
+            EngineCore::GTFO("/pixdb/ingest/list");
+            die;
+        }
+        $ingest->visibility_level = $visibility;
+        $ingest->active = $active;
+        $ingest->Save();
+    }
     EngineCore::GTFO("/pixdb/ingest/view/" . $ingest->id);
     die();
 }
 
 function ModuleAction_pixdb_ingest_manage($params)
 {
+    $ingest = PictureIngest::Load($params[0]);
+    if(!$ingest)
+    {
+        EngineCore::GTFO("/pixdb/ingest/list");
+        die;
+    }
+    $data = [
+        "visibility"=>$ingest->visibility_level,
+        "active"=>$ingest->active,
+        "foldername"=>$ingest->foldername,
+        "id"=>$ingest->id
+    ];
+    $tpl = new TemplateProcessor("pixdb/ingestcreate");
+    $tpl->tokens=$data;
+    EngineCore::SetPageContent($tpl->process(true));
+    return;
     
 }
 
