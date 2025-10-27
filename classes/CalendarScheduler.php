@@ -22,6 +22,7 @@ class CalendarScheduler
     
     public static function CheckMonth($y, $m)
     {
+        $m=str_pad($m,2,"0", STR_PAD_LEFT);
         return EVA::GetByPropertyPre("calendar.date", $y."-".$m."-", "calendar.event");
     }
     

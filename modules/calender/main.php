@@ -349,6 +349,7 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
 {
     list($y,$m,$d) = ModuleFunction_calender_ParseYYYYMMDD($month."01",true);
     $output="";
+    RecurringEvent::DoMonth($y,$m);
     
     $currentmonth = date_create_from_format("Ymd",$y.$m.$d);
     
@@ -405,11 +406,24 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     }
     $events_upcoming=[];
     $events_today=[];
-    $all_event_ids= CalendarScheduler::CheckMonth($y,$m);
+    $all_event_ids= CalendarScheduler::CheckMonth(intval($y),intval($m));
     $all_events = [];
     if($all_event_ids)
     {
         $all_events = EVA::GetAsTable(["calendar.date","calendar.time","title","description","calendar.event_type"], "calendar.event",$all_event_ids);
+    }
+    $m2=intval($m)+1;
+    $y2=intval($y);
+    if($m2>12)
+    {
+        $m2=1;
+        $y2++;
+    }
+    $next_month_ids= CalendarScheduler::CheckMonth($y2,$m2);
+    $next_month_events = [];
+    if($next_month_ids)
+    {
+        $next_month_events = EVA::GetAsTable(["calendar.date","calendar.time","title","description","calendar.event_type"], "calendar.event",$next_month_ids);
     }
     //$events_today = [];
     $upcoming = [];
@@ -431,7 +445,12 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
            $upcoming[]=$event;
        }
     }
-    //*/
+    foreach($next_month_events as $id=>$event)
+    {
+       
+       $upcoming[]=$event;
+    }
+    /*/
     EngineCore::Dump2Debug($events_by_day);
     EngineCore::Dump2Debug($all_event_ids);
     EngineCore::Dump2Debug($all_events);
@@ -564,9 +583,9 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
             $t_upcoming->tokens['events']=$events_today;
             EngineCore::AddSideBar("Today", $t_upcoming->process(true));
         }
-        if(count($events_upcoming) > 0)
+        if(count($upcoming) > 0)
         {
-            $t_upcoming->tokens['events']=$events_upcoming;
+            $t_upcoming->tokens['events']=$upcoming;
             EngineCore::AddSideBar("Upcoming", $t_upcoming->process(true));
         }
     }
@@ -575,6 +594,24 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
 function ModuleFunction_calender_TimeToEms($ems,$hh,$mm)
 {
     return ((floatval($hh))*1.0*$ems +floatval($mm)/60.0*$ems);
+}
+
+
+function ModuleAction_calender_fromevent($params)
+{
+    $eid = $params[0];
+    $evt = new CalendarEvent($eid);
+    if(!$evt->isValid)
+    {
+        var_dump($evt);
+        //EngineCore::GTFO("/calender");
+        die;
+    }
+    $rtype = EngineCore::POST("rtype", RecurringEvent::RECUR_MONTH);
+    $rdata = EngineCore::POST("rdata","1");
+    $rec = RecurringEvent::Create($rtype,$rdata,$evt->title,$evt->description,$evt->startTime,$evt->duration,$evt->type);
+    EngineCore::GTFO("/calender");
+    die;
 }
 
 function ModuleFunction_calender_ShowWeek($year,$week)

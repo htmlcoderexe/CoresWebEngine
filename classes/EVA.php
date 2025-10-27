@@ -591,7 +591,7 @@ class EVA
                 }
                 $output[$entry['object_id']][$entry['name']] = $entry['value'];
             }
-            EngineCore::Write2Debug($query);
+            // EngineCore::Write2Debug($query);
             return $output;
 	}
         

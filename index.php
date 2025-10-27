@@ -45,6 +45,7 @@ require_once CLASS_DIR."KB_Page.php";
 require_once CLASS_DIR."EVA.php";
 require_once CLASS_DIR."CalendarScheduler.php";
 require_once CLASS_DIR."CalendarEvent.php";
+require_once CLASS_DIR."RecurringEvent.php";
 require_once CLASS_DIR."File.php";
 require_once CLASS_DIR."HTTPHeaders.php";
 require_once CLASS_DIR."Tag.php";

@@ -21,5 +21,10 @@
     <input name ="create" type="hidden" value ="true" /><br />
     <input name ="EventID" type ="hidden" value ="{%eventId|-1%}" />
     <button type="submit">Save</button>
+</form>{#ifeq|{%eventId|-1%}|-1||
+<form action="/calender/fromevent/{%eventId%}" method="POST">
+    <label for="rtype">recur type</label><input id="rtype" name="rtype" value="week" />
+    <label for="rdata">recur data</label><input id="rtype" name="rdata" value="*****.."/>
+    <button type="submit">Make recurring</button>
 </form>
-
+#}
