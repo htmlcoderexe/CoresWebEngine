@@ -38,6 +38,7 @@ class CalendarEvent
         }
         else
         {
+            $this->Invalidate();
             return;
         }
         
