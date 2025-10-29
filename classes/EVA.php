@@ -487,6 +487,7 @@ class EVA
          */
 	public static function GetByProperty($property,$value,$type)
 	{
+            EngineCore::Lap2Debug("running for $type with '$property' = '$value'");
             $query ="
 		SELECT DISTINCT object_id FROM eva_property_values
 		INNER JOIN eva_objects
@@ -496,7 +497,9 @@ class EVA
 		WHERE value =? and eva_objects.type=? and eva_properties.name=?
 		
 		";
-            return DBHelper::RunList($query,[$value,$type,$property]);
+            $r=DBHelper::RunList($query,[$value,$type,$property]);
+            EngineCore::Lap2Debug("DONE running for $type with '$property' = '$value'");
+            return $r;
 	}
         
         /**
@@ -508,6 +511,7 @@ class EVA
          */
 	public static function GetByPropertyPre($property,$value,$type)
 	{
+            EngineCore::Lap2Debug("running %LIKE% of $type");
             $query ="
 		SELECT DISTINCT object_id FROM eva_property_values
 		INNER JOIN eva_objects
@@ -517,7 +521,9 @@ class EVA
 		WHERE value LIKE ? and eva_objects.type=? and eva_properties.name=?
 		
 		";
-            return DBHelper::RunList($query,[$value."%",$type,$property]);
+            $r=DBHelper::RunList($query,[$value."%",$type,$property]);
+            EngineCore::Lap2Debug("done running %LIKE% of $type");
+            return $r;
 	}
         
         /**
@@ -533,6 +539,7 @@ class EVA
          */
 	public static function GetKVA($property,$type)
 	{
+            EngineCore::Lap2Debug("getting list of '$property' for $type");
             $query ="
 		SELECT DISTINCT object_id,value FROM eva_property_values
 		INNER JOIN eva_objects
@@ -542,7 +549,9 @@ class EVA
 		WHERE eva_objects.type=? and eva_properties.name=?
 		
 		";
-            return DBHelper::RunTable($query,[$type,$property]);
+            $r=DBHelper::RunTable($query,[$type,$property]);
+            EngineCore::Lap2Debug("DONE getting list of '$property' for $type");
+            return $r;
 	}
         
         /**
@@ -558,6 +567,8 @@ class EVA
          */
 	public static function GetAsTable($propertylist,$type, $list=null)
 	{
+            
+            EngineCore::Lap2Debug("getting table of $type");
             if($list===[])
             {
                 return [];
@@ -592,6 +603,7 @@ class EVA
                 $output[$entry['object_id']][$entry['name']] = $entry['value'];
             }
             // EngineCore::Write2Debug($query);
+            EngineCore::Lap2Debug("done getting table of $type");
             return $output;
 	}
         
@@ -602,8 +614,11 @@ class EVA
          */
         public static function GetAllOfType($type)
         {
+            EngineCore::Lap2Debug("getting ALL of $type");
             $q=DBHelper::Select("eva_objects",["id"],["type"=>$type]);
-            return DBHelper::RunList($q,[$type]);
+            $r=DBHelper::RunList($q,[$type]);
+            EngineCore::Lap2Debug("DONE getting ALL of $type");
+            return $r;
         }
         
         

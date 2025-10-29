@@ -64,6 +64,8 @@ class EngineCore
      * @var string
      */
     static $Rendered = "";
+    
+    static $PerformanceTimer = 0;
 
     //------------------------------+
     // Page operation and rendering |
@@ -364,7 +366,7 @@ class EngineCore
      * @return string value of the setting
      */
     static function GetSetting($setting)
-    {
+    {       
         return DBHelper::RunScalar("SELECT setting_value FROM system_settings WHERE setting_name=?", [$setting], 0);
     }
     
@@ -437,5 +439,22 @@ class EngineCore
         ob_start();
         var_dump($whatever);
         return ob_get_clean();
+    }
+    
+    static function StartLap()
+    {
+        self::$PerformanceTimer = hrtime(true);
+    }
+    
+    static function Lap2Debug($message="")
+    {
+        if($message=="")
+        {
+            $message=__LINE__;
+        }
+        $now = hrtime(true);
+        $diff = ($now-self::$PerformanceTimer)/1000000;
+        self::Write2Debug("<strong>".$diff."</strong> ".$message);
+        self::$PerformanceTimer = hrtime(true);
     }
 }

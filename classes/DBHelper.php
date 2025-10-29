@@ -145,9 +145,13 @@ class DBHelper
         {
             EngineCore::Write2Debug("<strong>Executing MySQL query:</strong>");
             EngineCore::Write2Debug($query);
-            EngineCore::Write2Debug("<em>[".implode("|",$params)."]</em>");EngineCore::Write2Debug("<strong>Executing MySQL query:</strong>");
+            EngineCore::Write2Debug("<em>[".implode("|",$params)."]</em>");
+            /*
+            EngineCore::Write2Debug("<strong>Executing MySQL query:</strong>");
             EngineCore::Write2Debug($query);
             EngineCore::Write2Debug("<em>[".implode("|",$params)."]</em>");
+        //*/
+            
         }
         
         // prep the statement
@@ -170,8 +174,15 @@ class DBHelper
      */
     public static function RunTable($query, $params)
     {
+        $ttime = hrtime(true);
         $stmt = self::RunStmt($query,$params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $a = hrtime(true);
+        $rtime = ($a-$ttime)/1000000;
+        $fa=$stmt->fetchAll(PDO::FETCH_ASSOC);
+        $b = hrtime(true);
+        $ftime = ($b-$a)/1000000;
+        EngineCore::Write2Debug("$rtime + $ftime");
+        return $fa;
     }
     
     /**
