@@ -62,6 +62,7 @@ session_start();
 EngineCore::$CurrentUser=User::GetCurrentUser();
 $_PAGE_SIDEBAR=Array();
 require_once CLASS_DIR."Router.php";
+EngineCore::StartLap();
 Router::Dispatch();
 
 EngineCore::Write2Debug("<strong>Route:</strong>".EngineCore::GET("route"));
