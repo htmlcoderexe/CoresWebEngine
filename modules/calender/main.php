@@ -347,10 +347,13 @@ function ModuleFunction_calender_ShowEvent($eventID)
 
 function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
 {
+    EngineCore::StartLap();
     list($y,$m,$d) = ModuleFunction_calender_ParseYYYYMMDD($month."01",true);
     $output="";
-    RecurringEvent::DoMonth($y,$m);
-    
+    //RecurringEvent::DoMonth($y,$m);
+    $recurrings= RecurringEvent::CheckMonth($y,$m);
+    EngineCore::Lap2Debug("got recurrers");
+    //$recurrings =[];
     $currentmonth = date_create_from_format("Ymd",$y.$m.$d);
     
     $now= new DateTime();
@@ -380,7 +383,7 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     $headernext=$next_month->format("M Y");
     $headerlinkprev=$prev_month->format("Ym");
     $headerlinknext=$next_month->format("Ym");
-    
+    EngineCore::Lap2Debug("prep work");
     // insert grayed out previous month's days to fill the week
     $t_prev=new TemplateProcessor("calender/daycellprev");
     for($i = 0; $i<$weekfirst;$i++)
@@ -392,6 +395,7 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     //-----
     
     ///////////actual month
+    EngineCore::Lap2Debug("done prev month");
     $t_day = new TemplateProcessor("calender/daycell");
     $t_marker = new TemplateProcessor("calender/daycellmarker");
     
@@ -419,12 +423,14 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
         $m2=1;
         $y2++;
     }
+    EngineCore::Lap2Debug("got all events");
     $next_month_ids= CalendarScheduler::CheckMonth($y2,$m2);
     $next_month_events = [];
     if($next_month_ids)
     {
         $next_month_events = EVA::GetAsTable(["calendar.date","calendar.time","title","description","calendar.event_type"], "calendar.event",$next_month_ids);
     }
+    EngineCore::Lap2Debug("got all prev events");
     //$events_today = [];
     $upcoming = [];
     $events_by_day = [];
@@ -445,11 +451,31 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
            $upcoming[]=$event;
        }
     }
+    EngineCore::Lap2Debug("done processing month events");
+    foreach($recurrings as $event)
+    {
+       $c_d = (int) (explode("-",$event['calendar.date'])[2]);
+       if(!isset($events_by_day[$c_d]))
+       {
+           $events_by_day[$c_d]=[];
+       }
+       $events_by_day[$c_d][]=$event;
+       if($c_d == $today)
+       {
+           $events_today[]=$event;
+       }
+       elseif($c_d> $today)
+       {
+           $upcoming[]=$event;
+       }
+    }
+    EngineCore::Lap2Debug("done processing recurrings");
     foreach($next_month_events as $id=>$event)
     {
        
        $upcoming[]=$event;
     }
+    EngineCore::Lap2Debug("filled upcoming");
     /*/
     EngineCore::Dump2Debug($events_by_day);
     EngineCore::Dump2Debug($all_event_ids);
@@ -459,6 +485,7 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     $e_types=EVA::GetAllOfType("calendar.event.type");
     $mapping = EVA::GetAsTable(["calendar.tagcolour"],"calendar.event.type",$e_types);
     
+    EngineCore::Lap2Debug("got tag types");
     $marker_places = ["0px 8px", "0px -8px", "8px 0px", "-8px 0px"];
     
     for($i=0;$i<$daysthismont;$i++)
@@ -536,6 +563,7 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     }
     
     /////////end month
+    EngineCore::Lap2Debug("end month");
     $next_month_start=($daysthismont-28)+($weekfirst);
     $next_month_start%=7;
     $fifthrowcount=7-$next_month_start;
@@ -649,10 +677,26 @@ function ModuleFunction_calender_ShowWeek($year,$week)
                 {
                     continue;
                 }
-                list($hh,$mm)=explode(":",$event_entry['startTime']);
-                list($dhh,$dmm)=explode(":",$event_entry['duration']);
+                $etime =explode(":",$event_entry['startTime']);
+                if(count($etime)==2)
+                {
+                    list($hh,$mm)=$etime;
+                }
+                else
+                {
+                    list($hh,$mm)=[0,0];
+                }
+                $edur=explode(":",$event_entry['duration']);
+                if(count($edur)==2)
+                {
+                    list($dhh,$dmm)=$edur;
+                }
+                else
+                {
+                    list($dhh,$dmm)=[0,0];
+                }
                 $event_entry['xpos']=13*($i-1);
-                $event_entry['ypos']= ModuleFunction_calender_TimeToEms($ems, $hh-$starting_hour, $mm);
+                $event_entry['ypos']= ModuleFunction_calender_TimeToEms($ems, floatval($hh)-$starting_hour, $mm);
                 $event_entry['height']= ModuleFunction_calender_TimeToEms($ems,$dhh,$dmm);
                 $event_entry['id']=$event;
                 if($event_entry['type']!="")

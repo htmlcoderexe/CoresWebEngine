@@ -20,6 +20,18 @@ class CalendarScheduler
         
     }
     
+    public static function GetExceptions($y,$m)
+    {
+        $m=str_pad($m,2,"0", STR_PAD_LEFT);
+        $eids=EVA::GetByPropertyPre("calendar.date", $y."-".$m."-", "calendar.exception");
+        if(!$eids)
+        {
+            return [];
+        }
+        $exceptions = EVA::GetAsTable(["calendar.event.parent","calendar.date"], "calendar.exception",$eids);
+        return $exceptions;
+    }
+    
     public static function CheckMonth($y, $m)
     {
         $m=str_pad($m,2,"0", STR_PAD_LEFT);

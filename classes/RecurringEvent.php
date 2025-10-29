@@ -6,7 +6,7 @@ Module::DemandProperty("calendar.recurring.type", "Duration", "The duration of a
 Module::DemandProperty("calendar.recurring.data","Event type","Type of a calendar event.");
 Module::DemandProperty("calendar.recurring.latest_id","Calendar colour","How the event is marked in the month view.");
 Module::DemandProperty("calendar.recurring.latest_date","Schedule colour","How the event is marked in the week view.");
-Module::DemandProperty("calendar.event.parent","Schedule colour","How the event is marked in the week view.");
+Module::DemandProperty("calendar.event.parent","Schedule colour","Event's parent recurrer.");
 Module::DemandProperty("name", "Name", "Name of something.");
 /**
  * Description of RecurringEvent
@@ -168,6 +168,69 @@ class RecurringEvent
         return 0;
     }
     
+    
+    public static function CheckMonth($y, $m)
+    {
+        $output = [];
+        $recurrers = EVA::GetAsTable(
+                ["calendar.recurring.type",
+                    "calendar.recurring.data",
+                    "title","description",
+                    "calendar.time",
+                    "calendar.duration",
+                    "calendar.event_type",
+                    "calendar.recurring.latest_id",
+                    "calendar.recurring.latest_date"
+                    ], 
+                "calendar.recurring");
+        $lateststring = "";
+        $latest = new DateTimeImmutable($lateststring);
+            
+        $pre = str_pad($y,4,"0", STR_PAD_LEFT) . "-". str_pad($m,2,"0", STR_PAD_LEFT);
+        $frist = new DateTimeImmutable($pre."-01");
+        $days = intval($frist->format("t"));
+        for($d=1;$d<=$days;$d++)
+        {
+            $datestring =$pre."-".str_pad($d,2,"0", STR_PAD_LEFT);
+            $date = new DateTimeImmutable($datestring);
+            foreach($recurrers as $id=>$value)
+            {
+                if(self::CheckDate2($date,$latest,$value["calendar.recurring.type"],$value["calendar.recurring.data"]))
+                {
+                    $value['calendar.date'] = $datestring;
+                    $output[]=$value;
+                }
+            }
+        }
+        return $output;
+        
+    }
+    
+    public static function CheckDate2($date,$latest,$recur_type,$recur_data)
+    {
+        $diff =date_diff($latest,$date);
+        if($diff->invert)
+        {
+            return false;
+        }
+        switch($recur_type)
+        {
+            case self::RECUR_DAYS:
+            {
+                return self::CalculateThisInterval($date,$diff->days,$recur_data);
+            }
+            case self::RECUR_WEEKLY:
+            {
+                return self::CalculateThisWeekly($date,$recur_data);
+            }
+            case self::RECUR_MONTH:
+            {
+                return $date->format("j" == $recur_data);
+            }
+        }
+    }
+    
+    
     public static function DoMonth($y,$m)
     {
         // EngineCore::Write2Debug("|".$y."-".$m."|");
@@ -293,6 +356,7 @@ class RecurringEvent
             }
         }
     }
+    
     public static function CheckDate($datestring,$lateststring,$recur_type,$recur_data)
     {
         //EngineCore::Dump2Debug([$datestring,$lateststring,$recur_type,$recur_data]);
