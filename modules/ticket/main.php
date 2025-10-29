@@ -59,6 +59,7 @@ function ModuleAction_ticket_view($params)
     $tpl->tokens['statuscode']=$ticket->CurrentState;
     $tpl->tokens['ticket_group_id'] = $ticket->Category;
     $groups = EVA::GetKVA("name","ticket_group");
+    EngineCore::Lap2Debug("before the forloop");
     $assgroup = "!!NOWHERE!!";
     for($i=0;$i<count($groups);$i++)
     {
@@ -69,6 +70,8 @@ function ModuleAction_ticket_view($params)
     }
     $tpl->tokens['ticket_group_name'] = $assgroup;
     $tpl->tokens['groups'] = $groups;
+    
+            EngineCore::Lap2Debug("before getting updates");
     if($ticket->GetUpdates()>0)
     {
         $updates=array_reverse($ticket->Updates);
