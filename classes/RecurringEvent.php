@@ -184,9 +184,26 @@ class RecurringEvent
                     ], 
                 "calendar.recurring");
         $lateststring = "";
+        $pre = str_pad($y,4,"0", STR_PAD_LEFT) . "-". str_pad($m,2,"0", STR_PAD_LEFT);
+        $exceptionsList = EVA::GetByPropertyPre("calendar.date", $pre, "calendar.exception");
+        $exceptions = [];
+        $exceptions_by_day = [];
+        if(count($exceptionsList)>0)
+        {
+            $exceptions = EVA::GetAsTable(["calendar.date","calendar.event.parent"],$exceptionsList);
+        }
+        foreach($exceptions as $id=>$ex)
+        {
+            $eid = $ex['calendar.event.parent'];
+            $eday = substr($ex['calendar.date'],8,2);
+            if(!isset($exceptions_by_day[$eday]))
+            {
+                $exceptions_by_day[$eday] = [];
+            }
+            $exceptions_by_day[intval($eday)][]=$eid;
+        }
         $latest = new DateTimeImmutable($lateststring);
             
-        $pre = str_pad($y,4,"0", STR_PAD_LEFT) . "-". str_pad($m,2,"0", STR_PAD_LEFT);
         $frist = new DateTimeImmutable($pre."-01");
         $days = intval($frist->format("t"));
         for($d=1;$d<=$days;$d++)
@@ -195,7 +212,8 @@ class RecurringEvent
             $date = new DateTimeImmutable($datestring);
             foreach($recurrers as $id=>$value)
             {
-                if(self::CheckDate2($date,$latest,$value["calendar.recurring.type"],$value["calendar.recurring.data"]))
+                if(!(isset($exceptions_by_day[$d]) && in_array($id,$exceptions_by_day[$d]))
+                    &&    self::CheckDate2($date,$latest,$value["calendar.recurring.type"],$value["calendar.recurring.data"]))
                 {
                     $value['calendar.date'] = $datestring;
                     $output[]=$value;
