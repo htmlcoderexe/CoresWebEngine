@@ -300,27 +300,34 @@ function ModuleFunction_calender_ShowDay($day)
     $eventIds= CalendarScheduler::CheckDate($y,$m,$d);
     if(!$eventIds || count($eventIds)==0)
     {
-        echo "fuck";
-        return;
+        //echo "fuck";
+       // return;
     }
     $events=[];
     $output="";
+    $t=new TemplateProcessor("calender/displayeventlist");
+        
     foreach($eventIds as $event)
     {
         $e=new EVA($event);
         $events[]=$e;
-        $t=new TemplateProcessor("calender/displayeventlist");
+        $t->tokens = $e->attributes;
         $t->tokens['eventId']=$e->id;
-        $t->tokens['title']=$e->attributes['title'];
-        $t->tokens['date']=$e->attributes['calendar.date'];
-        $t->tokens['time']=$e->attributes['calendar.time'];
-        $t->tokens['description']=$e->attributes['description'];
         $output.=$t->process(true);
     }
-    $t = new TemplateProcessor("calender/eventsondate");
-    $t->tokens['events']=$output;
-    EngineCore::AddPageContent($t->process(true));
-    EngineCore::SetPageTitle("Events on ".$e->attributes['calendar.date']);
+    $datestring = substr($day,0,4)."-".substr($day,4,2)."-".substr($day,6,2);
+    $recurs = RecurringEvent::CheckDate($datestring);
+    foreach($recurs as  $recur)
+    {
+        $t->tokens = $recur;
+        $t->tokens['eventId']=0;
+        $t->tokens['recurring']="true";
+        $output.=$t->process(true);
+    }
+    $t2 = new TemplateProcessor("calender/eventsondate");
+    $t2->tokens['events']=$output;
+    EngineCore::AddPageContent($t2->process(true));
+    EngineCore::SetPageTitle("Events on ".$datestring);
 }
 function ModuleFunction_calender_ShowEvent($eventID)
 {
@@ -331,11 +338,8 @@ function ModuleFunction_calender_ShowEvent($eventID)
         }
         
         $t=new TemplateProcessor("calender/displayeventlist");
+        $t->tokens = $e->attributes;
         $t->tokens['eventId']=$e->id;
-        $t->tokens['title']=$e->attributes['title'];
-        $t->tokens['date']=$e->attributes['calendar.date'];
-        $t->tokens['time']=$e->attributes['calendar.time'];
-        $t->tokens['description']=$e->attributes['description'];
         $output=$t->process(true);
     
     $t = new TemplateProcessor("calender/eventsondate");

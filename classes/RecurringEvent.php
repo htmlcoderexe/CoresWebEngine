@@ -213,7 +213,7 @@ class RecurringEvent
             foreach($recurrers as $id=>$value)
             {
                 if(!(isset($exceptions_by_day[$d]) && in_array($id,$exceptions_by_day[$d]))
-                    &&    self::CheckDate2($date,$latest,$value["calendar.recurring.type"],$value["calendar.recurring.data"]))
+                    &&    self::CheckDay($date,$latest,$value["calendar.recurring.type"],$value["calendar.recurring.data"]))
                 {
                     $value['calendar.date'] = $datestring;
                     $output[]=$value;
@@ -223,8 +223,51 @@ class RecurringEvent
         return $output;
         
     }
+    public static function CheckDate($datestring)
+    {
+        $output = [];
+        $recurrers = EVA::GetAsTable(
+                ["calendar.recurring.type",
+                    "calendar.recurring.data",
+                    "title","description",
+                    "calendar.time",
+                    "calendar.duration",
+                    "calendar.event_type",
+                    "calendar.recurring.start_date"
+                    ], 
+                "calendar.recurring");
+        $exceptionsList = EVA::GetByProperty("calendar.date", $datestring, "calendar.exception");
+        $exceptions = [];
+        $exceptions_by_day = [];
+        if(count($exceptionsList)>0)
+        {
+            $exceptions = EVA::GetAsTable(["calendar.event.parent"],"calendar.exception",$exceptionsList);
+        }
+        foreach($exceptions as $id=>$ex)
+        {
+            $eid = $ex['calendar.event.parent'];
+            $exceptions_by_day[]=$eid;
+        }
+            
+       
+        $date = new DateTimeImmutable($datestring);
+        foreach($recurrers as $id=>$value)
+        {
+            $start = $value["calendar.recurring.start_date"] == '' ? new DateTimeImmutable("2000-01-01") : new DateTimeImmutable($value["calendar.recurring.start_date"]);
+            if(!in_array($id,$exceptions_by_day)
+                &&    self::CheckDay($date,$start,$value["calendar.recurring.type"],$value["calendar.recurring.data"]))
+            {
+                $value['calendar.date'] = $datestring;
+                $value['recurId'] = $id;
+                $output[]=$value;
+            }
+        }
+        
+        return $output;
+        
+    }
     
-    public static function CheckDate2($date,$latest,$recur_type,$recur_data)
+    public static function CheckDay($date,$latest,$recur_type,$recur_data)
     {
         $diff =date_diff($latest,$date);
         if($diff->invert)
@@ -375,7 +418,7 @@ class RecurringEvent
         }
     }
     
-    public static function CheckDate($datestring,$lateststring,$recur_type,$recur_data)
+    public static function xx__CheckDate($datestring,$lateststring,$recur_type,$recur_data)
     {
         //EngineCore::Dump2Debug([$datestring,$lateststring,$recur_type,$recur_data]);
         if($datestring == $lateststring)
