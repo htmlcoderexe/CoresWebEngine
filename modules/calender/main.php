@@ -669,6 +669,8 @@ function ModuleFunction_calender_ShowWeek($year,$week)
     $daynames=[];//["November 18","November 19","November 20","November 21","November 22","November 23","November 24"];
     $all_for_week = [];
     $events_per_day =[];
+    $e_types=EVA::GetAllOfType("calendar.event.type");
+    $mapping = EVA::GetAsTable(["calendar.agendacolour"],"calendar.event.type",$e_types);
     for($i =1;$i<8;$i++)
     {
         $date = strtotime($year."W".sprintf("%02u", $week).$i);
@@ -679,7 +681,7 @@ function ModuleFunction_calender_ShowWeek($year,$week)
         $recurs = RecurringEvent::CheckDate(date("Y-m-d",$date));
         $events_per_day[$i] = $recurs;
     }
-    $all_events = EVA::GetAsTable(["calendar.date","calendar.time","title","description","calendar.event_type"], "calendar.event",$all_for_week);
+    $all_events = EVA::GetAsTable(["calendar.date","calendar.time","calendar.duration","title","description","calendar.event_type"], "calendar.event",$all_for_week);
     foreach($all_events as $id=>$event)
     {
         $curd = strtotime($event['calendar.date']);
@@ -723,13 +725,16 @@ function ModuleFunction_calender_ShowWeek($year,$week)
                     list($dhh,$dmm)=[0,0];
                 }
                 $event_entry['xpos']=13*($i-1);
+                $event_entry['day'] = $i;
+                $event_entry['slot'] = 0;
+                $event_entry['slotcount'] =1;
                 $event_entry['ypos']= ModuleFunction_calender_TimeToEms($ems, floatval($hh)-$starting_hour, $mm);
                 $event_entry['height']= ModuleFunction_calender_TimeToEms($ems,$dhh,$dmm);
                 $event_entry['id']=0;
                 if($event_entry['calendar.event_type']!="")
                 {
-                    $etype=new EVA($event_entry['calendar.event_type']);
-                    $col=$etype->attributes['calendar.agendacolour'];
+                    $etype=$mapping[$event_entry['calendar.event_type']]??['calendar.agendacolour'=>'#7F7F7F'];
+                    $col=$etype['calendar.agendacolour'];
                     $event_entry['colour']=$col;
                 }
                 if(isset($event_entry['recurId']))
@@ -739,6 +744,8 @@ function ModuleFunction_calender_ShowWeek($year,$week)
                 $events[]=$event_entry;
             }
         }
+        
+        
         if($nowday==date("Ymd",$date))
         {
             $marker['xpos']=13*($i-1);
@@ -749,6 +756,66 @@ function ModuleFunction_calender_ShowWeek($year,$week)
             $month=date("m",$date);
         }
     }
+    
+    
+        
+        for($i=1;$i<count($events);$i++)
+        {
+           $overlaps = [];
+           for($j=0;$j<$i;$j++)
+           {
+               if($events[$i]['day']==$events[$j]['day'] && CalendarScheduler::TestOverlap($events[$i], $events[$j]))
+               {
+                   $overlaps[]=$j;
+               }
+           }
+           if(count($overlaps)>0)
+           {
+               $slotcount = $events[$overlaps[0]]['slotcount'];
+               if($slotcount==count($overlaps))
+               {
+                   foreach($overlaps as  $index)
+                   {
+                       $events[$index]['slotcount']++;
+                   }
+                   $events[$i]['slotcount']=$slotcount+1;
+                   $events[$i]['slot']=$slotcount;
+               }
+               else
+               {
+                   $newslot =0;
+                   for($s=0;$s<$slotcount;$s++)
+                   {
+                       $exists = false;
+                        foreach($overlaps as  $index)
+                        {
+                            if($events[$index]['slot']==$s)
+                            {
+                                $exists = true;
+                            }
+                        }
+                        if(!$exists)
+                        {
+                            $newslot = $s;
+                            break;
+                        }
+                       $events[$i]['slot'] =$newslot;
+                   }
+                   
+               }
+           }
+            
+        }
+        for($i=0;$i<count($events);$i++)
+        {
+            $slotcount = $events[$i]['slotcount'];
+            $slot = $events[$i]['slot'];
+            $offset = (13*$slot/$slotcount);
+            $events[$i]['xpos']+=$offset;
+            $events[$i]['width']=13/$slotcount;
+        }
+    
+    
     $tpl->tokens=[
         "year"=>$year,
         "weekno"=>$week,

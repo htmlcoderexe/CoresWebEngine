@@ -56,6 +56,22 @@ class CalendarScheduler
         return $items;
     }
     
+    public static function HHMM2Minutes($hhmm)
+    {
+        $hh=intval(substr($hhmm,0,2));
+        $mm=intval(substr($hhmm,3,2));
+        return $hh*6+$mm;
+    }
+    
+    public static function TestOverlap($a,$b)
+    {
+        $as = self::HHMM2Minutes($a['calendar.time']);
+        $ae = $as+self::HHMM2Minutes($a['calendar.duration']);
+        $bs = self::HHMM2Minutes($b['calendar.time']);
+        $be = $bs+self::HHMM2Minutes($b['calendar.duration']);
+        return ($as < $be && $ae > $bs);
+    }
+    
     public static function CheckMonth($y, $m)
     {
         $m=str_pad($m,2,"0", STR_PAD_LEFT);
