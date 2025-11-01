@@ -667,6 +667,25 @@ function ModuleFunction_calender_ShowWeek($year,$week)
     $starting_hour=0.0;
     $marker=[];
     $daynames=[];//["November 18","November 19","November 20","November 21","November 22","November 23","November 24"];
+    $all_for_week = [];
+    $events_per_day =[];
+    for($i =1;$i<8;$i++)
+    {
+        $date = strtotime($year."W".sprintf("%02u", $week).$i);
+        
+        
+        $eventIdsThisDay = CalendarScheduler::CheckDate(date("Y-m-d",$date));
+        $all_for_week = array_merge($all_for_week, $eventIdsThisDay);
+        $recurs = RecurringEvent::CheckDate(date("Y-m-d",$date));
+        $events_per_day[$i] = $recurs;
+    }
+    $all_events = EVA::GetAsTable(["calendar.date","calendar.time","title","description","calendar.event_type"], "calendar.event",$all_for_week);
+    foreach($all_events as $id=>$event)
+    {
+        $curd = strtotime($event['calendar.date']);
+        $dow = date("N",$curd);
+        $events_per_day[$dow][]=$event;
+    }
     for($i =1;$i<8;$i++)
     {
         $date = strtotime($year."W".sprintf("%02u", $week).$i);
@@ -678,18 +697,14 @@ function ModuleFunction_calender_ShowWeek($year,$week)
         $ismonday=$i==1;
         $daystyle= ($ismonday?" cal-week-monday":"").($isred?" cal-week-redday":($isblue?" cal-week-blueday":""));
         $daynames[]=["date"=>date("Ymd",$date),"title"=>date("D j/m",$date),"style"=>$daystyle];
-        $onthisday= CalendarScheduler::CheckDate(date("Y-m-d",$date));
+        $onthisday= $events_per_day[$i]??[];
+        $onthisday = CalendarScheduler::SortByDateTime($onthisday);
         if($onthisday)
         {
-            foreach($onthisday as $event)
+            foreach($onthisday as $event_entry)
             {
                 
-                $event_entry=(array)(new CalendarEvent($event));
-                if(!$event_entry['isValid'])
-                {
-                    continue;
-                }
-                $etime =explode(":",$event_entry['startTime']);
+                $etime =explode(":",$event_entry['calendar.time']);
                 if(count($etime)==2)
                 {
                     list($hh,$mm)=$etime;
@@ -698,7 +713,7 @@ function ModuleFunction_calender_ShowWeek($year,$week)
                 {
                     list($hh,$mm)=[0,0];
                 }
-                $edur=explode(":",$event_entry['duration']);
+                $edur=explode(":",$event_entry['calendar.duration']);
                 if(count($edur)==2)
                 {
                     list($dhh,$dmm)=$edur;
@@ -710,12 +725,16 @@ function ModuleFunction_calender_ShowWeek($year,$week)
                 $event_entry['xpos']=13*($i-1);
                 $event_entry['ypos']= ModuleFunction_calender_TimeToEms($ems, floatval($hh)-$starting_hour, $mm);
                 $event_entry['height']= ModuleFunction_calender_TimeToEms($ems,$dhh,$dmm);
-                $event_entry['id']=$event;
-                if($event_entry['type']!="")
+                $event_entry['id']=0;
+                if($event_entry['calendar.event_type']!="")
                 {
-                    $etype=new EVA($event_entry['type']);
+                    $etype=new EVA($event_entry['calendar.event_type']);
                     $col=$etype->attributes['calendar.agendacolour'];
                     $event_entry['colour']=$col;
+                }
+                if(isset($event_entry['recurId']))
+                {
+                    $event_entry['title']='📅'.$event_entry['title'];
                 }
                 $events[]=$event_entry;
             }
