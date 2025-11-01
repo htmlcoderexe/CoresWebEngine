@@ -12,7 +12,7 @@ $start = $time;
 global $_DEBUG;
 $_DEBUG=true;
 require_once CLASS_DIR."EngineCore.php";
-EngineCore::$DEBUG = true;
+// EngineCore::$DEBUG = true;
 ini_set("display_errors", "1");
 error_reporting(E_ALL & ~E_NOTICE);
 setlocale(LC_CTYPE, "en_US.UTF-8");
