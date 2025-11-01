@@ -799,8 +799,9 @@ function ModuleFunction_calender_ShowWeek($year,$week)
                             $newslot = $s;
                             break;
                         }
-                       $events[$i]['slot'] =$newslot;
                    }
+                       $events[$i]['slot'] =$newslot;
+                       $events[$i]['slotcount']=$slotcount;
                    
                }
            }
