@@ -32,6 +32,30 @@ class CalendarScheduler
         return $exceptions;
     }
     
+    public static function SortByDateTime($items)
+    {
+        $sorter = function($a, $b)
+        {
+            $ad = $a['calendar.date'];
+            $bd = $b['calendar.date'];
+            $d=strcmp($ad,$bd);
+            if($d<0)
+                return -1;
+            if($d>0)
+                return 1;
+            $at = $a['calendar.time'];
+            $bt = $b['calendar.time'];
+            $t=strcmp($at,$bt);
+            if($t<0)
+                return -1;
+            if($t>0)
+                return 1;
+            return 0;
+        };
+        usort($items,$sorter);
+        return $items;
+    }
+    
     public static function CheckMonth($y, $m)
     {
         $m=str_pad($m,2,"0", STR_PAD_LEFT);
