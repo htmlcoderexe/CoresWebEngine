@@ -3,6 +3,7 @@
 
 
 Module::DemandProperty("calendar.recurring.type", "Duration", "The duration of an event.");
+Module::DemandProperty("calendar.recurring.start_date", "Start date", "The starting date of a recurring event.");
 Module::DemandProperty("calendar.recurring.data","Event type","Type of a calendar event.");
 Module::DemandProperty("calendar.recurring.latest_id","Calendar colour","How the event is marked in the month view.");
 Module::DemandProperty("calendar.recurring.latest_date","Schedule colour","How the event is marked in the week view.");
@@ -22,8 +23,7 @@ class RecurringEvent
     public $title;
     public $description;
     public $event_type;
-    public $latest_id;
-    public $latest_date;
+    public $start_date;
     public $time;
     public $duration;
     
@@ -31,18 +31,17 @@ class RecurringEvent
     public const RECUR_DAYS = "day";
     public const RECUR_MONTH = "month";
     
-    public function __construct($id,$recur_type,$recur_data, $title, $description, $time, $duration, $event_type, $latest_id, $latest_date)
+    public function __construct($id,$recur_type,$recur_data, $title, $description,$startdate, $time, $duration, $event_type)
     {
         $this->id=$id;
         $this->recur_type = $recur_type;
         $this->recur_data = $recur_data;
         $this->title = $title;
         $this->description = $description;
+        $this->start_date = $startdate;
         $this->time = $time;
         $this->duration = $duration;
         $this->event_type = $event_type;
-        $this->latest_id = $latest_id;
-        $this->latest_date = $latest_date;
                 
     }
     
@@ -58,11 +57,10 @@ class RecurringEvent
                 $eva->attributes['calendar.recurring.data'],
                 $eva->attributes['title'],
                 $eva->attributes['description'],
-                $eva->attributes['calendar.time'],
-                $eva->attributes['calendar.duration'],
-                $eva->attributes['calendar.event_type'],
-                $eva->attributes['calendar.recurring.latest_id'],
-                $eva->attributes['calendar.recurring.latest_date']);
+                $eva->atrributes["calendar.recurring.start_date"] ?? '1970-01-01',
+                $eva->attributes['calendar.time'] ?? '00:00',
+                $eva->attributes['calendar.duration'] ?? '01:00',
+                $eva->attributes['calendar.event_type']);
         
     }
     
@@ -71,27 +69,26 @@ class RecurringEvent
         $eva = new EVA($this->id);
         $eva->SetSingleAttribute('calendar.recurring.type',$this->recur_type);
         $eva->SetSingleAttribute('calendar.recurring.data',$this->recur_data);
+        $eva->SetSingleAttribute("calendar.recurring.start_date", $this->start_date);
         $eva->SetSingleAttribute('calendar.time',$this->time);
         $eva->SetSingleAttribute('calendar.duration',$this->duration);
         $eva->SetSingleAttribute('title',$this->title);
         $eva->SetSingleAttribute('description',$this->description);
         $eva->SetSingleAttribute('calendar.event_type',$this->event_type);
-        $eva->SetSingleAttribute('calendar.recurring.latest_id',$this->latest_id);
-        $eva->SetSingleAttribute('calendar.recurring.latest_date',$this->latest_date);
         $eva->Save();
         
     }
     
-    public static function Create($recur_type,$recur_data, $title, $description, $time, $duration, $event_type)
+    public static function Create($recur_type,$recur_data, $title, $description,$startdate, $time, $duration, $event_type)
     {
         $id = EVA::CreateObject("calendar.recurring");
-        $r = new RecurringEvent($id->id, $recur_type,$recur_data, $title, $description, $time, $duration, $event_type,"","");
+        $r = new RecurringEvent($id->id, $recur_type,$recur_data, $title, $description,$startdate, $time, $duration, $event_type);
         $r->Save();
         return $r;
         
     }
     
-    public static function Refresh()
+    public static function xx__Refresh()
     {
         $recurrers = EVA::GetAsTable(
                 ["calendar.recurring.type",
@@ -99,9 +96,7 @@ class RecurringEvent
                     "title","description",
                     "calendar.time",
                     "calendar.duration",
-                    "calendar.event_type",
-                    "calendar.recurring.latest_id",
-                    "calendar.recurring.latest_date"
+                    "calendar.event_type"
                     ], 
                 "calendar.recurring");
         $now = time();
@@ -179,11 +174,10 @@ class RecurringEvent
                     "calendar.time",
                     "calendar.duration",
                     "calendar.event_type",
-                    "calendar.recurring.latest_id",
-                    "calendar.recurring.latest_date"
+                    "calendar.recurring.start_date"
                     ], 
                 "calendar.recurring");
-        $lateststring = "2000-01-01";
+        $lateststring = "1970-01-01";
         $pre = str_pad($y,4,"0", STR_PAD_LEFT) . "-". str_pad($m,2,"0", STR_PAD_LEFT);
         $exceptionsList = EVA::GetByPropertyPre("calendar.date", $pre, "calendar.exception");
         $exceptions = [];
@@ -202,7 +196,7 @@ class RecurringEvent
             }
             $exceptions_by_day[intval($eday)][]=$eid;
         }
-        $latest = new DateTimeImmutable($lateststring);
+        
             
         $frist = new DateTimeImmutable($pre."-01");
         $days = intval($frist->format("t"));
@@ -212,10 +206,13 @@ class RecurringEvent
             $date = new DateTimeImmutable($datestring);
             foreach($recurrers as $id=>$value)
             {
+                $startstring = $value["calendar.recurring.start_date"] == '' ? $lateststring : $value["calendar.recurring.start_date"];
+                $start = new DateTimeImmutable($startstring);
                 if(!(isset($exceptions_by_day[$d]) && in_array($id,$exceptions_by_day[$d]))
-                    &&    self::CheckDay($date,$latest,$value["calendar.recurring.type"],$value["calendar.recurring.data"]))
+                    &&    self::CheckDay($date,$start,$value["calendar.recurring.type"],$value["calendar.recurring.data"]))
                 {
                     $value['calendar.date'] = $datestring;
+                    $value['recurrer'] = $id;
                     $output[]=$value;
                 }
             }
@@ -267,9 +264,9 @@ class RecurringEvent
         
     }
     
-    public static function CheckDay($date,$latest,$recur_type,$recur_data)
+    public static function CheckDay($date,$start_date,$recur_type,$recur_data)
     {
-        $diff =date_diff($latest,$date);
+        $diff =date_diff($start_date,$date);
         if($diff->invert)
         {
             return false;
@@ -292,7 +289,7 @@ class RecurringEvent
     }
     
     
-    public static function DoMonth($y,$m)
+    public static function xx__DoMonth($y,$m)
     {
         // EngineCore::Write2Debug("|".$y."-".$m."|");
         $recurrers = EVA::GetAsTable(
@@ -449,9 +446,10 @@ class RecurringEvent
         }
     }
     
-    public static function FromEvent($event)
+    public static function FromEvent($event,$rtype,$rdata)
     {
-        
+        $rec = RecurringEvent::Create($rtype,$rdata,$event->title,$event->description,$event->date,$event->startTime,$event->duration,$event->type);
+        return  $rec;
     }
     
     public function AddException($date)

@@ -457,6 +457,7 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
        }
     }
     EngineCore::Lap2Debug("done processing month events");
+    $seen_recurs =[];
     foreach($recurrings as $event)
     {
        $c_d = (int) (explode("-",$event['calendar.date'])[2]);
@@ -469,11 +470,13 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
        {
            $events_today[]=$event;
        }
-       elseif($c_d> $today)
+       elseif($c_d> $today && !in_array($event['recurrer'],$seen_recurs))
        {
            $upcoming[]=$event;
+           $seen_recurs[]=$event['recurrer'];
        }
     }
+    EngineCore::Dump2Debug($seen_recurs);
     EngineCore::Lap2Debug("done processing recurrings");
     foreach($next_month_events as $id=>$event)
     {
@@ -621,6 +624,7 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
         }
         if(count($upcoming) > 0)
         {
+            $upcoming = CalendarScheduler::SortByDateTime($upcoming);
             $t_upcoming->tokens['events']=$upcoming;
             EngineCore::AddSideBar("Upcoming", $t_upcoming->process(true));
         }
@@ -639,13 +643,13 @@ function ModuleAction_calender_fromevent($params)
     $evt = new CalendarEvent($eid);
     if(!$evt->isValid)
     {
-        var_dump($evt);
-        //EngineCore::GTFO("/calender");
+        //var_dump($evt);
+        EngineCore::GTFO("/calender");
         die;
     }
     $rtype = EngineCore::POST("rtype", RecurringEvent::RECUR_MONTH);
     $rdata = EngineCore::POST("rdata","1");
-    $rec = RecurringEvent::Create($rtype,$rdata,$evt->title,$evt->description,$evt->startTime,$evt->duration,$evt->type);
+    $rec = RecurringEvent::FromEvent($evt, $rtype, $rdata);
     EngineCore::GTFO("/calender");
     die;
 }
