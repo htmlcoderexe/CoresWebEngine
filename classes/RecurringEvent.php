@@ -183,14 +183,14 @@ class RecurringEvent
                     "calendar.recurring.latest_date"
                     ], 
                 "calendar.recurring");
-        $lateststring = "";
+        $lateststring = "2000-01-01";
         $pre = str_pad($y,4,"0", STR_PAD_LEFT) . "-". str_pad($m,2,"0", STR_PAD_LEFT);
         $exceptionsList = EVA::GetByPropertyPre("calendar.date", $pre, "calendar.exception");
         $exceptions = [];
         $exceptions_by_day = [];
         if(count($exceptionsList)>0)
         {
-            $exceptions = EVA::GetAsTable(["calendar.date","calendar.event.parent"],$exceptionsList);
+            $exceptions = EVA::GetAsTable(["calendar.date","calendar.event.parent"],"calendar.exception",$exceptionsList);
         }
         foreach($exceptions as $id=>$ex)
         {
@@ -454,9 +454,26 @@ class RecurringEvent
         
     }
     
-    public function CreateNext()
+    public function AddException($date)
     {
-        
+        $exception = EVA::CreateObject("calendar.exception");
+        $exception->AddAttribute("calendar.date",$date);
+        $exception->AddAttribute("calendar.event.parent",$this->id);
+        $exception->Save();
+    }
+    
+    public function CreateOnDate($date)
+    {
+        $event = EVA::CreateObject("calendar.event");
+        $event->AddAttribute("title",$this->title);
+        $event->AddAttribute("calendar.date",$date);
+        $event->AddAttribute("calendar.time",$this->time);
+        $event->AddAttribute("calendar.duration",$this->duration);
+        $event->AddAttribute("description",$this->description);
+        $event->AddAttribute("calendar.event_type",$this->event_type);
+        $event->AddAttribute("calendar.event.parent",$this->id);
+        $event->Save();
+        return $event;
     }
     public function Cancel()
     {

@@ -99,6 +99,25 @@ class EVA
             return $object;
 	}
         
+        public static function DeleteObject($id)
+        {
+            $stmt = "
+            SELECT id,type
+            FROM eva_objects
+            WHERE id=?";
+            //$stmt->bindParam(1,$id);
+            //$objectmeta=DBHelper::GetArray($stmt);
+            $data=DBHelper::RunTable($stmt,[$id]);
+            if(count($data)<=0)
+            {
+                return;
+            }
+            
+            $type=$data[0]['type'];
+            DBHelper::Update("eva_objects",["type"=>"!".$type],["id"=>$id]);
+            
+        }
+        
         /**
          * Creates a new EVA attribute.
          * @param string $name Name used to refer to the attribute.

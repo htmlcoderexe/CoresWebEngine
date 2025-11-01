@@ -313,6 +313,7 @@ function ModuleFunction_calender_ShowDay($day)
         $events[]=$e;
         $t->tokens = $e->attributes;
         $t->tokens['eventId']=$e->id;
+        $t->tokens['calendar.date']="";
         $output.=$t->process(true);
     }
     $datestring = substr($day,0,4)."-".substr($day,4,2)."-".substr($day,6,2);
@@ -488,9 +489,10 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     
     $e_types=EVA::GetAllOfType("calendar.event.type");
     $mapping = EVA::GetAsTable(["calendar.tagcolour"],"calendar.event.type",$e_types);
+    $default=array_keys($mapping)[0];
     
     EngineCore::Lap2Debug("got tag types");
-    $marker_places = ["0px 8px", "0px -8px", "8px 0px", "-8px 0px"];
+    $marker_places = ["0px -8px", "0px 8px", "8px 0px", "-8px 0px"];
     
     for($i=0;$i<$daysthismont;$i++)
     {
@@ -505,7 +507,9 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
         {
             foreach($events_by_day[$i+1] as $event)
             {
-                $actives[]=$mapping[$event['calendar.event_type']]['calendar.tagcolour'];
+                $etype=$event['calendar.event_type'] =="" ? $default : $event['calendar.event_type'];
+                //$etype =$event['calendar.event_type'];
+                $actives[]=$mapping[$etype]['calendar.tagcolour'];
             }
 
             
@@ -775,4 +779,48 @@ function ModuleAction_calender_view($params)
             ModuleAction_calender_default($params);
         }
     }
+}
+
+function ModuleAction_calender_except($params)
+{
+    if(!isset($params[0]))
+    {
+        EngineCore::GTFO("/calender");
+        die;
+    }
+    $id=intval($params[0]);
+    $recurrer = RecurringEvent::Load($id);
+    if(!$recurrer)
+    {
+        EngineCore::GTFO("/calender");
+        die;
+    }
+    $action = EngineCore::POST("action","create");
+    $date = EngineCore::POST("date","1970-01-01");
+    $ymdstr = substr($date,0,4).substr($date,5,2).substr($date,8,2);
+    $recurrer->AddException($date);
+    if($action == "create")
+    {
+        EngineCore::GTFO("/calender/edit/".($recurrer->CreateOnDate($date))->id);
+        die;
+    }
+    EngineCore::GTFO("/calender/view/date/".$ymdstr);
+    die;
+    
+}
+
+function ModuleAction_calender_delete($params)
+{
+    $id=EngineCore::POST("id_to_delete","-1");
+    $e = new EVA($id);
+    if(!$e)
+    {
+        EngineCore::GTFO("/calender");
+        die;
+    }
+    // #TODO: some actual AAA ffs!!11
+    
+    EVA::DeleteObject($id);
+    EngineCore::GTFO("/calender");
+    die;
 }
