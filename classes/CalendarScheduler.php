@@ -60,7 +60,7 @@ class CalendarScheduler
     {
         $hh=intval(substr($hhmm,0,2));
         $mm=intval(substr($hhmm,3,2));
-        return $hh*6+$mm;
+        return $hh*60+$mm;
     }
     
     public static function TestOverlap($a,$b)
