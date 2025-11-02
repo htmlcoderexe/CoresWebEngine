@@ -1,6 +1,6 @@
 <?php
 
-function ModuleAction_debug_template($params)
+function ModuleAction_debug_templatedump($params)
 {
     $user=User::GetCurrentUser();
     if(!$user->HasPermission("super"))
@@ -16,6 +16,26 @@ function ModuleAction_debug_template($params)
     $tpl=new TemplateProcessor($params[0]);
     $tpl->do_new_parser();
     echo $tpl->dumpStateNice();
+    die;
+    //EngineCore::SetPageContent($tpl->process(true));
+}
+
+function ModuleAction_debug_template($params)
+{
+    $user=User::GetCurrentUser();
+    if(!$user->HasPermission("super"))
+    {
+        EngineCore::FromWhenceYouCame();
+        die;
+    }
+    if(isset($params[1]))
+    {
+        $params[0].="/".$params[1];
+    }
+    //EngineCore::AppendTemplate($params[0]);
+    $tpl=new TemplateProcessor($params[0]);
+    $tpl->do_new_parser();
+    echo $tpl->process(true);
     die;
     //EngineCore::SetPageContent($tpl->process(true));
 }
