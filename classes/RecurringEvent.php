@@ -88,64 +88,6 @@ class RecurringEvent
         
     }
     
-    public static function xx__Refresh()
-    {
-        $recurrers = EVA::GetAsTable(
-                ["calendar.recurring.type",
-                    "calendar.recurring.data",
-                    "title","description",
-                    "calendar.time",
-                    "calendar.duration",
-                    "calendar.event_type"
-                    ], 
-                "calendar.recurring");
-        $now = time();
-        foreach($recurrers as $id=>$data)
-        {
-            $latest = $data["calendar.recurring.latest_date"];
-            $y=substr($latest,0,4);
-            $m=substr($latest,5,2);
-            $d=substr($latest,8,2);
-            $last_time = mktime(0,0,0,$m,$d,$y);
-            if($last_time<$now)
-            {
-                $generator = self::Load($id);
-                $generator->CreateNext();
-            }
-        }
-    }
-    
-    public static function CalculateNextMonthly($date,$recur_data)
-    {
-        $newDate = $date->modify("+1 month");
-        return $newDate;
-    }
-    
-    public static function CalculateNextInterval($date, $recur_data)
-    {
-        $newDate = $date->modify("+".$recur_data." days");
-        return $newDate;
-    }
-    
-    public static function CalculateNextWeekly($date, $recur_data)
-    {
-        // no point in first getting this, (monday leading)
-        // then "converting" to 0-based (monday leading)
-        // THEN adding a 1 for next day as the start
-        $now = $date->format("N");
-        $timeline = $recur_data.$recur_data;
-        for($i=1;$i<8;$i++)
-        {
-            // recur_data for weeklies looks like this:
-            // "** **  " - this is every Monday, Tuesday, Thursday and Friday
-            if($timeline[$i+$now-1] == "*")
-            {
-                return $date->modify("+".$i." days");
-            }
-            
-        }
-    }
-    
     public static function cmp($a,$b)
     {
         if($a==="")
@@ -220,6 +162,7 @@ class RecurringEvent
         return $output;
         
     }
+    
     public static function CheckDate($datestring)
     {
         $output = [];
@@ -250,7 +193,7 @@ class RecurringEvent
         $date = new DateTimeImmutable($datestring);
         foreach($recurrers as $id=>$value)
         {
-            $start = $value["calendar.recurring.start_date"] == '' ? new DateTimeImmutable("2000-01-01") : new DateTimeImmutable($value["calendar.recurring.start_date"]);
+            $start = $value["calendar.recurring.start_date"] == '' ? new DateTimeImmutable("1970-01-01") : new DateTimeImmutable($value["calendar.recurring.start_date"]);
             if(!in_array($id,$exceptions_by_day)
                 &&    self::CheckDay($date,$start,$value["calendar.recurring.type"],$value["calendar.recurring.data"]))
             {
@@ -283,103 +226,9 @@ class RecurringEvent
             }
             case self::RECUR_MONTH:
             {
-                return $date->format("j" == $recur_data);
+                return $date->format("j") == $recur_data;
             }
         }
-    }
-    
-    
-    public static function xx__DoMonth($y,$m)
-    {
-        // EngineCore::Write2Debug("|".$y."-".$m."|");
-        $recurrers = EVA::GetAsTable(
-                ["calendar.recurring.type",
-                    "calendar.recurring.data",
-                    "title","description",
-                    "calendar.time",
-                    "calendar.duration",
-                    "calendar.event_type",
-                    "calendar.recurring.latest_id",
-                    "calendar.recurring.latest_date"
-                    ], 
-                "calendar.recurring");
-        
-        $all_event_ids= CalendarScheduler::CheckMonth(intval($y),intval($m));
-        $all_events = [];
-        if($all_event_ids)
-        {
-            $all_events = EVA::GetAsTable(["calendar.date","calendar.event.parent"], "calendar.event",$all_event_ids);
-        }
-        $daymap=[];
-        foreach($all_events as $id=>$data)
-        {
-            if($data['calendar.event.parent']=="")
-            {
-                continue;
-            }
-            $day = intval(substr($data['calendar.date'],8,2));
-            if(!isset($daymap[$day]))
-            {
-                $daymap[$day]=[];
-            }
-            $daymap[$day][]=intval($data['calendar.event.parent']);
-        }
-        $pre = str_pad($y,4,"0", STR_PAD_LEFT) . "-". str_pad($m,2,"0", STR_PAD_LEFT);
-        $frist = new DateTimeImmutable($pre."-01");
-        $days = intval($frist->format("t"));
-        //var_dump($recurrers);
-        for($d=$days;$d>0;$d--)
-        {
-            //echo($d);
-            $curr = $pre."-".str_pad($d,2,"0", STR_PAD_LEFT);
-            foreach($recurrers as $id=>$value)
-            {
-                //EngineCore::Write2Debug("fuck");
-                // if recurrer already exists here
-                if(isset($daymap[$d]) && in_array($id,$daymap[$d]))
-                {
-                    continue;
-                }
-                //EngineCore::Write2Debug("ass");
-                // if recurrer has latest in future
-                if(self::cmp($value['calendar.recurring.latest_date'],$curr)>=0)
-                {
-                    unset($recurrers[$id]);
-                    continue;
-                }
-                //EngineCore::Write2Debug("shit");
-                // only then check if should be created
-                if(self::CheckDate($curr,$value['calendar.recurring.latest_date'],$value["calendar.recurring.type"],$value["calendar.recurring.data"]))
-                {
-                    // do shit here
-                    
-                    $event = EVA::CreateObject("calendar.event");
-                    $event->AddAttribute("title",$value["title"]);
-                    $event->AddAttribute("calendar.date",$curr);
-                    if(!isset($value["calendar.time"]))
-                    {
-                        $value["calendar.time"] ="00:00";
-                    }
-                    if(!isset($value["calendar.duration"]))
-                    {
-                        $value["calendar.duration"]="01:00";
-                    }
-                    $event->AddAttribute("calendar.time",$value["calendar.time"]);
-                    $event->AddAttribute("calendar.duration",$value["calendar.duration"]);
-                    $event->AddAttribute("description",$value["description"]);
-                    $event->AddAttribute("calendar.event_type",$value["calendar.event_type"]);
-                    $event->AddAttribute("calendar.event.parent",$id);
-                    $event->Save();
-                    // IMPORTANT!!!! this updates DB but not the current recurrer list in here - so it can
-                    // fill the "earlier" unfilled dates yet if it happens
-                    // YOU WILL BREAK THE WHOLE THING IF YOU CHANGE THIS
-                    // actually fuck that don't write it because it will break the recurring event if you click the months wrong
-                    // EVA::WritePropByName($id, "calendar.recurring.latest_date", $curr);
-                }
-            }
-        }
-        
-        
     }
     
     public static function CalculateThisInterval($date, $days, $recur_data)
@@ -395,56 +244,6 @@ class RecurringEvent
         
     }
     
-    public static function CalculateNext($datestring,$recur_type,$recur_data)
-    {
-        $date = new DateTimeImmutable($datestring);
-        switch($recur_type)
-        {
-            case self::RECUR_DAYS:
-            {
-                return self::CalculateNextInterval($date,$recur_data);
-            }
-            case self::RECUR_WEEKLY:
-            {
-                return self::CalculateNextWeekly($date,$recur_data);
-            }
-            case self::RECUR_MONTH:
-            {
-                return self::CalculateNextMonthly($date,$recur_data);
-            }
-        }
-    }
-    
-    public static function xx__CheckDate($datestring,$lateststring,$recur_type,$recur_data)
-    {
-        //EngineCore::Dump2Debug([$datestring,$lateststring,$recur_type,$recur_data]);
-        if($datestring == $lateststring)
-        {
-            return false;
-        }
-        $date = new DateTimeImmutable($datestring);
-        $latest = new DateTimeImmutable($lateststring);
-        $diff =date_diff($latest,$date);
-        if($diff->invert)
-        {
-            return false;
-        }
-        switch($recur_type)
-        {
-            case self::RECUR_DAYS:
-            {
-                return self::CalculateThisInterval($date,$diff->days,$recur_data);
-            }
-            case self::RECUR_WEEKLY:
-            {
-                return self::CalculateThisWeekly($date,$recur_data);
-            }
-            case self::RECUR_MONTH:
-            {
-                return $date->format("j" == $recur_data);
-            }
-        }
-    }
     
     public static function FromEvent($event,$rtype,$rdata)
     {
