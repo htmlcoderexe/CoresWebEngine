@@ -47,7 +47,7 @@ function ModuleFunction_EditEvent($eID,$title,$date,$time,$duration,$description
     $event->SetSingleAttribute("description",$description);
     $event->SetSingleAttribute("calendar.event_type",$type);
     $event->Save();
-    EngineCore::GTFO("/calender");
+    EngineCore::GTFO("/calender/view/event/".$eID);
     return;
 }
 
@@ -74,7 +74,7 @@ function ModuleFunction_CreateEvent($title,$date,$time,$duration,$description,$t
     $event->AddAttribute("description",$description);
     $event->AddAttribute("calendar.event_type",$type);
     $event->Save();
-    EngineCore::GTFO("/calender");
+    EngineCore::GTFO("/calender/view/event/".$event->id);
     return;
 }
 
@@ -327,6 +327,8 @@ function ModuleFunction_calender_ShowDay($day)
     }
     $t2 = new TemplateProcessor("calender/eventsondate");
     $t2->tokens['events']=$output;
+    $t2->tokens['date']=$day;
+    $t2->tokens['month']=substr($day,0,6);
     EngineCore::AddPageContent($t2->process(true));
     EngineCore::SetPageTitle("Events on ".$datestring);
 }
@@ -695,10 +697,10 @@ function ModuleFunction_calender_ShowWeek($year,$week)
         $isblue = $i==6;
         // TODO: check red days other than Sundays
         
-        
+        $currentdaystring=date("Ymd",$date);
         $ismonday=$i==1;
         $daystyle= ($ismonday?" cal-week-monday":"").($isred?" cal-week-redday":($isblue?" cal-week-blueday":""));
-        $daynames[]=["date"=>date("Ymd",$date),"title"=>date("D j/m",$date),"style"=>$daystyle];
+        $daynames[]=["date"=>$currentdaystring,"title"=>date("D j/m",$date),"style"=>$daystyle];
         $onthisday= $events_per_day[$i]??[];
         $onthisday = CalendarScheduler::SortByDateTime($onthisday);
         if($onthisday)
@@ -736,6 +738,7 @@ function ModuleFunction_calender_ShowWeek($year,$week)
                     $etype=$mapping[$event_entry['calendar.event_type']]??['calendar.agendacolour'=>'#7F7F7F'];
                     $col=$etype['calendar.agendacolour'];
                     $event_entry['colour']=$col;
+                    $event_entry['date']=$currentdaystring;
                 }
                 if(isset($event_entry['recurId']))
                 {
@@ -746,7 +749,7 @@ function ModuleFunction_calender_ShowWeek($year,$week)
         }
         
         
-        if($nowday==date("Ymd",$date))
+        if($nowday==$currentdaystring)
         {
             $marker['xpos']=13*($i-1);
             $marker['ypos']= ModuleFunction_calender_TimeToEms($ems, $nowhh, $nowmm);
@@ -847,22 +850,26 @@ function ModuleAction_calender_view($params)
     {
         case "month":
         {
-            ModuleFunction_calender_ShowMonth($params[1]);
+            ModuleFunction_calender_ShowMonth($params[1]);        
+            $_SESSION['returnTo']="/month/".$params[1];
             return;
         }
         case "date":
         {
             ModuleFunction_calender_ShowDay($params[1]);
+            $_SESSION['returnTo']="/date/".$params[1];
             return;
         }
         case "event":
         {
             ModuleFunction_calender_ShowEvent($params[1]);
+            $_SESSION['returnTo']="/event/".$params[1];
             return;
         }
         case "week":
         {
             ModuleFunction_calender_ShowWeek($params[1],$params[2]);
+            $_SESSION['returnTo']="/week/".$params[1]."/".$params[2];
             return;
         }
         default:
@@ -912,6 +919,12 @@ function ModuleAction_calender_delete($params)
     // #TODO: some actual AAA ffs!!11
     
     EVA::DeleteObject($id);
-    EngineCore::GTFO("/calender");
+    $returnTo="";
+    if(isset($_SESSION['returnTo']))
+    {
+        $returnTo=$_SESSION['returnTo'];
+        $_SESSION['returnTo']="";
+    }
+    EngineCore::GTFO("/calender".$returnTo);
     die;
 }
