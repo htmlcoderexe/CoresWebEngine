@@ -23,8 +23,7 @@
     <button type="submit">Save</button>
 </form>{#ifeq|{%eventId|-1%}|-1||
 <form action="/calender/fromevent/{%eventId%}" method="POST">
-    <label for="rtype">recur type</label><input id="rtype" name="rtype" value="week" />
-    <label for="rdata">recur data</label><input id="rtype" name="rdata" value="*****.."/>
+    {{calender/recurpickercontrol|calendar.recurring.data=7,calendar.recurring.type=day}}
     <button type="submit">Make recurring</button>
 </form>
 #}

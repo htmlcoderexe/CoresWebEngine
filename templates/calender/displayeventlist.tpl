@@ -10,11 +10,11 @@
     <button type="submit" value="delete" name="action">Cancel today</button>
     <button type="submit" value="create" name="action">Edit today</button>
 </form>
-<a href="/calender/recurring/{%recurId%}">Edit</a>
+<a class="action_button" href="/calender/recurring/{%recurId%}">Edit</a>
 |
 <form action="/calender/delete" method="POST">
     <input type="hidden" value="{%eventId%}" name="id_to_delete" />
     <button type="submit">Delete</button>
 </form>
-<a href="/calender/edit/{%eventId%}">Edit</a>#}
+<a class="action_button" href="/calender/edit/{%eventId%}">Edit</a>#}
 </div>
