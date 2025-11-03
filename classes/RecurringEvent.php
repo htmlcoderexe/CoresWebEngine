@@ -121,7 +121,8 @@ class RecurringEvent
                     "calendar.time",
                     "calendar.duration",
                     "calendar.event_type",
-                    "calendar.recurring.start_date"
+                    "calendar.recurring.start_date",
+                    "calendar.recurring.end_date"
                     ], 
                 "calendar.recurring");
         $lateststring = "1970-01-01";
@@ -156,7 +157,7 @@ class RecurringEvent
                 $startstring = $value["calendar.recurring.start_date"] == '' ? $lateststring : $value["calendar.recurring.start_date"];
                 $start = new DateTimeImmutable($startstring);
                 if(!(isset($exceptions_by_day[$d]) && in_array($id,$exceptions_by_day[$d]))
-                    &&    self::CheckDay($date,$start,$value["calendar.recurring.type"],$value["calendar.recurring.data"]))
+                    &&    self::CheckDay($date,$start,$value['calendar.recurring.end_date'],$value["calendar.recurring.type"],$value["calendar.recurring.data"]))
                 {
                     $value['calendar.date'] = $datestring;
                     $value['recurrer'] = $id;
@@ -178,7 +179,8 @@ class RecurringEvent
                     "calendar.time",
                     "calendar.duration",
                     "calendar.event_type",
-                    "calendar.recurring.start_date"
+                    "calendar.recurring.start_date",
+                    "calendar.recurring.end_date"
                     ], 
                 "calendar.recurring");
         $exceptionsList = EVA::GetByProperty("calendar.date", $datestring, "calendar.exception");
@@ -200,7 +202,7 @@ class RecurringEvent
         {
             $start = $value["calendar.recurring.start_date"] == '' ? new DateTimeImmutable("1970-01-01") : new DateTimeImmutable($value["calendar.recurring.start_date"]);
             if(!in_array($id,$exceptions_by_day)
-                &&    self::CheckDay($date,$start,$value["calendar.recurring.type"],$value["calendar.recurring.data"]))
+                &&    self::CheckDay($date,$start,$value['calendar.recurring.end_date'],$value["calendar.recurring.type"],$value["calendar.recurring.data"]))
             {
                 $value['calendar.date'] = $datestring;
                 $value['recurId'] = $id;
@@ -212,8 +214,18 @@ class RecurringEvent
         
     }
     
-    public static function CheckDay($date,$start_date,$recur_type,$recur_data)
+    public static function CheckDay($date,$start_date,$end_date,$recur_type,$recur_data)
     {
+        if($end_date!="")
+        {
+            $end = new DateTimeImmutable($end_date);
+            $diff=date_diff($date,$end);
+            if($diff->invert)
+            {
+                return false;
+            }
+            
+        }
         $diff =date_diff($start_date,$date);
         if($diff->invert)
         {
