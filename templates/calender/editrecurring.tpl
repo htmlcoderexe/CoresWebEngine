@@ -7,10 +7,10 @@
     <input name="date" id ="date" type ="date" value="{%calendar.recurring.start_date|%}" />
     <br />
     <label for="no_end_date">Repeat indefinitely</label>
-    <input id="no_end_date"{#ifeq|{%calendar.recurring.end_date|%}|| checked |#} value="no" type="radio" name="end_date_option" />
+    <input onchange="EnableDisableEndDate();" id="no_end_date"{#ifeq|{%calendar.recurring.end_date|%}|| checked |#} value="no" type="radio" name="end_date_option" />
     <br />
     <label for="yes_end_date">Repeat until:</label>
-    <input id="yes_end_date"{#ifeq|{%calendar.recurring.end_date|%}||| checked #} value="yes" type="radio" name="end_date_option" />
+    <input onchange="EnableDisableEndDate();" id="yes_end_date"{#ifeq|{%calendar.recurring.end_date|%}||| checked #} value="yes" type="radio" name="end_date_option" />
     <br />
     <input name="date_end" id ="date_end" type ="date" value="{%calendar.recurring.end_date|%}"{#ifeq|{%calendar.recurring.end_date|%}|| disabled |#} />
     <br />
@@ -32,3 +32,10 @@
     {{calender/recurpickercontrol|calendar.recurring.data={%calendar.recurring.data|7%}|calendar.recurring.type={%calendar.recurring.type|day%}}}
     <button type="submit">Save</button>
 </form>
+<script>
+    
+function EnableDisableEndDate()
+{
+    document.getElementById("date_end").disabled = document.getElementById("no_end_date").checked;
+}    
+</script>
