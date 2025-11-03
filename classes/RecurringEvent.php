@@ -4,6 +4,7 @@
 
 Module::DemandProperty("calendar.recurring.type", "Duration", "The duration of an event.");
 Module::DemandProperty("calendar.recurring.start_date", "Start date", "The starting date of a recurring event.");
+Module::DemandProperty("calendar.recurring.end_date", "End date", "The ending date of a recurring event.");
 Module::DemandProperty("calendar.recurring.data","Event type","Type of a calendar event.");
 Module::DemandProperty("calendar.recurring.latest_id","Calendar colour","How the event is marked in the month view.");
 Module::DemandProperty("calendar.recurring.latest_date","Schedule colour","How the event is marked in the week view.");
@@ -24,6 +25,7 @@ class RecurringEvent
     public $description;
     public $event_type;
     public $start_date;
+    public $end_date;
     public $time;
     public $duration;
     
@@ -31,7 +33,7 @@ class RecurringEvent
     public const RECUR_DAYS = "day";
     public const RECUR_MONTH = "month";
     
-    public function __construct($id,$recur_type,$recur_data, $title, $description,$startdate, $time, $duration, $event_type)
+    public function __construct($id,$recur_type,$recur_data, $title, $description,$startdate, $time, $duration, $event_type,$enddate="")
     {
         $this->id=$id;
         $this->recur_type = $recur_type;
@@ -42,6 +44,7 @@ class RecurringEvent
         $this->time = $time;
         $this->duration = $duration;
         $this->event_type = $event_type;
+        $this->end_date = $enddate; 
                 
     }
     
@@ -58,6 +61,7 @@ class RecurringEvent
                 $eva->attributes['title'],
                 $eva->attributes['description'],
                 $eva->atrributes["calendar.recurring.start_date"] ?? '1970-01-01',
+                $eva->atrributes["calendar.recurring.end_date"] ?? '',
                 $eva->attributes['calendar.time'] ?? '00:00',
                 $eva->attributes['calendar.duration'] ?? '01:00',
                 $eva->attributes['calendar.event_type']);
@@ -70,6 +74,7 @@ class RecurringEvent
         $eva->SetSingleAttribute('calendar.recurring.type',$this->recur_type);
         $eva->SetSingleAttribute('calendar.recurring.data',$this->recur_data);
         $eva->SetSingleAttribute("calendar.recurring.start_date", $this->start_date);
+        $eva->SetSingleAttribute("calendar.recurring.end_date", $this->end_date);
         $eva->SetSingleAttribute('calendar.time',$this->time);
         $eva->SetSingleAttribute('calendar.duration',$this->duration);
         $eva->SetSingleAttribute('title',$this->title);
@@ -79,10 +84,10 @@ class RecurringEvent
         
     }
     
-    public static function Create($recur_type,$recur_data, $title, $description,$startdate, $time, $duration, $event_type)
+    public static function Create($recur_type,$recur_data, $title, $description,$startdate, $time, $duration, $event_type,$end_date="")
     {
         $id = EVA::CreateObject("calendar.recurring");
-        $r = new RecurringEvent($id->id, $recur_type,$recur_data, $title, $description,$startdate, $time, $duration, $event_type);
+        $r = new RecurringEvent($id->id, $recur_type,$recur_data, $title, $description,$startdate, $time, $duration, $event_type,$end_date);
         $r->Save();
         return $r;
         

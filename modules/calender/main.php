@@ -19,6 +19,12 @@ function ModuleAction_calender_default($params)
     
 }
 
+function ModuleFunction_EditRecurring($rID,$title,$description,$startdate,$enddate,$time,$duration,$event_type,$recur_type,$recur_data)
+{
+    $event = new RecurringEvent($rID, $recur_type,$recur_data, $title, $description,$startdate, $time, $duration, $event_type,$enddate);
+    $event->Save();
+}
+
 function ModuleFunction_EditEvent($eID,$title,$date,$time,$duration,$description,$type)
 {
     if(!$title || !$date||!$eID)
@@ -158,6 +164,51 @@ function ModuleAction_calender_type($params)
             return;            
         }
     }
+}
+
+function ModuleAction_calender_recurring($params)
+{
+    $selectedId=$params[0] ?? -1;
+    $title = EngineCore::POST("title","");
+    $date = EngineCore::POST("date","");
+    $time = EngineCore::POST("time","");
+    $duration = EngineCore::POST("timeD","");
+    $description = EngineCore::POST("description","");
+    $submitted=EngineCore::POST("create","");
+    $eventId=EngineCore::POST("EventID");
+    $type=EngineCore::Post("type","");
+    $rtype=EngineCore::Post("rtype","");
+    $rdata=EngineCore::Post("rdata","");
+    $enddate="";
+    if(EngineCore::POST("end_date_option","no")=="yes")
+    {
+        $enddate=EngineCore::POST("date_end");
+    }
+    if($submitted && $eventId && (RecurringEvent::Load($eventId))!=null)
+    {
+        ModuleFunction_EditRecurring($eventId,$title,$description,$date,$enddate,$time,$duration,$type,$rtype,$rdata);
+        EngineCore::GTFO("/calender/recurring/$eventId");
+        die;
+    }
+    $t=new TemplateProcessor("calender/editrecurring");
+    $types=EVA::GetAllOfType("calendar.event.type");
+    //$event = RecurringEvent::Load($selectedId);
+    $eee = new EVA($selectedId);
+    $t->tokens=$eee->attributes;
+    $t->tokens['verb']="edit";
+    $t->tokens['eventId']=$eee->id;
+    $t->tokens['types']=[];
+    foreach($types as $type)
+    {
+        $e=new EVA($type);
+        $flattype=(array)($e->attributes);
+        $flattype['typeId']=$e->id;
+        $t->tokens['types'][]=$flattype;
+    }
+    EngineCore::AddPageContent($t->process(true));
+    EngineCore::SetPageTitle("Editing event");
+            return;
+    
 }
 
 
@@ -851,25 +902,25 @@ function ModuleAction_calender_view($params)
         case "month":
         {
             ModuleFunction_calender_ShowMonth($params[1]);        
-            $_SESSION['returnTo']="/month/".$params[1];
+            $_SESSION['returnTo']="/view/month/".$params[1];
             return;
         }
         case "date":
         {
             ModuleFunction_calender_ShowDay($params[1]);
-            $_SESSION['returnTo']="/date/".$params[1];
+            $_SESSION['returnTo']="/view/date/".$params[1];
             return;
         }
         case "event":
         {
             ModuleFunction_calender_ShowEvent($params[1]);
-            $_SESSION['returnTo']="/event/".$params[1];
+            $_SESSION['returnTo']="/view/event/".$params[1];
             return;
         }
         case "week":
         {
             ModuleFunction_calender_ShowWeek($params[1],$params[2]);
-            $_SESSION['returnTo']="/week/".$params[1]."/".$params[2];
+            $_SESSION['returnTo']="/view/week/".$params[1]."/".$params[2];
             return;
         }
         default:
