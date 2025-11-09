@@ -1,7 +1,37 @@
 <?php
 
 
+$recurrerr_event_schema = [
+    // event data
+    // body
+    "title"=>"varchar(255)",
+    "description"=>"varchar(2000)",
+    "category"=>"int",
+    // time
+    "day"=>"int",
+    "month"=>"int",
+    "year"=>"int",
+    "hour"=>"int",
+    "minute"=>"int",
+    "duration"=>"int", // in minutes
+    // recurrer specific data
+    "end"=>"int", // Unix Timestamp
+    "recur_type"=>"varchar(255)",
+    "recur_data"=>"varchar(255)",
+    // AAA data
+    "user"=>"int",
+    "user_group"=>"int",
+    "active"=>"int"
+    ];
 
+$exception_schema = [
+    "recurrer_id"=>"int",
+    "day"=>"int",
+    "month"=>"int",
+    "year"=>"int"
+];
+Module::DemandTable("calendar_exceptions", $exception_schema);
+Module::DemandTable("calendar_recurring_events", $recurrerr_event_schema);
 Module::DemandProperty("calendar.recurring.type", "Duration", "The duration of an event.");
 Module::DemandProperty("calendar.recurring.start_date", "Start date", "The starting date of a recurring event.");
 Module::DemandProperty("calendar.recurring.end_date", "End date", "The ending date of a recurring event.");
@@ -114,37 +144,30 @@ class RecurringEvent
     public static function CheckMonth($y, $m)
     {
         $output = [];
-        $recurrers = EVA::GetAsTable(
-                ["calendar.recurring.type",
-                    "calendar.recurring.data",
-                    "title","description",
-                    "calendar.time",
-                    "calendar.duration",
-                    "calendar.event_type",
-                    "calendar.recurring.start_date",
-                    "calendar.recurring.end_date"
-                    ], 
-                "calendar.recurring");
-        $lateststring = "1970-01-01";
-        $pre = str_pad($y,4,"0", STR_PAD_LEFT) . "-". str_pad($m,2,"0", STR_PAD_LEFT);
-        $exceptionsList = EVA::GetByPropertyPre("calendar.date", $pre, "calendar.exception");
-        $exceptions = [];
+        $selector = [
+            "id",
+            "title", "description","category",
+            "day","month","year",
+            "hour","minute", "duration",
+            "end","recur_type","recur_data"
+            ];
+        $q_recurrers = DBHelper::Select("calendar_recurring_events",$selector,["active"=>1]);
+        $q_exceptions = DBHelper::Select("calendar_exceptions",["recurrer_id","day","month","year"],["year"=>$y,"month"=>$m]);
+        $recurrers = DBHelper::RunTable($q_recurrers,[1]);
+        $exceptions = DBHelper::RunTable($q_exceptions,[$y,$m]);
         $exceptions_by_day = [];
-        if(count($exceptionsList)>0)
+        foreach($exceptions as $ex)
         {
-            $exceptions = EVA::GetAsTable(["calendar.date","calendar.event.parent"],"calendar.exception",$exceptionsList);
-        }
-        foreach($exceptions as $id=>$ex)
-        {
-            $eid = $ex['calendar.event.parent'];
-            $eday = substr($ex['calendar.date'],8,2);
-            if(!isset($exceptions_by_day[$eday]))
+            $eid = $ex['recurrer_id'];
+            if(!isset($exceptions_by_day[$ex['day']]))
             {
-                $exceptions_by_day[$eday] = [];
+                $exceptions_by_day[$ex['day']] = [];
             }
-            $exceptions_by_day[intval($eday)][]=$eid;
+            $exceptions_by_day[intval($ex['day'])][]=$eid;
         }
         
+        $lateststring = "1970-01-01";
+        $pre = str_pad($y,4,"0", STR_PAD_LEFT) . "-". str_pad($m,2,"0", STR_PAD_LEFT);
             
         $frist = new DateTimeImmutable($pre."-01");
         $days = intval($frist->format("t"));
@@ -152,15 +175,38 @@ class RecurringEvent
         {
             $datestring =$pre."-".str_pad($d,2,"0", STR_PAD_LEFT);
             $date = new DateTimeImmutable($datestring);
-            foreach($recurrers as $id=>$value)
+            foreach($recurrers as $value)
             {
-                $startstring = $value["calendar.recurring.start_date"] == '' ? $lateststring : $value["calendar.recurring.start_date"];
-                $start = new DateTimeImmutable($startstring);
-                if(!(isset($exceptions_by_day[$d]) && in_array($id,$exceptions_by_day[$d]))
-                    &&    self::CheckDay($date,$start,$value['calendar.recurring.end_date'],$value["calendar.recurring.type"],$value["calendar.recurring.data"]))
+                if(isset($exceptions_by_day[$d]) && in_array($value['id'],$exceptions_by_day[$d]))
+                {
+                    continue;
+                }
+                if($value['year']==0)
+                {
+                    $start = new DateTimeImmutable($lateststring);
+                }
+                else
+                {
+                    $start = new DateTimeImmutable($value['year']."-".$value['month']."-".$value['day']);
+                }
+                if(self::CheckDay($date,$start,$value['end'],$value["recur_type"],$value["recur_data"]))
                 {
                     $value['calendar.date'] = $datestring;
-                    $value['recurrer'] = $id;
+                    $value['day']=str_pad($d,2,"0", STR_PAD_LEFT);
+                    $value['month']=str_pad($m,2,"0", STR_PAD_LEFT);
+                    $dayminute = $value['hour']*60+$value['minute'];
+                    $doneminute =$dayminute+$value['duration'];
+                    $value['dayminute']=$dayminute;
+                    $value['doneminute']=$doneminute;
+                    
+                    $value['hour']=str_pad($value['hour'],2,"0", STR_PAD_LEFT);
+                    $value['minute']=str_pad($value['minute'],2,"0", STR_PAD_LEFT);
+                    $value['year']=$y;
+                    $value['recurrer'] = $value['id'];
+                    $value['duration_minutes'] = str_pad($value['duration'] % 60,2,"0", STR_PAD_LEFT);
+                    $value['duration_hours'] = str_pad(floor($value['duration'] / 60),2,"0", STR_PAD_LEFT);
+                    $value['done_minutes'] = str_pad($value['doneminute'] % 60,2,"0", STR_PAD_LEFT);
+                    $value['done_hours'] = str_pad(floor($value['doneminute'] / 60),2,"0", STR_PAD_LEFT);
                     $output[]=$value;
                 }
             }
@@ -171,42 +217,58 @@ class RecurringEvent
     
     public static function CheckDate($datestring)
     {
+        list($y,$m,$d) = explode("-",$datestring);
         $output = [];
-        $recurrers = EVA::GetAsTable(
-                ["calendar.recurring.type",
-                    "calendar.recurring.data",
-                    "title","description",
-                    "calendar.time",
-                    "calendar.duration",
-                    "calendar.event_type",
-                    "calendar.recurring.start_date",
-                    "calendar.recurring.end_date"
-                    ], 
-                "calendar.recurring");
-        $exceptionsList = EVA::GetByProperty("calendar.date", $datestring, "calendar.exception");
-        $exceptions = [];
-        $exceptions_by_day = [];
-        if(count($exceptionsList)>0)
-        {
-            $exceptions = EVA::GetAsTable(["calendar.event.parent"],"calendar.exception",$exceptionsList);
-        }
-        foreach($exceptions as $id=>$ex)
-        {
-            $eid = $ex['calendar.event.parent'];
-            $exceptions_by_day[]=$eid;
-        }
+        $selector = [
+            "id",
+            "title", "description","category",
+            "day","month","year",
+            "hour","minute", "duration",
+            "end","recur_type","recur_data"
+            ];
+        $q_recurrers = DBHelper::Select("calendar_recurring_events",$selector,["active"=>1]);
+        $q_exceptions = DBHelper::Select("calendar_exceptions",["recurrer_id"],["year"=>$y,"month"=>$m,"day"=>$d]);
+        $recurrers = DBHelper::RunTable($q_recurrers,[1]);
+        $exceptions_by_day = DBHelper::RunList($q_exceptions,[$y,$m,$d]);
             
+        $lateststring = "1970-01-01";
        
         $date = new DateTimeImmutable($datestring);
-        foreach($recurrers as $id=>$value)
+        foreach($recurrers as $value)
         {
-            $start = $value["calendar.recurring.start_date"] == '' ? new DateTimeImmutable("1970-01-01") : new DateTimeImmutable($value["calendar.recurring.start_date"]);
-            if(!in_array($id,$exceptions_by_day)
-                &&    self::CheckDay($date,$start,$value['calendar.recurring.end_date'],$value["calendar.recurring.type"],$value["calendar.recurring.data"]))
+            
+            if(in_array($value['id'],$exceptions_by_day))
             {
-                $value['calendar.date'] = $datestring;
-                $value['recurId'] = $id;
-                $output[]=$value;
+                continue;
+            }
+            if($value['year']==0)
+            {
+                $start = new DateTimeImmutable($lateststring);
+            }
+            else
+            {
+            $start = new DateTimeImmutable($value['year']."-".$value['month']."-".$value['day']);
+            }
+            if(self::CheckDay($date,$start,$value['end'],$value["recur_type"],$value["recur_data"]))
+            {
+                    $value['calendar.date'] = $datestring;
+                    $value['day']=str_pad($d,2,"0", STR_PAD_LEFT);
+                    $value['month']=str_pad($m,2,"0", STR_PAD_LEFT);
+                    $dayminute = $value['hour']*60+$value['minute'];
+                    $doneminute =$dayminute+$value['duration'];
+                    $value['dayminute']=$dayminute;
+                    $value['doneminute']=$doneminute;
+                    
+                    $value['hour']=str_pad($value['hour'],2,"0", STR_PAD_LEFT);
+                    $value['minute']=str_pad($value['minute'],2,"0", STR_PAD_LEFT);
+                    $value['year']=$y;
+                    $value['recurrer'] = $value['id'];
+                    $value['recurId'] = $value['id'];
+                    $value['duration_minutes'] = str_pad($value['duration'] % 60,2,"0", STR_PAD_LEFT);
+                    $value['duration_hours'] = str_pad(floor($value['duration'] / 60),2,"0", STR_PAD_LEFT);
+                    $value['done_minutes'] = str_pad($value['doneminute'] % 60,2,"0", STR_PAD_LEFT);
+                    $value['done_hours'] = str_pad(floor($value['doneminute'] / 60),2,"0", STR_PAD_LEFT);
+                    $output[]=$value;
             }
         }
         
@@ -216,9 +278,10 @@ class RecurringEvent
     
     public static function CheckDay($date,$start_date,$end_date,$recur_type,$recur_data)
     {
-        if($end_date!="")
+        //var_dump([$date,$start_date,$end_date,$recur_type,$recur_data]);
+        if($end_date!=0)
         {
-            $end = new DateTimeImmutable($end_date);
+            $end = new DateTimeImmutable("@".$end_date);
             $diff=date_diff($date,$end);
             if($diff->invert)
             {
@@ -250,6 +313,7 @@ class RecurringEvent
     
     public static function CalculateThisInterval($date, $days, $recur_data)
     {
+        //var_dump([$date,$days,$recur_data,intval($days) % intval($recur_data)]);
         return intval($days) % intval($recur_data) == 0;
     }
     

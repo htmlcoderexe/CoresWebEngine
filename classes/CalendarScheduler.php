@@ -4,19 +4,38 @@ class CalendarScheduler
 {
     public static function CheckDate($y,$m="",$d="")
     {
-        self::CheckRecurrers($y,$m,$d);
-        if($m=="")
+        
+        $fields=[
+            "id",
+            "title", "description","category",
+            "day","month","year",
+            "hour","minute", "duration"
+            ];
+        $q_events = DBHelper::Select("calendar_events",$fields,["year"=>$y,"month"=>$m,"day"=>$d]);
+        $events = DBHelper::RunTable($q_events,[$y,$m,$d]);
+        $output =[];
+        foreach($events as $value)
         {
-            $dates = EVA::GetByProperty("calendar.date", $y, "calendar.event");
-        
+            $value['day']=str_pad($value['day'],2,"0", STR_PAD_LEFT);
+            $value['month']=str_pad($m,2,"0", STR_PAD_LEFT);
+            $dayminute = $value['hour']*60+$value['minute'];
+            $doneminute =$dayminute+$value['duration'];
+            $value['dayminute']=$dayminute;
+            $value['doneminute']=$doneminute;
+
+            $value['hour']=str_pad($value['hour'],2,"0", STR_PAD_LEFT);
+            $value['minute']=str_pad($value['minute'],2,"0", STR_PAD_LEFT);
+            $value['year']=$y;
+            $value['recurrer'] = $value['id'];
+            $value['duration_minutes'] = str_pad($value['duration'] % 60,2,"0", STR_PAD_LEFT);
+            $value['duration_hours'] = str_pad(floor($value['duration'] / 60),2,"0", STR_PAD_LEFT);
+            $value['done_minutes'] = str_pad($value['doneminute'] % 60,2,"0", STR_PAD_LEFT);
+            $value['done_hours'] = str_pad(floor($value['doneminute'] / 60),2,"0", STR_PAD_LEFT);
+            $output[]=$value;
         }
-        else
-        {
-            $dates = EVA::GetByProperty("calendar.date", $y."-".$m."-".$d, "calendar.event");
+        return  $output;
         
-        }
         
-        return $dates;
         
     }
     
@@ -36,20 +55,19 @@ class CalendarScheduler
     {
         $sorter = function($a, $b)
         {
-            $ad = $a['calendar.date'];
-            $bd = $b['calendar.date'];
-            $d=strcmp($ad,$bd);
-            if($d<0)
-                return -1;
-            if($d>0)
-                return 1;
-            $at = $a['calendar.time'];
-            $bt = $b['calendar.time'];
-            $t=strcmp($at,$bt);
-            if($t<0)
-                return -1;
-            if($t>0)
-                return 1;
+            $props = [
+                'year',
+                'month',
+                'day',
+                'hour',
+                'minute'
+            ];
+            foreach($props as $prop)
+            {
+                if($a[$prop]==$b[$prop])
+                    continue;
+                return $a[$prop]<$b[$prop]?-1:1;
+            }
             return 0;
         };
         usort($items,$sorter);
@@ -65,17 +83,40 @@ class CalendarScheduler
     
     public static function TestOverlap($a,$b)
     {
-        $as = self::HHMM2Minutes($a['calendar.time']);
-        $ae = $as+self::HHMM2Minutes($a['calendar.duration']);
-        $bs = self::HHMM2Minutes($b['calendar.time']);
-        $be = $bs+self::HHMM2Minutes($b['calendar.duration']);
-        return ($as < $be && $ae > $bs);
+        return ($a['dayminute'] < $b['doneminute'] && $a['doneminute'] > $b['dayminute']);
     }
     
     public static function CheckMonth($y, $m)
     {
-        $m=str_pad($m,2,"0", STR_PAD_LEFT);
-        return EVA::GetByPropertyPre("calendar.date", $y."-".$m."-", "calendar.event");
+        $fields=[
+            "id",
+            "title", "description","category",
+            "day","month","year",
+            "hour","minute", "duration"
+            ];
+        $q_events = DBHelper::Select("calendar_events",$fields,["year"=>$y,"month"=>$m]);
+        $events = DBHelper::RunTable($q_events,[$y,$m]);
+        $output =[];
+        foreach($events as $value)
+        {
+            $value['day']=str_pad($value['day'],2,"0", STR_PAD_LEFT);
+            $value['month']=str_pad($m,2,"0", STR_PAD_LEFT);
+            $dayminute = $value['hour']*60+$value['minute'];
+            $doneminute =$dayminute+$value['duration'];
+            $value['dayminute']=$dayminute;
+            $value['doneminute']=$doneminute;
+
+            $value['hour']=str_pad($value['hour'],2,"0", STR_PAD_LEFT);
+            $value['minute']=str_pad($value['minute'],2,"0", STR_PAD_LEFT);
+            $value['year']=$y;
+            $value['recurrer'] = $value['id'];
+            $value['duration_minutes'] = str_pad($value['duration'] % 60,2,"0", STR_PAD_LEFT);
+            $value['duration_hours'] = str_pad(floor($value['duration'] / 60),2,"0", STR_PAD_LEFT);
+            $value['done_minutes'] = str_pad($value['doneminute'] % 60,2,"0", STR_PAD_LEFT);
+            $value['done_hours'] = str_pad(floor($value['doneminute'] / 60),2,"0", STR_PAD_LEFT);
+            $output[]=$value;
+        }
+        return  $output;
     }
     
     

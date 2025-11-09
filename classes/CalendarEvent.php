@@ -1,4 +1,33 @@
 <?php
+
+$calendar_event_schema = [
+    // body
+    "title"=>"varchar(255)",
+    "description"=>"varchar(2000)",
+    "category"=>"int",
+    // time
+    "day"=>"int",
+    "month"=>"int",
+    "year"=>"int",
+    "hour"=>"int",
+    "minute"=>"int",
+    "duration"=>"int", // in minutes
+    // AAA stuff
+    "user"=>"int",
+    "user_group"=>"int",
+    "active"=>"int"
+    ];
+$calendar_event_types = [
+    "name"=>"varchar(255)",
+    "marker_colour"=>"varchar(255)",
+    "agenda_colour"=>"varchar(255)",
+    "number_colour"=>"varchar(255)",
+    "bg_colour"=>"varchar(255)",
+    "priority"=>"int",
+    "ghost"=>"int"
+    ];
+Module::DemandTable("calendar_event_types",$calendar_event_types);
+Module::DemandTable("calendar_events", $calendar_event_schema);
 Module::DemandProperty("calendar.duration", "Duration", "The duration of an event.");
 Module::DemandProperty("calendar.event_type","Event type","Type of a calendar event.");
 Module::DemandProperty("calendar.tagcolour","Calendar colour","How the event is marked in the month view.");

@@ -33,7 +33,8 @@ function ModuleFunction_EditEvent($eID,$title,$date,$time,$duration,$description
         return;
     }
     $event = new EVA($eID);
-    if(!$event)
+    $event = DBHelper::Count("calendar_events", "id", ["id"=>$eID]);
+    if($event!=1)
     {
         EngineCore::GTFO("/calender/edit/error");
         return;
@@ -212,6 +213,14 @@ function ModuleAction_calender_recurring($params)
 }
 
 
+function ModuleAction_calender_migrate($params)
+{
+    ModuleAction_calender_migrateevents($params);
+    ModuleFunction_calender_migrateexceptions($params);
+    ModuleAction_calender_migraterecurrers($params);
+    ModuleFunction_calender_migratetypes($params);
+}
+
 function ModuleAction_calender_edit($params)
 {
     $selectedId=$params[0] ?? -1;
@@ -277,6 +286,127 @@ function ModuleAction_calender_edit($params)
             EngineCore::SetPageTitle("Editing event");
             return;
         }
+    }
+}
+
+function ModuleFunction_calender_migratetypes($params)
+{
+    $mapping = EVA::GetAsTable(["calendar.tagcolour","calendar.agendacolour","name"],"calendar.event.type");
+    foreach($mapping as $id=>$etype)
+    {
+        $row=[
+            null,
+            $etype['name'],
+            $etype["calendar.tagcolour"],
+            $etype["calendar.agendacolour"],
+            "#000000","#000000",
+            0,0
+        ];
+        DBHelper::Insert("calendar_event_types", $row);
+        $new_id = DBHelper::GetLastId();
+        DBHelper::Update("calendar_events",["category"=>$new_id],["category"=>$id]);
+        DBHelper::Update("calendar_recurring_events",["category"=>$new_id],["category"=>$id]);
+    }
+        DBHelper::Update("calendar_events",["category"=>1],["category"=>0]);
+        DBHelper::Update("calendar_recurring_events",["category"=>1],["category"=>0]);
+}
+
+function ModuleFunction_calender_migrateexceptions($params)
+{
+    if(!EngineCore::$CurrentUser->HasPermission("dba"))
+    {
+        die("no");
+    }
+    $exceptions = EVA::GetAsTable(["calendar.date","calendar.event.parent"],"calendar.exception");
+     foreach($exceptions as $event)
+    {
+        $ymd = $event['calendar.date'];
+        $y=substr($ymd,0,4);
+        $m=substr($ymd,5,2);
+        $d=substr($ymd,8,2);
+        $eventrow=[
+            null, 
+            $event['calendar.event.parent'],
+            $d,$m,$y
+        ];
+        DBHelper::Insert("calendar_exceptions", $eventrow);
+    }
+    
+}
+
+function ModuleAction_calender_migrateevents($params)
+{
+    if(!EngineCore::$CurrentUser->HasPermission("dba"))
+    {
+        die("no");
+    }
+    $all_events = EVA::GetAsTable(["calendar.date","calendar.time","title","description","calendar.event_type","calendar.duration"], "calendar.event");
+    foreach($all_events as $event)
+    {
+        $ymd = $event['calendar.date'];
+        $y=substr($ymd,0,4);
+        $m=substr($ymd,5,2);
+        $d=substr($ymd,8,2);
+        $hm = $event['calendar.time'];
+        $dur = $event['calendar.duration'];
+        $h=substr($hm,0,2);
+        $min=substr($hm,3,2);
+        $duration = (intval(substr($dur,0,2)))*60 + (intval(substr($dur,3,2)));
+        $eventrow=[
+            null, 
+            $event['title'], $event['description'], $event['calendar.event_type'],
+            $d,$m,$y,
+            $h,$min,$duration,
+            0,0,1
+        ];
+        DBHelper::Insert("calendar_events", $eventrow);
+    }
+}
+function ModuleAction_calender_migraterecurrers($params)
+{
+    if(!EngineCore::$CurrentUser->HasPermission("dba"))
+    {
+        die("no");
+    }
+    $recurrers = EVA::GetAsTable(
+            ["calendar.recurring.type",
+                "calendar.recurring.data",
+                "title","description",
+                "calendar.time",
+                "calendar.duration",
+                "calendar.event_type",
+                "calendar.recurring.start_date",
+                "calendar.recurring.end_date"
+                ], 
+            "calendar.recurring");
+    foreach($recurrers as $id=>$event)
+    {
+        $ymd = $event['calendar.recurring.start_date'];
+        $y=substr($ymd,0,4);
+        $m=substr($ymd,5,2);
+        $d=substr($ymd,8,2);
+        $hm = $event['calendar.time'];
+        $dur = $event['calendar.duration'];
+        $h=substr($hm,0,2);
+        $min=substr($hm,3,2);
+        $duration = (intval(substr($dur,0,2)))*60 + (intval(substr($dur,3,2)));
+        $end=0;
+        if($event['calendar.recurring.end_date']!="")
+        {
+            $end = strtotime($event['calendar.recurring.end_date']);
+        }
+        $eventrow=[
+            null, 
+            $event['title'], $event['description'], $event['calendar.event_type'],
+            $d,$m,$y,
+            $h,$min,$duration,
+            $end,
+            $event["calendar.recurring.type"], $event["calendar.recurring.data"],
+            0,0,1
+        ];
+        DBHelper::Insert("calendar_recurring_events", $eventrow);
+        $new_id = DBHelper::GetLastId();
+        DBHelper::Update("calendar_exceptions",["recurrer_id"=>$new_id],["recurrer_id"=>$id]);
     }
 }
 
@@ -348,23 +478,17 @@ function ModuleAction_calender_create($params)
 function ModuleFunction_calender_ShowDay($day)
 {
     list($y,$m,$d)= ModuleFunction_calender_ParseYYYYMMDD($day,true);
-    $eventIds= CalendarScheduler::CheckDate($y,$m,$d);
-    if(!$eventIds || count($eventIds)==0)
-    {
-        //echo "fuck";
-       // return;
-    }
-    $events=[];
+    $events= CalendarScheduler::CheckDate($y,$m,$d);
+    
     $output="";
     $t=new TemplateProcessor("calender/displayeventlist");
         
-    foreach($eventIds as $event)
+    foreach($events as $e)
     {
-        $e=new EVA($event);
         $events[]=$e;
-        $t->tokens = $e->attributes;
-        $t->tokens['eventId']=$e->id;
-        $t->tokens['calendar.date']="";
+        $t->tokens = $e;
+        $t->tokens['eventId']=$e['id'];
+        //$t->tokens['calendar.date']="";
         $output.=$t->process(true);
     }
     $datestring = substr($day,0,4)."-".substr($day,4,2)."-".substr($day,6,2);
@@ -410,7 +534,28 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     $output="";
     //RecurringEvent::DoMonth($y,$m);
     $recurrings= RecurringEvent::CheckMonth($y,$m);
-    EngineCore::Lap2Debug("got recurrers");
+    
+    $all_events = CalendarScheduler::CheckMonth(intval($y),intval($m));
+    
+    
+    $m2=intval($m)+1;
+    $y2=intval($y);
+    if($m2>12)
+    {
+        $m2=1;
+        $y2++;
+    }
+    $next_month_events =CalendarScheduler::CheckMonth($y2,$m2);
+    
+    $q_mapping = DBHelper::Select("calendar_event_types",["id","number_colour","marker_colour","agenda_colour","bg_colour","priority","ghost"],[]);
+    $mapping_result = DBHelper::RunTable($q_mapping,[]);
+    $mapping=[];
+    foreach($mapping_result as $result)
+    {
+        $mapping[$result['id']]=$result;
+    }
+    
+    EngineCore::Lap2Debug("got recurrers and this month's events");
     //$recurrings =[];
     $currentmonth = date_create_from_format("Ymd",$y.$m.$d);
     
@@ -466,35 +611,17 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     {
         $lastweek+=52;
     }
-    $events_upcoming=[];
     $events_today=[];
-    $all_event_ids= CalendarScheduler::CheckMonth(intval($y),intval($m));
-    $all_events = [];
-    if($all_event_ids)
-    {
-        $all_events = EVA::GetAsTable(["calendar.date","calendar.time","title","description","calendar.event_type"], "calendar.event",$all_event_ids);
-    }
-    $m2=intval($m)+1;
-    $y2=intval($y);
-    if($m2>12)
-    {
-        $m2=1;
-        $y2++;
-    }
+    
+    
     EngineCore::Lap2Debug("got all events");
-    $next_month_ids= CalendarScheduler::CheckMonth($y2,$m2);
-    $next_month_events = [];
-    if($next_month_ids)
-    {
-        $next_month_events = EVA::GetAsTable(["calendar.date","calendar.time","title","description","calendar.event_type"], "calendar.event",$next_month_ids);
-    }
     EngineCore::Lap2Debug("got all prev events");
     //$events_today = [];
     $upcoming = [];
     $events_by_day = [];
     foreach($all_events as $id=>$event)
     {
-       $c_d = (int) (explode("-",$event['calendar.date'])[2]);
+       $c_d = (int) $event['day'];
        if(!isset($events_by_day[$c_d]))
        {
            $events_by_day[$c_d]=[];
@@ -513,7 +640,7 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     $seen_recurs =[];
     foreach($recurrings as $event)
     {
-       $c_d = (int) (explode("-",$event['calendar.date'])[2]);
+       $c_d = (int) $event['day'];
        if(!isset($events_by_day[$c_d]))
        {
            $events_by_day[$c_d]=[];
@@ -531,41 +658,27 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     }
     EngineCore::Dump2Debug($seen_recurs);
     EngineCore::Lap2Debug("done processing recurrings");
-    foreach($next_month_events as $id=>$event)
+    foreach($next_month_events as $event)
     {
        
        $upcoming[]=$event;
     }
     EngineCore::Lap2Debug("filled upcoming");
-    /*/
-    EngineCore::Dump2Debug($events_by_day);
-    EngineCore::Dump2Debug($all_event_ids);
-    EngineCore::Dump2Debug($all_events);
-    //*/
     
-    $e_types=EVA::GetAllOfType("calendar.event.type");
-    $mapping = EVA::GetAsTable(["calendar.tagcolour"],"calendar.event.type",$e_types);
     $default=array_keys($mapping)[0];
     
     EngineCore::Lap2Debug("got tag types");
     $marker_places = ["0px -8px", "0px 8px", "8px 0px", "-8px 0px"];
-    
     for($i=0;$i<$daysthismont;$i++)
     {
         
         $actives = [];
-        /*
-        $dates = CalendarScheduler::CheckDate($y,$m,str_pad($i+1,2,"0",STR_PAD_LEFT));
-        if($dates)
-         * 
-         */
         if(isset($events_by_day[$i+1]))
         {
             foreach($events_by_day[$i+1] as $event)
             {
-                $etype=$event['calendar.event_type'] =="" ? $default : $event['calendar.event_type'];
-                //$etype =$event['calendar.event_type'];
-                $actives[]=$mapping[$etype]['calendar.tagcolour'];
+                $etype=$event['category'] =="0" ? $default : $event['category'];
+                $actives[]=$mapping[$etype]['marker_colour'];
             }
 
             
@@ -576,28 +689,12 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
             $t_today= new TemplateProcessor("calender/daycelltoday");
             $t_today->tokens['number']=$today;
             $output.=$t_today->process(true);
-            /*/
-            foreach($dates as $date)
-            {
-                $events_today[]= new CalendarEvent($date);
-            }
-            //*/
         }
         else
         {
             $divstring="";
             $thisdate=date_create_from_format("j m Y", ($i+1)." ".$currentmonth->format("m Y"));
             $datestring = $thisdate->format("Ymd");
-            
-            /*/
-            if($i+1>$today)
-            {
-                foreach($dates as $date)
-                {
-                    $events_upcoming[]= new CalendarEvent($date);
-                }
-            }
-            //*/
             $marker_count=0;
             foreach($actives as $marker_colour)
             {
@@ -722,25 +819,25 @@ function ModuleFunction_calender_ShowWeek($year,$week)
     $daynames=[];//["November 18","November 19","November 20","November 21","November 22","November 23","November 24"];
     $all_for_week = [];
     $events_per_day =[];
-    $e_types=EVA::GetAllOfType("calendar.event.type");
-    $mapping = EVA::GetAsTable(["calendar.agendacolour"],"calendar.event.type",$e_types);
+    $q_mapping = DBHelper::Select("calendar_event_types",["id","number_colour","marker_colour","agenda_colour","bg_colour","priority","ghost"],[]);
+    $mapping_result = DBHelper::RunTable($q_mapping,[]);
+    $mapping=[];
+    foreach($mapping_result as $result)
+    {
+        $mapping[$result['id']]=$result;
+    }
+    
     for($i =1;$i<8;$i++)
     {
         $date = strtotime($year."W".sprintf("%02u", $week).$i);
         
         
-        $eventIdsThisDay = CalendarScheduler::CheckDate(date("Y-m-d",$date));
-        $all_for_week = array_merge($all_for_week, $eventIdsThisDay);
+        $eventsThisDay = CalendarScheduler::CheckDate(date("Y",$date),date("n",$date),date("j",$date));
         $recurs = RecurringEvent::CheckDate(date("Y-m-d",$date));
-        $events_per_day[$i] = $recurs;
+        $events_per_day[$i] = array_merge($recurs,$eventsThisDay);
     }
-    $all_events = EVA::GetAsTable(["calendar.date","calendar.time","calendar.duration","title","description","calendar.event_type"], "calendar.event",$all_for_week);
-    foreach($all_events as $id=>$event)
-    {
-        $curd = strtotime($event['calendar.date']);
-        $dow = date("N",$curd);
-        $events_per_day[$dow][]=$event;
-    }
+    
+    
     for($i =1;$i<8;$i++)
     {
         $date = strtotime($year."W".sprintf("%02u", $week).$i);
@@ -759,35 +856,17 @@ function ModuleFunction_calender_ShowWeek($year,$week)
             foreach($onthisday as $event_entry)
             {
                 
-                $etime =explode(":",$event_entry['calendar.time']);
-                if(count($etime)==2)
-                {
-                    list($hh,$mm)=$etime;
-                }
-                else
-                {
-                    list($hh,$mm)=[0,0];
-                }
-                $edur=explode(":",$event_entry['calendar.duration']);
-                if(count($edur)==2)
-                {
-                    list($dhh,$dmm)=$edur;
-                }
-                else
-                {
-                    list($dhh,$dmm)=[0,0];
-                }
                 $event_entry['xpos']=13*($i-1);
                 $event_entry['day'] = $i;
                 $event_entry['slot'] = 0;
                 $event_entry['slotcount'] =1;
-                $event_entry['ypos']= ModuleFunction_calender_TimeToEms($ems, floatval($hh)-$starting_hour, $mm);
-                $event_entry['height']= ModuleFunction_calender_TimeToEms($ems,$dhh,$dmm);
+                $event_entry['ypos']= ModuleFunction_calender_TimeToEms($ems, floatval($event_entry['hour'])-$starting_hour, $event_entry['minute']);
+                $event_entry['height']= ModuleFunction_calender_TimeToEms($ems,$event_entry['duration_hours'],$event_entry['duration_minutes']);
                 $event_entry['id']=0;
-                if($event_entry['calendar.event_type']!="")
+                if($event_entry['category']!="")
                 {
-                    $etype=$mapping[$event_entry['calendar.event_type']]??['calendar.agendacolour'=>'#7F7F7F'];
-                    $col=$etype['calendar.agendacolour'];
+                    $etype=$mapping[$event_entry['category']]??['agenda_colour'=>'#7F7F7F'];
+                    $col=$etype['agenda_colour'];
                     $event_entry['colour']=$col;
                     $event_entry['date']=$currentdaystring;
                 }

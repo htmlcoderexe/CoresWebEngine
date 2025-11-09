@@ -1,3 +1,3 @@
     {#foreach|{%events%}|<h4>{:title:}</h4>
-    <span>{:calendar.date:}</span><br />
+    <span><strong>{:day:}.{:month:}</strong> ⌚{#ifeq|{:duration:}|1440|All day|{:hour:}:{:minute:} - {:done_hours:}:{:done_minutes:}#}</span><br />
     <p>{:description:}</p><hr />#}
