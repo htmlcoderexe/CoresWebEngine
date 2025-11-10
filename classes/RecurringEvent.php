@@ -80,37 +80,51 @@ class RecurringEvent
     
     public static function Load($id)
     {
-        $eva = new EVA($id);
-        if(!$eva)
+        $fields = [
+            "id",
+            "title", "description","category",
+            "day","month","year",
+            "hour","minute", "duration",
+            "end","recur_type","recur_data"
+            ];
+        $q_rec = DBHelper::Select("calendar_recurring_events", $fields, ['id'=>$id]);
+        $row = DBHelper::RunRow($q_rec,[$id]);
+        if(!$row)
         {
             return null;
         }
+        $dh=floor(floatval($row['duration'])/60);
+        $dm=intval($row['duration'])%60;
         return new RecurringEvent($id, 
-                $eva->attributes['calendar.recurring.type'],
-                $eva->attributes['calendar.recurring.data'],
-                $eva->attributes['title'],
-                $eva->attributes['description'],
-                $eva->atrributes["calendar.recurring.start_date"] ?? '1970-01-01',
-                $eva->atrributes["calendar.recurring.end_date"] ?? '',
-                $eva->attributes['calendar.time'] ?? '00:00',
-                $eva->attributes['calendar.duration'] ?? '01:00',
-                $eva->attributes['calendar.event_type']);
+                $row['recur_type'],
+                $row['recur_data'],
+                $row['title'],
+                $row['description'],
+                $row["year"]."-".$row["month"].$row["day"],
+                $row["end"],
+                $row['hour'].":".$row['minute'],
+                $dh.":".$dm,
+                $row['category']);
         
     }
     
     public function Save()
     {
-        $eva = new EVA($this->id);
-        $eva->SetSingleAttribute('calendar.recurring.type',$this->recur_type);
-        $eva->SetSingleAttribute('calendar.recurring.data',$this->recur_data);
-        $eva->SetSingleAttribute("calendar.recurring.start_date", $this->start_date);
-        $eva->SetSingleAttribute("calendar.recurring.end_date", $this->end_date);
-        $eva->SetSingleAttribute('calendar.time',$this->time);
-        $eva->SetSingleAttribute('calendar.duration',$this->duration);
-        $eva->SetSingleAttribute('title',$this->title);
-        $eva->SetSingleAttribute('description',$this->description);
-        $eva->SetSingleAttribute('calendar.event_type',$this->event_type);
-        $eva->Save();
+        list($y,$m,$d)=explode("-", $this->start_date);
+        list($h,$min)=explode(":",$this->time);
+        list($dh,$dm)=explode(":",$this->duration);
+        $duration=$dh*60+$dm;
+        $update = [
+            "title"=>$this->title,
+            "description"=>$this->description,
+            "catergory"=>$this->event_type,
+            "year"=>$y,"month"=>$m,"day"=>$d,
+            "hour"=>$h,"minute"=>$min,"duration"=>$duration,
+            "recur_type"=>$this->recur_type,
+            "recur_data"=>$this->recur_data,
+            "end"=>$this->end_date
+        ];
+        DBHelper::Update("calendar_recurring_events", $update, ['id'=>$this->id]);
         
     }
     
@@ -191,23 +205,7 @@ class RecurringEvent
                 }
                 if(self::CheckDay($date,$start,$value['end'],$value["recur_type"],$value["recur_data"]))
                 {
-                    $value['calendar.date'] = $datestring;
-                    $value['day']=str_pad($d,2,"0", STR_PAD_LEFT);
-                    $value['month']=str_pad($m,2,"0", STR_PAD_LEFT);
-                    $dayminute = $value['hour']*60+$value['minute'];
-                    $doneminute =$dayminute+$value['duration'];
-                    $value['dayminute']=$dayminute;
-                    $value['doneminute']=$doneminute;
-                    
-                    $value['hour']=str_pad($value['hour'],2,"0", STR_PAD_LEFT);
-                    $value['minute']=str_pad($value['minute'],2,"0", STR_PAD_LEFT);
-                    $value['year']=$y;
-                    $value['recurrer'] = $value['id'];
-                    $value['duration_minutes'] = str_pad($value['duration'] % 60,2,"0", STR_PAD_LEFT);
-                    $value['duration_hours'] = str_pad(floor($value['duration'] / 60),2,"0", STR_PAD_LEFT);
-                    $value['done_minutes'] = str_pad($value['doneminute'] % 60,2,"0", STR_PAD_LEFT);
-                    $value['done_hours'] = str_pad(floor($value['doneminute'] / 60),2,"0", STR_PAD_LEFT);
-                    $output[]=$value;
+                    $output[]=CalendarEvent::PrepareForDisplay($value, $y, $m, $d);
                 }
             }
         }
@@ -251,24 +249,7 @@ class RecurringEvent
             }
             if(self::CheckDay($date,$start,$value['end'],$value["recur_type"],$value["recur_data"]))
             {
-                    $value['calendar.date'] = $datestring;
-                    $value['day']=str_pad($d,2,"0", STR_PAD_LEFT);
-                    $value['month']=str_pad($m,2,"0", STR_PAD_LEFT);
-                    $dayminute = $value['hour']*60+$value['minute'];
-                    $doneminute =$dayminute+$value['duration'];
-                    $value['dayminute']=$dayminute;
-                    $value['doneminute']=$doneminute;
-                    
-                    $value['hour']=str_pad($value['hour'],2,"0", STR_PAD_LEFT);
-                    $value['minute']=str_pad($value['minute'],2,"0", STR_PAD_LEFT);
-                    $value['year']=$y;
-                    $value['recurrer'] = $value['id'];
-                    $value['recurId'] = $value['id'];
-                    $value['duration_minutes'] = str_pad($value['duration'] % 60,2,"0", STR_PAD_LEFT);
-                    $value['duration_hours'] = str_pad(floor($value['duration'] / 60),2,"0", STR_PAD_LEFT);
-                    $value['done_minutes'] = str_pad($value['doneminute'] % 60,2,"0", STR_PAD_LEFT);
-                    $value['done_hours'] = str_pad(floor($value['doneminute'] / 60),2,"0", STR_PAD_LEFT);
-                    $output[]=$value;
+                $output[]=CalendarEvent::PrepareForDisplay($value, $y, $m, $d);
             }
         }
         

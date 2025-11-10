@@ -89,5 +89,25 @@ class CalendarEvent
         
     }
     
+    public static function PrepareForDisplay($value,$y,$m,$d)
+    {
+        $value['day']=str_pad($d,2,"0", STR_PAD_LEFT);
+        $value['month']=str_pad($m,2,"0", STR_PAD_LEFT);
+        $dayminute = $value['hour']*60+$value['minute'];
+        $doneminute =$dayminute+$value['duration'];
+        $value['dayminute']=$dayminute;
+        $value['doneminute']=$doneminute;
+
+        $value['hour']=str_pad($value['hour'],2,"0", STR_PAD_LEFT);
+        $value['minute']=str_pad($value['minute'],2,"0", STR_PAD_LEFT);
+        $value['year']=$y;
+        $value['recurrer'] = $value['id'];
+        $value['duration_minutes'] = str_pad($value['duration'] % 60,2,"0", STR_PAD_LEFT);
+        $value['duration_hours'] = str_pad(floor($value['duration'] / 60),2,"0", STR_PAD_LEFT);
+        $value['done_minutes'] = str_pad($value['doneminute'] % 60,2,"0", STR_PAD_LEFT);
+        $value['done_hours'] = str_pad(floor($value['doneminute'] / 60),2,"0", STR_PAD_LEFT);
+        return $value;
+    }
+    
     
 } 
