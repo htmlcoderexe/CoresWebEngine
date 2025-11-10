@@ -36,12 +36,15 @@ Module::DemandProperty("name", "Name", "Name of something.");
 class CalendarEvent
 {
     public $id;
-    public $timestamp;
     
-    public $date;
-    public $startTime;
+    public $year;
+    public $month;
+    public $day;
+    
+    public $hour;
+    public $minute;
+    
     public $duration;
-    public $allDay;
     
     
     public $title;
@@ -50,43 +53,112 @@ class CalendarEvent
     public $type;
     
     public $isValid=true;
-    public EVA $EvaInstance;
+    public $allDay;
 
-    function __construct($id)
+    function __construct($id,$title,$description,$category,$year,$month,$day,$hour,$minute,$duration)
     {
-        $e = new EVA($id);
-        if($e)
+        $this->id=$id;
+        $this->title=$title;
+        $this->description = $description;
+        $this->catergory=$category;
+        $this->year=$year;
+        $this->month = $month;
+        $this->day=$day;
+        $this->hour = $hour;
+        $this->minute = $minute;
+        $this->duration = $duration;
+        if($duration==60*24)
         {
-            $this->title=$e->attributes['title']??$this->Invalidate();
-            $this->date=$e->attributes['calendar.date']??$this->Invalidate();
-            $this->startTime=$e->attributes['calendar.time']??$this->Invalidate();
-            $this->duration=$e->attributes['calendar.duration']??"01:00";
-            $this->description=$e->attributes['description']??$this->Invalidate();
-            $this->type=$e->attributes['calendar.event_type']??"";
-            $this->EvaInstance=$e;
+            $this->allDay=true;
         }
-        else
-        {
-            $this->Invalidate();
-            return;
-        }
-        
     }
     
-    function Invalidate()
+    static function Load($id)
     {
-        $this->isValid=false;
-        return "";
-    }
-
-    function Create()
-    {
-
+        $fields=[
+            "id",
+            "title", "description","category",
+            "day","month","year",
+            "hour","minute", "duration"
+            ];
+        $q_event=DBHelper::Select("calendar_events",$fields,['id'=>$id]);
+        $row = DBHelper::RunRow($q_event, [$id]);
+        if(!$row)
+        {
+            return null;
+        }
+        return new CalendarEvent($id,$row['title'],$row['description'],$row['category'],$row['year'],$row['month'],$row['day'],$row['hour'],$row['minute'],$row['duration']);
     }
     
-    public function Commit()
+    public function Save()
     {
+        $update = [
+        "title"=>$this->title,
+        "description"=>$this->description,
+        "category"=>$this->type,
+        "day"=>$this->day,
+        "month"=>$this->month,
+        "year"=>$this->year,
+        "hour"=>$this->hour,
+        "minute"=>$this->minute,
+        "duration"=>$this->duration,
+        "active"=>$this->active
+        ];
+        DBHelper::Update("calendar_events", $update, ['id'=>$this->id]);
+    }
+
+    static function Create($title, $description,$date,$time,$duration,$type,$parent=0)
+    {
+        $uid=EngineCore::$CurrentUser->userid;
         
+        list($y,$m,$d)=self::SplitDate($date);
+        list($hh,$mm)=self::SplitHHMM($time);
+        $dur = self::MinutesFromHHMM($duration);
+        $row = [
+            null,
+            $title,$description,$type,
+            $d,$m,$y,$hh,$mm,$dur,
+            $uid,0,0
+        ];
+        DBHelper::Insert("calendar_events",$row);
+        $id=DBHelper::GetLastId();
+        return new CalendarEvent($id,$title,$description,$type,$y,$m,$d,$hh,$mm,$dur);
+    }
+    
+    static function SplitDate($date)
+    {
+        return explode("-",$date);
+    }
+    static function JoinDate($y,$m,$d)
+    {
+        return $y."-".str_pad($m,2,"0", STR_PAD_LEFT)."-".str_pad($d,2,"0", STR_PAD_LEFT);
+    }
+    static function SplitHHMM($time)
+    {
+        return explode(":",$time);
+    }
+    static function JoinHHMM($hh,$mm)
+    {
+        return str_pad($hh,2,"0", STR_PAD_LEFT).":".str_pad($mm,2,"0", STR_PAD_LEFT);
+    }
+    static function MinutesToArray($minutes)
+    {
+        return [
+            str_pad(
+                    floor($minutes / 60),2,"0", STR_PAD_LEFT),
+            str_pad(
+                    $minutes % 60,2,"0", STR_PAD_LEFT)
+            ];
+    }
+    static function HHMMFromMinutes($minutes)
+    {
+        list($hh,$mm)=self::MinutesToArray($minutes);
+        return $hh.":".$mm;
+    }
+    static function MinutesFromHHMM($time)
+    {
+        list($hh,$mm)=self::SplitHHMM($time);
+        return $hh*60+$mm;
     }
     
     public static function PrepareForDisplay($value,$y,$m,$d)
