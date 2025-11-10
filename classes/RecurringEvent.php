@@ -49,32 +49,49 @@ class RecurringEvent
 {
     
     public $id;
-    public $recur_type;
-    public $recur_data;
+    
     public $title;
     public $description;
-    public $event_type;
-    public $start_date;
-    public $end_date;
-    public $time;
+    public $category;
+    
+    public $year;
+    public $month;
+    public $day;
+    
+    public $hour;
+    public $minute;
     public $duration;
+    
+    public $end_date;
+    public $recur_type;
+    public $recur_data;
+    
+    public $allDay;
     
     public const RECUR_WEEKLY = "week";
     public const RECUR_DAYS = "day";
     public const RECUR_MONTH = "month";
     
-    public function __construct($id,$recur_type,$recur_data, $title, $description,$startdate, $time, $duration, $event_type,$enddate="")
+    public function __construct($id,$title,$description,$category,$year,$month,$day,$hour,$minute,$duration,$recur_type,$recur_data,$enddate=0)
     {
         $this->id=$id;
-        $this->recur_type = $recur_type;
-        $this->recur_data = $recur_data;
         $this->title = $title;
         $this->description = $description;
-        $this->start_date = $startdate;
-        $this->time = $time;
+        $this->catergory=$category;
+        $this->year=$year;
+        $this->month = $month;
+        $this->day=$day;
+        $this->hour = $hour;
+        $this->minute = $minute;
         $this->duration = $duration;
-        $this->event_type = $event_type;
+        if($duration==60*24)
+        {
+            $this->allDay=true;
+        }
+        
         $this->end_date = $enddate; 
+        $this->recur_type = $recur_type;
+        $this->recur_data = $recur_data;
                 
     }
     
@@ -93,33 +110,27 @@ class RecurringEvent
         {
             return null;
         }
-        $dh=floor(floatval($row['duration'])/60);
-        $dm=intval($row['duration'])%60;
         return new RecurringEvent($id, 
-                $row['recur_type'],
-                $row['recur_data'],
                 $row['title'],
                 $row['description'],
-                $row["year"]."-".$row["month"].$row["day"],
-                $row["end"],
-                $row['hour'].":".$row['minute'],
-                $dh.":".$dm,
-                $row['category']);
+                $row['category'],
+                $row["year"],$row["month"],$row["day"],
+                $row['hour'],$row['minute'],
+                $row['duration'],
+                $row['recur_type'],
+                $row['recur_data'],
+                $row["end"]);
         
     }
     
     public function Save()
     {
-        list($y,$m,$d)=explode("-", $this->start_date);
-        list($h,$min)=explode(":",$this->time);
-        list($dh,$dm)=explode(":",$this->duration);
-        $duration=$dh*60+$dm;
         $update = [
             "title"=>$this->title,
             "description"=>$this->description,
             "catergory"=>$this->event_type,
-            "year"=>$y,"month"=>$m,"day"=>$d,
-            "hour"=>$h,"minute"=>$min,"duration"=>$duration,
+            "year"=>$this->year,"month"=>$this->month,"day"=>$this->day,
+            "hour"=>$this->hour,"minute"=>$this->minute,"duration"=>$this->duration,
             "recur_type"=>$this->recur_type,
             "recur_data"=>$this->recur_data,
             "end"=>$this->end_date
@@ -128,10 +139,18 @@ class RecurringEvent
         
     }
     
-    public static function Create($recur_type,$recur_data, $title, $description,$startdate, $time, $duration, $event_type,$end_date="")
+    public static function Create($title, $description, $category,$year,$month,$day, $hour,$minute, $duration,$recur_type,$recur_data, $end_date="")
     {
-        $id = EVA::CreateObject("calendar.recurring");
-        $r = new RecurringEvent($id->id, $recur_type,$recur_data, $title, $description,$startdate, $time, $duration, $event_type,$end_date);
+        $uid=EngineCore::$CurrentUser->userid;
+        $row = [
+            null,
+            $title,$description,$category,
+            $day,$month,$year,$hour,$minute,$duration,
+            $uid,0,0
+        ];
+        DBHelper::Insert("calendar_recurring_events",$row);
+        $id = DBHelper::GetLastId();
+        $r = new RecurringEvent($id, $title, $description, $category, $year,$month,$day, $hour,$minute, $duration, $recur_type,$recur_data,$end_date);
         $r->Save();
         return $r;
         
@@ -309,29 +328,24 @@ class RecurringEvent
     
     public static function FromEvent($event,$rtype,$rdata)
     {
-        $rec = RecurringEvent::Create($rtype,$rdata,$event->title,$event->description,$event->date,$event->startTime,$event->duration,$event->type);
+        $rec = RecurringEvent::Create(
+                $event->title,$event->description,$event->type,
+                $event->year,$event->month,$event->day,
+                $event->hour,$event->minute,$event->duration,
+                $rtype,$rdata,0);
         return  $rec;
     }
     
     public function AddException($date)
     {
-        $exception = EVA::CreateObject("calendar.exception");
-        $exception->AddAttribute("calendar.date",$date);
-        $exception->AddAttribute("calendar.event.parent",$this->id);
-        $exception->Save();
+        list($y,$m,$d) = CalendarEvent::SplitDate($date);
+        $new_row = [null,$this->id,$d,$m,$y];
+        DBHelper::Insert("calendar_exceptions",$new_row);
     }
     
     public function CreateOnDate($date)
     {
-        $event = EVA::CreateObject("calendar.event");
-        $event->AddAttribute("title",$this->title);
-        $event->AddAttribute("calendar.date",$date);
-        $event->AddAttribute("calendar.time",$this->time);
-        $event->AddAttribute("calendar.duration",$this->duration);
-        $event->AddAttribute("description",$this->description);
-        $event->AddAttribute("calendar.event_type",$this->event_type);
-        $event->AddAttribute("calendar.event.parent",$this->id);
-        $event->Save();
+        $event = CalendarEvent::Create($this->title,$this->description,$date,$this->time,$this->duration,$this->event_type);
         return $event;
     }
     public function Cancel()

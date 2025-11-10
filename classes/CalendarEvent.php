@@ -107,22 +107,19 @@ class CalendarEvent
         DBHelper::Update("calendar_events", $update, ['id'=>$this->id]);
     }
 
-    static function Create($title, $description,$date,$time,$duration,$type,$parent=0)
+    static function Create($title, $description, $category,$year,$month,$day, $hour,$minute, $duration)
     {
         $uid=EngineCore::$CurrentUser->userid;
         
-        list($y,$m,$d)=self::SplitDate($date);
-        list($hh,$mm)=self::SplitHHMM($time);
-        $dur = self::MinutesFromHHMM($duration);
         $row = [
             null,
-            $title,$description,$type,
-            $d,$m,$y,$hh,$mm,$dur,
+            $title,$description,$category,
+            $day,$month,$year,$hour,$minute,$duration,
             $uid,0,0
         ];
         DBHelper::Insert("calendar_events",$row);
         $id=DBHelper::GetLastId();
-        return new CalendarEvent($id,$title,$description,$type,$y,$m,$d,$hh,$mm,$dur);
+        return new CalendarEvent($id,$title,$description,$category,$year,$month,$day,$hour,$minute,$duration);
     }
     
     static function SplitDate($date)
