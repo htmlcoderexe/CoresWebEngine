@@ -21,7 +21,12 @@ function ModuleAction_calender_default($params)
 
 function ModuleFunction_EditRecurring($rID,$title,$description,$startdate,$enddate,$time,$duration,$event_type,$recur_type,$recur_data)
 {
-    $event = new RecurringEvent($rID, $recur_type,$recur_data, $title, $description,$startdate, $time, $duration, $event_type,$enddate);
+    list($y,$m,$d)= CalendarEvent::SplitDate($startdate);
+    list($hh,$mm) = CalendarEvent::SplitHHMM($time);
+    $dur = CalendarEvent::MinutesFromHHMM($duration);
+    $end = strtotime($enddate);
+    
+    $event = new RecurringEvent($rID,$title,$description,$event_type,$y,$m,$d,$hh,$mm,$dur,$recur_type,$recur_data,$end);
     $event->Save();
 }
 
@@ -32,15 +37,6 @@ function ModuleFunction_EditEvent($eID,$title,$date,$time,$duration,$description
         EngineCore::GTFO("/calender/edit/error");
         return;
     }
-    $event = new EVA($eID);
-    $event = DBHelper::Count("calendar_events", "id", ["id"=>$eID]);
-    if($event!=1)
-    {
-        EngineCore::GTFO("/calender/edit/error");
-        return;
-    }
-    $event->SetSingleAttribute("title",$title);
-    $event->SetSingleAttribute("calendar.date",$date);
     if(!$time)
     {
         $time ="00:00";
@@ -49,10 +45,19 @@ function ModuleFunction_EditEvent($eID,$title,$date,$time,$duration,$description
     {
         $duration="01:00";
     }
-    $event->SetSingleAttribute("calendar.time",$time);
-    $event->SetSingleAttribute("calendar.duration",$duration);
-    $event->SetSingleAttribute("description",$description);
-    $event->SetSingleAttribute("calendar.event_type",$type);
+    $exists = DBHelper::Count("calendar_events", "id", ["id"=>$eID]);
+    if($exists!=1)
+    {
+        EngineCore::GTFO("/calender/edit/error");
+        return;
+    }
+    
+    
+    list($y,$m,$d)= CalendarEvent::SplitDate($date);
+    list($hh,$mm) = CalendarEvent::SplitHHMM($time);
+    $dur = CalendarEvent::MinutesFromHHMM($duration);
+    
+    $event = new CalendarEvent($eID,$title,$description,$type,$y,$m,$d,$hh,$mm,$dur);
     $event->Save();
     EngineCore::GTFO("/calender/view/event/".$eID);
     return;
@@ -65,9 +70,6 @@ function ModuleFunction_CreateEvent($title,$date,$time,$duration,$description,$t
         EngineCore::GTFO("/calender/create/error");
         return;
     }
-    $event = EVA::CreateObject("calendar.event");
-    $event->AddAttribute("title",$title);
-    $event->AddAttribute("calendar.date",$date);
     if(!$time)
     {
         $time ="00:00";
@@ -76,11 +78,12 @@ function ModuleFunction_CreateEvent($title,$date,$time,$duration,$description,$t
     {
         $duration="01:00";
     }
-    $event->AddAttribute("calendar.time",$time);
-    $event->AddAttribute("calendar.duration",$duration);
-    $event->AddAttribute("description",$description);
-    $event->AddAttribute("calendar.event_type",$type);
-    $event->Save();
+    
+    
+    list($y,$m,$d)= CalendarEvent::SplitDate($date);
+    list($hh,$mm) = CalendarEvent::SplitHHMM($time);
+    $dur = CalendarEvent::MinutesFromHHMM($duration);
+    $event = CalendarEvent::Create($title,$description,$type,$y,$m,$d,$hh,$mm,$dur);
     EngineCore::GTFO("/calender/view/event/".$event->id);
     return;
 }
