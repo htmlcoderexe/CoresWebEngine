@@ -178,5 +178,21 @@ class CalendarEvent
         return $value;
     }
     
+    public static function GetEventTypes($flat=false)
+    {
+        $q_mapping = DBHelper::Select("calendar_event_types",["id","number_colour","marker_colour","agenda_colour","bg_colour","priority","ghost"],[]);
+        $mapping_result = DBHelper::RunTable($q_mapping,[]);
+        $mapping=[];
+        if($flat)
+        {
+            return $mapping_result;
+        }
+        foreach($mapping_result as $result)
+        {
+            $mapping[$result['id']]=$result;
+        }
+        return $mapping;
+    }
+    
     
 } 
