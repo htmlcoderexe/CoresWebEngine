@@ -139,19 +139,20 @@ class RecurringEvent
         
     }
     
-    public static function Create($title, $description, $category,$year,$month,$day, $hour,$minute, $duration,$recur_type,$recur_data, $end_date="")
+    public static function Create($title, $description, $category,$year,$month,$day, $hour,$minute, $duration,$recur_type,$recur_data, $end_date=0)
     {
         $uid=EngineCore::$CurrentUser->userid;
         $row = [
             null,
             $title,$description,$category,
             $day,$month,$year,$hour,$minute,$duration,
-            $uid,0,0
+            $end_date,
+            $recur_type,$recur_data,
+            $uid,0,1
         ];
         DBHelper::Insert("calendar_recurring_events",$row);
         $id = DBHelper::GetLastId();
         $r = new RecurringEvent($id, $title, $description, $category, $year,$month,$day, $hour,$minute, $duration, $recur_type,$recur_data,$end_date);
-        $r->Save();
         return $r;
         
     }

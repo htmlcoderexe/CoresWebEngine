@@ -432,8 +432,7 @@ function ModuleAction_calender_create($params)
             $t=new TemplateProcessor("calender/createevent");
             if(isset($params[1]))
             {
-                $datestring= ModuleFunction_calender_ParseYYYYMMDD($params[1]);
-                $t->tokens['date']=$datestring;      
+                list($t->tokens['year'],$t->tokens['month'],$t->tokens['day'])= ModuleFunction_calender_ParseYYYYMMDD($params[1],true);
             } 
             $t->tokens['types']=$mapping;
             EngineCore::AddPageContent($t->process(true));
@@ -765,8 +764,8 @@ function ModuleFunction_calender_TimeToEms($ems,$hh,$mm)
 function ModuleAction_calender_fromevent($params)
 {
     $eid = $params[0];
-    $evt = new CalendarEvent($eid);
-    if(!$evt->isValid)
+    $evt = CalendarEvent::Load($eid);
+    if(!$evt)
     {
         //var_dump($evt);
         EngineCore::GTFO("/calender");
