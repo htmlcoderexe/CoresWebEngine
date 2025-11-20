@@ -241,13 +241,14 @@ function ModuleAction_calender_edit($params)
         return;
     }
     $mode = $params[1] ?? "default";
-    
-    if(new EVA($selectedId)==null)
+    $event = CalendarEvent::Load($selectedId);
+    if($event==null)
     {
         EngineCore::GTFO("/calender");
         return;
     }
     
+    $mapping = CalendarEvent::GetEventTypes();
     switch($mode)
     {
         case "error":
@@ -271,20 +272,11 @@ function ModuleAction_calender_edit($params)
         default:
         {
             $t=new TemplateProcessor("calender/createevent");
-            $types=EVA::GetAllOfType("calendar.event.type");
-            $event = new CalendarEvent($selectedId);
             $t->tokens=(array)$event;
             $t->tokens['verb']="edit";
             $t->tokens['eventId']=$event->EvaInstance->id;
             $t->tokens['type']=$event->type;
-            $t->tokens['types']=[];
-            foreach($types as $type)
-            {
-                $e=new EVA($type);
-                $flattype=(array)($e->attributes);
-                $flattype['typeId']=$e->id;
-                $t->tokens['types'][]=$flattype;
-            }
+            $t->tokens['types']=$mapping;
             EngineCore::AddPageContent($t->process(true));
             EngineCore::SetPageTitle("Editing event");
             return;
@@ -429,7 +421,7 @@ function ModuleAction_calender_create($params)
         return;
     }
     $mode = $params[0] ?? "default";
-    
+    $mapping = CalendarEvent::GetEventTypes(true);
     switch($mode)
     {
         case "error":
@@ -448,30 +440,15 @@ function ModuleAction_calender_create($params)
                 $datestring= ModuleFunction_calender_ParseYYYYMMDD($params[1]);
                 $t->tokens['date']=$datestring;      
             } 
-            $t->tokens['types']=[];
-            $types=EVA::GetAllOfType("calendar.event.type");
-            foreach($types as $type)
-            {
-                $e=new EVA($type);
-                $flattype=(array)($e->attributes);
-                $flattype['typeId']=$e->id;
-                $t->tokens['types'][]=$flattype;
-            }
+            $t->tokens['types']=$mapping;
             EngineCore::AddPageContent($t->process(true));
             EngineCore::SetPageTitle("Create event");
             return;
         }
         default:
         {
-            $t=new TemplateProcessor("calender/createevent"); $t->tokens['types']=[];
-            $types=EVA::GetAllOfType("calendar.event.type");
-            foreach($types as $type)
-            {
-                $e=new EVA($type);
-                $flattype=(array)($e->attributes);
-                $flattype['typeId']=$e->id;
-                $t->tokens['types'][]=$flattype;
-            }
+            $t=new TemplateProcessor("calender/createevent");
+            $t->tokens['types']=$mapping;
             EngineCore::SetPageTitle("Create event");
             return;
         }
@@ -822,13 +799,7 @@ function ModuleFunction_calender_ShowWeek($year,$week)
     $daynames=[];//["November 18","November 19","November 20","November 21","November 22","November 23","November 24"];
     $all_for_week = [];
     $events_per_day =[];
-    $q_mapping = DBHelper::Select("calendar_event_types",["id","number_colour","marker_colour","agenda_colour","bg_colour","priority","ghost"],[]);
-    $mapping_result = DBHelper::RunTable($q_mapping,[]);
-    $mapping=[];
-    foreach($mapping_result as $result)
-    {
-        $mapping[$result['id']]=$result;
-    }
+    $mapping = CalendarEvent::GetEventTypes();
     
     for($i =1;$i<8;$i++)
     {

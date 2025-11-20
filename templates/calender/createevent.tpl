@@ -14,7 +14,7 @@
     <br />
     <label for="type">Event type</label><br />
     <select id="type" name="type">
-        {#foreach|{%types%}|<option style="background-color:{:calendar.tagcolour:}" value="{:typeId:}" {#ifeq|{:typeId:}|{%type%}|selected="selected"#}>{:name:}</option><!--{%type|-1%}-->#}
+        {#foreach|{%types%}|<option style="background-color:{:marker_colour:}" value="{:id:}" {#ifeq|{:id:}|{%type%}|selected="selected"#}>{:id:}</option><!--{%type|-1%}-->#}
     </select>
     <label for="description">Event description</label><br />
     <textarea name="description" id ="description">{%description|%}</textarea>
