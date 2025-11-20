@@ -266,6 +266,7 @@ class RecurringEvent
             {
             $start = new DateTimeImmutable($value['year']."-".$value['month']."-".$value['day']);
             }
+            $value['recurId']=$value['id'];
             if(self::CheckDay($date,$start,$value['end'],$value["recur_type"],$value["recur_data"]))
             {
                 $output[]=CalendarEvent::PrepareForDisplay($value, $y, $m, $d);

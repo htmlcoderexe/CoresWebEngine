@@ -6,7 +6,7 @@
     <span class="cal-description">{%description|%}</span><br />
     {#ifeq|{%recurring|%}|true|
 <form action="/calender/except/{%recurId%}" method="POST">
-    <input type="hidden" value="{%calendar.date%}" name="date" />
+    <input type="hidden" value="{%year|1970%}-{%month|01%}-{%day|01%}" name="date" />
     <button type="submit" value="delete" name="action">Cancel today</button>
     <button type="submit" value="create" name="action">Edit today</button>
 </form>
