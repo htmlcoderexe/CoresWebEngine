@@ -115,7 +115,7 @@ class CalendarEvent
             null,
             $title,$description,$category,
             $day,$month,$year,$hour,$minute,$duration,
-            $uid,0,0
+            $uid,0,1
         ];
         DBHelper::Insert("calendar_events",$row);
         $id=DBHelper::GetLastId();
