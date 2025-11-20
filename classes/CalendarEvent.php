@@ -180,7 +180,7 @@ class CalendarEvent
     
     public static function GetEventTypes($flat=false)
     {
-        $q_mapping = DBHelper::Select("calendar_event_types",["id","number_colour","marker_colour","agenda_colour","bg_colour","priority","ghost"],[]);
+        $q_mapping = DBHelper::Select("calendar_event_types",["id","name","number_colour","marker_colour","agenda_colour","bg_colour","priority","ghost"],[]);
         $mapping_result = DBHelper::RunTable($q_mapping,[]);
         $mapping=[];
         if($flat)

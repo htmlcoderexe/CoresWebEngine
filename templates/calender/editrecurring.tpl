@@ -22,7 +22,7 @@
     <br />
     <label for="type">Event type</label><br />
     <select id="type" name="type">
-        {#foreach|{%types%}|<option style="background-color:{:marker_colour:}" value="{:id:}" {#ifeq|{:id:}|{%category%}|selected="selected"#}>{:id:}</option><!--{%category|-1%}-->#}
+        {#foreach|{%types%}|<option style="background-color:{:marker_colour:}" value="{:id:}" {#ifeq|{:id:}|{%category%}|selected="selected"#}>{:name:}</option><!--{%category|-1%}-->#}
     </select>
     <label for="description">Event description</label><br />
     <textarea name="description" id ="description">{%description|%}</textarea>
