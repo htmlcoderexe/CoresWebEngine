@@ -4,13 +4,13 @@
     <input name="title" id ="title" type ="text" value="{%title|%}"/>
     <br />
     <label for="date">Event date YYYY-MM-DD</label><br />
-    <input name="date" id ="date" type ="date" value="{%date|%}" />
+    <input name="date" id ="date" type ="date" value="{%year|1970%}-{%month|01%}-{%day|01%}" />
     <br />
     <label for="time">Event time HH:MM</label><br />
-    <input name="time" id ="time" type ="time"  value="{%startTime|%}"/>
+    <input name="time" id ="time" type ="time"  value="{%hour|00%}:{%minute|00%}"/>
     <br />
     <label for="timeD">Event duration</label><br />
-    <input name="timeD" id ="timeD" type ="time" value="{%duration|01:00%}" />
+    <input name="timeD" id ="timeD" type ="time" value="{%duration_hours|01%}:{%duration_minutes|00%}" />
     <br />
     <label for="type">Event type</label><br />
     <select id="type" name="type">
@@ -19,10 +19,10 @@
     <label for="description">Event description</label><br />
     <textarea name="description" id ="description">{%description|%}</textarea>
     <input name ="create" type="hidden" value ="true" /><br />
-    <input name ="EventID" type ="hidden" value ="{%eventId|-1%}" />
+    <input name ="EventID" type ="hidden" value ="{%id|-1%}" />
     <button type="submit">Save</button>
-</form>{#ifeq|{%eventId|-1%}|-1||
-<form action="/calender/fromevent/{%eventId%}" method="POST">
+</form>{#ifeq|{%id|-1%}|-1||
+<form action="/calender/fromevent/{%id%}" method="POST">
     {{calender/recurpickercontrol|calendar.recurring.data=7|calendar.recurring.type=day}}
     <button type="submit">Make recurring</button>
 </form>

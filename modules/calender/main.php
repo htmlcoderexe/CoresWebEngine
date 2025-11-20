@@ -248,7 +248,7 @@ function ModuleAction_calender_edit($params)
         return;
     }
     
-    $mapping = CalendarEvent::GetEventTypes();
+    $mapping = CalendarEvent::GetEventTypes(true);
     switch($mode)
     {
         case "error":
@@ -256,15 +256,8 @@ function ModuleAction_calender_edit($params)
             $t=new TemplateProcessor("calender/createevent");
             $t->tokens['error']="Invalid input.";       
             
-            $t->tokens['types']=[];
-            $types=EVA::GetAllOfType("calendar.event.type");
-            foreach($types as $type)
-            {
-                $e=new EVA($type);
-                $flattype=(array)($e->attributes);
-                $flattype['typeId']=$e->id;
-                $t->tokens['types'][]=$flattype;
-            }
+            
+            $t->tokens['types']=$mapping;
             EngineCore::AddPageContent($t->process(true));
             EngineCore::SetPageTitle("Create event");
             return;
@@ -272,11 +265,13 @@ function ModuleAction_calender_edit($params)
         default:
         {
             $t=new TemplateProcessor("calender/createevent");
-            $t->tokens=(array)$event;
+            $t->tokens=CalendarEvent::PrepareForDisplay((array)$event,$event->year,$event->month,$event->day);
             $t->tokens['verb']="edit";
-            $t->tokens['eventId']=$event->EvaInstance->id;
             $t->tokens['type']=$event->type;
             $t->tokens['types']=$mapping;
+            EngineCore::$DEBUG = true;
+            EngineCore::Dump2Debug($t->tokens);
+            EngineCore::Dump2Debug($event);
             EngineCore::AddPageContent($t->process(true));
             EngineCore::SetPageTitle("Editing event");
             return;
