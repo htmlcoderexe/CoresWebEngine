@@ -77,7 +77,7 @@ class RecurringEvent
         $this->id=$id;
         $this->title = $title;
         $this->description = $description;
-        $this->catergory=$category;
+        $this->category=$category;
         $this->year=$year;
         $this->month = $month;
         $this->day=$day;
