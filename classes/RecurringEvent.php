@@ -346,7 +346,8 @@ class RecurringEvent
     
     public function CreateOnDate($date)
     {
-        $event = CalendarEvent::Create($this->title,$this->description,$date,$this->time,$this->duration,$this->event_type);
+        list($y,$m,$d)=CalendarEvent::SplitDate($date);
+        $event = CalendarEvent::Create($this->title,$this->description,$this->category,$y,$m,$d,$this->hour,$this->minute,$this->duration);
         return $event;
     }
     public function Cancel()
