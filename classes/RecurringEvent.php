@@ -128,7 +128,7 @@ class RecurringEvent
         $update = [
             "title"=>$this->title,
             "description"=>$this->description,
-            "catergory"=>$this->event_type,
+            "category"=>$this->category,
             "year"=>$this->year,"month"=>$this->month,"day"=>$this->day,
             "hour"=>$this->hour,"minute"=>$this->minute,"duration"=>$this->duration,
             "recur_type"=>$this->recur_type,

@@ -24,9 +24,8 @@ function ModuleFunction_EditRecurring($rID,$title,$description,$startdate,$endda
     list($y,$m,$d)= CalendarEvent::SplitDate($startdate);
     list($hh,$mm) = CalendarEvent::SplitHHMM($time);
     $dur = CalendarEvent::MinutesFromHHMM($duration);
-    $end = strtotime($enddate);
     
-    $event = new RecurringEvent($rID,$title,$description,$event_type,$y,$m,$d,$hh,$mm,$dur,$recur_type,$recur_data,$end);
+    $event = new RecurringEvent($rID,$title,$description,$event_type,$y,$m,$d,$hh,$mm,$dur,$recur_type,$recur_data,$enddate);
     $event->Save();
 }
 
@@ -186,7 +185,11 @@ function ModuleAction_calender_recurring($params)
     $enddate="";
     if(EngineCore::POST("end_date_option","no")=="yes")
     {
-        $enddate=EngineCore::POST("date_end");
+        $enddate=strtotime(EngineCore::POST("date_end"));
+    }
+    else
+    {
+        $enddate=0;
     }
     if($submitted && $eventId && (RecurringEvent::Load($eventId))!=null)
     {
@@ -195,19 +198,19 @@ function ModuleAction_calender_recurring($params)
         die;
     }
     $t=new TemplateProcessor("calender/editrecurring");
-    $types=EVA::GetAllOfType("calendar.event.type");
-    //$event = RecurringEvent::Load($selectedId);
-    $eee = new EVA($selectedId);
-    $t->tokens=$eee->attributes;
-    $t->tokens['verb']="edit";
-    $t->tokens['eventId']=$eee->id;
-    $t->tokens['types']=[];
-    foreach($types as $type)
+    $event = RecurringEvent::Load($selectedId);
+    if($event==null)
     {
-        $e=new EVA($type);
-        $flattype=(array)($e->attributes);
-        $flattype['typeId']=$e->id;
-        $t->tokens['types'][]=$flattype;
+        EngineCore::GTFO("/calender");
+        return;
+    }
+    $t->tokens=CalendarEvent::PrepareForDisplay((array)$event,$event->year,$event->month,$event->day);
+    $t->tokens['verb']="edit";
+    $t->tokens['eventId']=intval($selectedId);
+    $t->tokens['types']=CalendarEvent::GetEventTypes(true);
+    if($event->end_date!=0)
+    {
+        $t->tokens['end_date_yyyymmdd']=date("Y-m-d",$event->end_date);
     }
     EngineCore::AddPageContent($t->process(true));
     EngineCore::SetPageTitle("Editing event");
