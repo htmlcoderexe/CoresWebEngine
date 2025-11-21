@@ -57,6 +57,7 @@ function ModuleFunction_EditEvent($eID,$title,$date,$time,$duration,$description
     $dur = CalendarEvent::MinutesFromHHMM($duration);
     
     $event = new CalendarEvent($eID,$title,$description,$type,$y,$m,$d,$hh,$mm,$dur);
+    $event->active=1; // workaround!!
     $event->Save();
     EngineCore::GTFO("/calender/view/event/".$eID);
     return;
