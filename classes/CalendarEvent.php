@@ -106,6 +106,11 @@ class CalendarEvent
         ];
         DBHelper::Update("calendar_events", $update, ['id'=>$this->id]);
     }
+    
+    public function ProcessForDisplay()
+    {
+        return self::PrepareForDisplay((array)$this,$this->year,$this->month,$this->day);
+    }
 
     static function Create($title, $description, $category,$year,$month,$day, $hour,$minute, $duration)
     {
