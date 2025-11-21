@@ -1,9 +1,10 @@
 <div class="cal-display-event">
     <h3>{%title|&lt;Untitled&gt;%}</h3>
-    {#ifeq|{%recurring|%}|true||<h3>{%calendar.date|%}</h3>#}
+    {#ifeq|{%nodate|%}|true||<h3>{%year|1970%}-{%month|01%}-{%day|01%}</h3>#}
     {#ifeq|{%recurring|%}|true|<h4>Recurring</h4>|#}
     {#ifeq|{%calendar.time|%}|||<h3>{%calendar.time|%}</h3>#}
-    <span class="cal-description">{%description|%}</span><br />
+    <span class="cal-description">{%description|(no description)%}</span><br />
+    <h4>{#ifeq|{%duration|1%}|1440|All day|{%hour|00%}:{%minute|00%} - {%done_hours|00%}:{%done_minutes|00%}#}
     {#ifeq|{%recurring|%}|true|
 <form action="/calender/except/{%recurId%}" method="POST">
     <input type="hidden" value="{%year|1970%}-{%month|01%}-{%day|01%}" name="date" />
