@@ -455,6 +455,7 @@ function ModuleFunction_calender_ShowDay($day)
         $events[]=$e;
         $t->tokens = $e;
         $t->tokens['eventId']=$e['id'];
+        $t->tokens['nodate']="true";
         //$t->tokens['calendar.date']="";
         $output.=$t->process(true);
     }
@@ -465,32 +466,35 @@ function ModuleFunction_calender_ShowDay($day)
         $t->tokens = $recur;
         $t->tokens['eventId']=0;
         $t->tokens['recurring']="true";
+        $t->tokens['nodate']="true";
         $output.=$t->process(true);
     }
     $t2 = new TemplateProcessor("calender/eventsondate");
     $t2->tokens['events']=$output;
     $t2->tokens['date']=$day;
+    $t2->tokens['datestring']=$datestring;
     $t2->tokens['month']=substr($day,0,6);
     EngineCore::AddPageContent($t2->process(true));
     EngineCore::SetPageTitle("Events on ".$datestring);
 }
 function ModuleFunction_calender_ShowEvent($eventID)
 {
-        $e=new EVA($eventID);
+        $e=CalendarEvent::Load($eventID);
         if(!$e)
         {
          return;   
         }
         
         $t=new TemplateProcessor("calender/displayeventlist");
-        $t->tokens = $e->attributes;
+        $display= $e->ProcessForDisplay();
+        $t->tokens =$display;
         $t->tokens['eventId']=$e->id;
         $output=$t->process(true);
     
-    $t = new TemplateProcessor("calender/eventsondate");
-    $t->tokens['events']=$output;
+    $t2 = new TemplateProcessor("calender/eventsondate");
+    $t2->tokens['events']=$output;
     EngineCore::AddPageContent($t->process(true));
-    EngineCore::SetPageTitle("Events on ".$e->attributes['calendar.date']);
+    EngineCore::SetPageTitle("Event on {$e->day}-{$e->month}-{$e->year}");
 }
 
 
@@ -1000,6 +1004,8 @@ function ModuleAction_calender_except($params)
 
 function ModuleAction_calender_delete($params)
 {
+    EngineCore::GTFO("/calender");
+    die(); // not implemented yet
     $id=EngineCore::POST("id_to_delete","-1");
     $e = new EVA($id);
     if(!$e)
