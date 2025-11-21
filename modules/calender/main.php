@@ -91,30 +91,20 @@ function ModuleFunction_calender_ManageTypes()
 {
     $types=EVA::GetAllOfType("calendar.event.type");
     $tpl=new TemplateProcessor("calender/managetypes");
-    foreach($types as $type)
-    {
-        $t=new EVA($type);
-        $flattype=(array)($t->attributes);
-        $flattype['id']=$t->id;
-        $tpl->tokens['types'][]=$flattype;
-    }
+    $tpl->tokens['types']=CalendarEvent::GetEventTypes(true);
     EngineCore::AddPageContent($tpl->process(true));
 }
 
-function ModuleFunction_calender_CreateUpdate($tagname, $tagcolour,$schedulecolour,$id=-1)
+function ModuleFunction_calender_CreateUpdate($tagname, $tagcolour,$schedulecolour,$bgcolour,$numcolour,$id=-1)
 {
     if($id==-1)
     {
-        $e=EVA::CreateObject("calendar.event.type");
+        DBHelper::Insert("calendar_event_types",[null,$tagname,$tagcolour,$schedulecolour,$numcolour,$bgcolour,0,0]);
     }
     else
     {
-        $e=new EVA($id);
+        DBHelper::Update("calendar_event_types",['name'=>$tagname,'number_colour'=>$numcolour,'marker_colour'=>$tagcolour,'agenda_colour'=>$schedulecolour,'bg_colour'=>$bgcolour],['id'=>$id]);
     }
-    $e->SetSingleAttribute("calendar.tagcolour",$tagcolour);
-    $e->SetSingleAttribute("name",$tagname);
-    $e->SetSingleAttribute("calendar.agendacolour",$schedulecolour);
-    $e->Save();
     EngineCore::GTFO("/calender/type/manager/");
     die();
 }
@@ -129,14 +119,12 @@ function ModuleAction_calender_type($params)
         {
             $id=$params[1]??-1;
             $tpl=new TemplateProcessor("calender/edittype");
-            $item=new EVA($id);
+            $q_type = DBHelper::Select("calendar_event_types",["id","name","number_colour","marker_colour","agenda_colour","bg_colour","priority","ghost"],['id'=>$id]);
+            $type = DBHelper::RunRow($q_type,[$id]);
             //var_dump($item);//die;
-            if($item->id!=null && $id!=-1)
+            if($type)
             {
-                $tpl->tokens['name']=$item->attributes['name'];
-                $tpl->tokens['agendacolour']=$item->attributes['calendar.tagcolour'];
-                $tpl->tokens['tagcolour']=$item->attributes['calendar.agendacolour'];
-                $tpl->tokens['typeId']=$item->id;
+                $tpl->tokens=$type;
             }
             EngineCore::AddPageContent($tpl->process(true));
             return;
@@ -146,6 +134,8 @@ function ModuleAction_calender_type($params)
             $name=EngineCore::POST("name");
             $tc=EngineCore::POST("tagcolour");
             $ac=EngineCore::POST("agendacolour");
+            $bc=EngineCore::POST("bgcolour");
+            $nc=EngineCore::POST("numcolour");
             $id=EngineCore::POST("TypeID");
             if($name=="")
             {
@@ -153,7 +143,7 @@ function ModuleAction_calender_type($params)
             }
             if(EngineCore::POST("create"))
             {
-                ModuleFunction_calender_CreateUpdate($name, $tc, $ac,$id);
+                ModuleFunction_calender_CreateUpdate($name, $tc, $ac,$bc,$nc,$id);
             }
         }
         case "manager":
