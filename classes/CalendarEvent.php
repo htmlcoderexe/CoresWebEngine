@@ -67,7 +67,7 @@ class CalendarEvent
         $this->hour = $hour;
         $this->minute = $minute;
         $this->duration = $duration;
-        if($duration==60*24)
+        if($duration==0)
         {
             $this->allDay=true;
         }
