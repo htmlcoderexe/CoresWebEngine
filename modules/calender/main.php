@@ -686,6 +686,7 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
             $marker_count=0;
             $bgcol="#000000";
             $numcol="#000000";
+            $markers =[];
             foreach($actives as $active)
             {
                 if($active['number_colour']!="#000000")
@@ -696,11 +697,12 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
                 {
                     $bgcol=$active['bg_colour'];
                 }
-                if($active['marker_colour']!="#000000" && $marker_count<4)
+                if($active['marker_colour']!="#000000" && $marker_count<4 && !in_array($active['marker_colour'],$markers))
                 {
                     $t_marker->tokens['marker']=$marker_places[$marker_count];
                     $t_marker->tokens['colour']=$active['marker_colour'];
                     $divstring.=$t_marker->process(true);
+                    $markers[]=$active['marker_colour'];
                     $marker_count++;          
                 }
             }
