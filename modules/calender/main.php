@@ -649,7 +649,7 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
             foreach($events_by_day[$i+1] as $event)
             {
                 $etype=$event['category'] =="0" ? $default : $event['category'];
-                $actives[]=$mapping[$etype]['marker_colour'];
+                $actives[]=$mapping[$etype];
             }
 
             
@@ -667,20 +667,35 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
             $thisdate=date_create_from_format("j m Y", ($i+1)." ".$currentmonth->format("m Y"));
             $datestring = $thisdate->format("Ymd");
             $marker_count=0;
-            foreach($actives as $marker_colour)
+            $bgcol="#000000";
+            $numcol="#000000";
+            foreach($actives as $active)
             {
                 if($marker_count>3)
                 {
                     break;
                 }
-                $t_marker->tokens['marker']=$marker_places[$marker_count];
-                $t_marker->tokens['colour']=$marker_colour;
-                $divstring.=$t_marker->process(true);
-                $marker_count++;
+                if($active['number_colour']!="#000000")
+                {
+                    $numcol=$active['number_colour'];
+                }
+                if($active['bg_colour']!="#000000")
+                {
+                    $bgcol=$active['bg_colour'];
+                }
+                if($active['marker_colour']!="#000000")
+                {
+                    $t_marker->tokens['marker']=$marker_places[$marker_count];
+                    $t_marker->tokens['colour']=$active['marker_colour'];
+                    $divstring.=$t_marker->process(true);
+                    $marker_count++;          
+                }
             }
             $t_day->tokens['date']=$datestring;
             $t_day->tokens['number']=($i+1);
             $t_day->tokens['markers']=$divstring;
+            $t_day->tokens['bg_colour']=$bgcol;
+            $t_day->tokens['number_colour']=$numcol;
             if($actives)
             {
                 $t_day->tokens['verb']="view";
