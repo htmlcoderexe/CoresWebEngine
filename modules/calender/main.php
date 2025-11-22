@@ -647,7 +647,11 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     foreach($next_month_events as $event)
     {
        
-       $upcoming[]=$event;
+        $event_type=(!isset($mapping[$event['category']])) ? $default : $event['category'];
+        if($mapping[$event_type]['marker_colour']!="#000000")
+        {
+            $upcoming[]=$event;
+        }
     }
     EngineCore::Lap2Debug("filled upcoming");
     
