@@ -518,6 +518,7 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     }
     $next_month_events =CalendarScheduler::CheckMonth($y2,$m2);
     
+    // get event type tags and highlights
     $q_mapping = DBHelper::Select("calendar_event_types",["id","number_colour","marker_colour","agenda_colour","bg_colour","priority","ghost"],[]);
     $mapping_result = DBHelper::RunTable($q_mapping,[]);
     $mapping=[];
@@ -525,9 +526,13 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     {
         $mapping[$result['id']]=$result;
     }
+    $default=array_keys($mapping)[0];
+    
+    //END get event type tags and highlights
+    
     
     EngineCore::Lap2Debug("got recurrers and this month's events");
-    //$recurrings =[];
+    
     $currentmonth = date_create_from_format("Ymd",$y.$m.$d);
     
     $now= new DateTime();
@@ -573,15 +578,17 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     $t_day = new TemplateProcessor("calender/daycell");
     $t_marker = new TemplateProcessor("calender/daycellmarker");
     
-    // find out current month's day
+    // find out current month's weekday
     $daysthismont =$currentmonth->format("t");
     $firstweek=$currentmonth->format("W");
     $lastday=date_create_from_format("Ymd",$y.$m.$daysthismont);
     $lastweek=$lastday->format("W");
+    // this is needed if the month's week straddles the year
     if(intval($lastweek)<intval($firstweek))
     {
         $lastweek+=52;
     }
+    
     $events_today=[];
     
     
@@ -604,7 +611,11 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
        }
        elseif($c_d> $today)
        {
-           $upcoming[]=$event;
+           $event_type=(!isset($mapping[$event['category']])) ? $default : $event['category'];
+           if($mapping[$event_type]['marker_colour']!="#000000")
+           {
+               $upcoming[]=$event;
+           }
        }
     }
     EngineCore::Lap2Debug("done processing month events");
@@ -622,8 +633,12 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
            $events_today[]=$event;
        }
        elseif($c_d> $today && !in_array($event['recurrer'],$seen_recurs))
-       {
-           $upcoming[]=$event;
+       {   
+           $event_type=(!isset($mapping[$event['category']])) ? $default : $event['category'];
+           if($mapping[$event_type]['marker_colour']!="#000000")
+           {
+               $upcoming[]=$event;
+           }
            $seen_recurs[]=$event['recurrer'];
        }
     }
@@ -635,8 +650,6 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
        $upcoming[]=$event;
     }
     EngineCore::Lap2Debug("filled upcoming");
-    
-    $default=array_keys($mapping)[0];
     
     EngineCore::Lap2Debug("got tag types");
     $marker_places = ["0px -8px", "0px 8px", "8px 0px", "-8px 0px"];
@@ -671,10 +684,6 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
             $numcol="#000000";
             foreach($actives as $active)
             {
-                if($marker_count>3)
-                {
-                    break;
-                }
                 if($active['number_colour']!="#000000")
                 {
                     $numcol=$active['number_colour'];
@@ -683,7 +692,7 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
                 {
                     $bgcol=$active['bg_colour'];
                 }
-                if($active['marker_colour']!="#000000")
+                if($active['marker_colour']!="#000000" && $marker_count<4)
                 {
                     $t_marker->tokens['marker']=$marker_places[$marker_count];
                     $t_marker->tokens['colour']=$active['marker_colour'];
