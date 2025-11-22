@@ -862,6 +862,11 @@ function ModuleFunction_calender_ShowWeek($year,$week)
                 {
                     $etype=$mapping[$event_entry['category']]??['agenda_colour'=>'#7F7F7F'];
                     $col=$etype['agenda_colour'];
+                    // skip events without a schedule colour
+                    if($col=="#000000")
+                    {
+                        continue;
+                    }
                     $event_entry['colour']=$col;
                     $event_entry['date']=$currentdaystring;
                 }
