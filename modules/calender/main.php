@@ -90,7 +90,6 @@ function ModuleFunction_CreateEvent($title,$date,$time,$duration,$description,$t
 
 function ModuleFunction_calender_ManageTypes()
 {
-    $types=EVA::GetAllOfType("calendar.event.type");
     $tpl=new TemplateProcessor("calender/managetypes");
     $tpl->tokens['types']=CalendarEvent::GetEventTypes(true);
     EngineCore::AddPageContent($tpl->process(true));
