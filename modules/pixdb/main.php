@@ -42,10 +42,18 @@ function ModuleAction_pixdb_showall($params)
 
 function ModuleAction_pixdb_tag($params)
 {
-    $tag=$params[0];
-    $pic_ids = Tag::Find("picture", $tag);
-    ModuleFunction_pixdb_list_thumbnail($pic_ids, "Searching by tag [$tag]");
-    
+    if(count($params)==1)
+    {
+        $tag=$params[0];
+        $pic_ids = Tag::Find("picture", $tag);
+        ModuleFunction_pixdb_list_thumbnail($pic_ids, "Searching by tag [$tag]");
+    }
+    else
+    {
+        $pic_ids = Tag::Find("picture", $params);
+        $tags = implode(", ", $params);
+        ModuleFunction_pixdb_list_thumbnail($pic_ids, "Searching by tags [$tags]");
+    }
 }
 
 function ModuleAction_pixdb_showpic($params)
