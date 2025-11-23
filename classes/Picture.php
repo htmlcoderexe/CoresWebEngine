@@ -238,10 +238,11 @@ class Picture
         $title = "";
         $text = "";
         // TODO: text OCR (tesseract?) and title editing (needed??)
-        return self::Create($blobid, $new_pic_thumb_blob, $w, $h, $title, $text, $ext,$filedate,$totaldate);
+        $result = self::Create($blobid, $new_pic_thumb_blob, $w, $h, $title, $text, $ext,$filedate,$totaldate);
         
+        JobScheduler::Schedule("tesseract",$blobid);
         
-        
+        return $result;
     }
     /**
      * 

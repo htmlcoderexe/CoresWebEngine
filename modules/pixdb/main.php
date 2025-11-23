@@ -127,7 +127,6 @@ function ModuleAction_pixdb_upload($params)
                         Tag::Attach($pic->id, $newtag);
                     }
                 }
-                JobScheduler::Schedule("tesseract",$pic->blob_id);
                 $pic_ids[]= $pic->id;
             }
             else
