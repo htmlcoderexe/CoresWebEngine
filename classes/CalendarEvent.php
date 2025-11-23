@@ -1,5 +1,5 @@
 <?php
-
+const CALENDAR_EVENTS_TABLE ="calendar_events";
 $calendar_event_schema = [
     // body
     "title"=>"varchar(255)",
@@ -27,7 +27,7 @@ $calendar_event_types = [
     "ghost"=>"int"
     ];
 Module::DemandTable("calendar_event_types",$calendar_event_types);
-Module::DemandTable("calendar_events", $calendar_event_schema);
+Module::DemandTable(CALENDAR_EVENTS_TABLE, $calendar_event_schema);
 Module::DemandProperty("calendar.duration", "Duration", "The duration of an event.");
 Module::DemandProperty("calendar.event_type","Event type","Type of a calendar event.");
 Module::DemandProperty("calendar.tagcolour","Calendar colour","How the event is marked in the month view.");
@@ -55,7 +55,7 @@ class CalendarEvent
     public $isValid=true;
     public $allDay;
 
-    function __construct($id,$title,$description,$category,$year,$month,$day,$hour,$minute,$duration)
+    function __construct($id,$title,$description,$category,$year,$month,$day,$hour,$minute,$duration,$active=true)
     {
         $this->id=$id;
         $this->title=$title;
@@ -67,6 +67,7 @@ class CalendarEvent
         $this->hour = $hour;
         $this->minute = $minute;
         $this->duration = $duration;
+        $this->active = $active;
         if($duration==0)
         {
             $this->allDay=true;
@@ -79,7 +80,8 @@ class CalendarEvent
             "id",
             "title", "description","category",
             "day","month","year",
-            "hour","minute", "duration"
+            "hour","minute", "duration",
+            "active"
             ];
         $q_event=DBHelper::Select("calendar_events",$fields,['id'=>$id]);
         $row = DBHelper::RunRow($q_event, [$id]);
@@ -87,7 +89,7 @@ class CalendarEvent
         {
             return null;
         }
-        return new CalendarEvent($id,$row['title'],$row['description'],$row['category'],$row['year'],$row['month'],$row['day'],$row['hour'],$row['minute'],$row['duration']);
+        return new CalendarEvent($id,$row['title'],$row['description'],$row['category'],$row['year'],$row['month'],$row['day'],$row['hour'],$row['minute'],$row['duration'],$row['active']==1);
     }
     
     public function Save()
@@ -105,6 +107,11 @@ class CalendarEvent
         "active"=>$this->active
         ];
         DBHelper::Update("calendar_events", $update, ['id'=>$this->id]);
+    }
+    
+    public function Deactivate()
+    {
+        DBHelper::Update("calendar_events",['active'=>0],['id'=>$this->id]);
     }
     
     public function ProcessForDisplay()

@@ -68,6 +68,8 @@ class RecurringEvent
     
     public $allDay;
     
+    public $active;
+    
     public const RECUR_WEEKLY = "week";
     public const RECUR_DAYS = "day";
     public const RECUR_MONTH = "month";
@@ -102,7 +104,8 @@ class RecurringEvent
             "title", "description","category",
             "day","month","year",
             "hour","minute", "duration",
-            "end","recur_type","recur_data"
+            "end","recur_type","recur_data",
+            "active"
             ];
         $q_rec = DBHelper::Select("calendar_recurring_events", $fields, ['id'=>$id]);
         $row = DBHelper::RunRow($q_rec,[$id]);
@@ -110,7 +113,7 @@ class RecurringEvent
         {
             return null;
         }
-        return new RecurringEvent($id, 
+        $event= new RecurringEvent($id, 
                 $row['title'],
                 $row['description'],
                 $row['category'],
@@ -120,7 +123,8 @@ class RecurringEvent
                 $row['recur_type'],
                 $row['recur_data'],
                 $row["end"]);
-        
+        $event->active = $row['active']==1;
+        return $event;
     }
     
     public function Save()
@@ -133,7 +137,8 @@ class RecurringEvent
             "hour"=>$this->hour,"minute"=>$this->minute,"duration"=>$this->duration,
             "recur_type"=>$this->recur_type,
             "recur_data"=>$this->recur_data,
-            "end"=>$this->end_date
+            "end"=>$this->end_date,
+            "active"=>$this->active
         ];
         DBHelper::Update("calendar_recurring_events", $update, ['id'=>$this->id]);
         

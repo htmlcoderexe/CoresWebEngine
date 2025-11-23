@@ -44,7 +44,7 @@ function ModuleFunction_EditEvent($eID,$title,$date,$time,$duration,$description
     {
         $duration="01:00";
     }
-    $exists = DBHelper::Count("calendar_events", "id", ["id"=>$eID]);
+    $exists = DBHelper::Count(CALENDAR_EVENTS_TABLE, "id", ["id"=>$eID]);
     if($exists!=1)
     {
         EngineCore::GTFO("/calender/edit/error");
@@ -287,10 +287,10 @@ function ModuleFunction_calender_migratetypes($params)
         ];
         DBHelper::Insert("calendar_event_types", $row);
         $new_id = DBHelper::GetLastId();
-        DBHelper::Update("calendar_events",["category"=>$new_id],["category"=>$id]);
+        DBHelper::Update(CALENDAR_EVENTS_TABLE,["category"=>$new_id],["category"=>$id]);
         DBHelper::Update("calendar_recurring_events",["category"=>$new_id],["category"=>$id]);
     }
-        DBHelper::Update("calendar_events",["category"=>1],["category"=>0]);
+        DBHelper::Update(CALENDAR_EVENTS_TABLE,["category"=>1],["category"=>0]);
         DBHelper::Update("calendar_recurring_events",["category"=>1],["category"=>0]);
 }
 
@@ -342,7 +342,7 @@ function ModuleAction_calender_migrateevents($params)
             $h,$min,$duration,
             0,0,1
         ];
-        DBHelper::Insert("calendar_events", $eventrow);
+        DBHelper::Insert(CALENDAR_EVENTS_TABLE, $eventrow);
     }
 }
 function ModuleAction_calender_migraterecurrers($params)
@@ -1039,18 +1039,13 @@ function ModuleAction_calender_except($params)
 
 function ModuleAction_calender_delete($params)
 {
-    EngineCore::GTFO("/calender");
-    die(); // not implemented yet
     $id=EngineCore::POST("id_to_delete","-1");
-    $e = new EVA($id);
-    if(!$e)
-    {
-        EngineCore::GTFO("/calender");
-        die;
-    }
+    $e = CalendarEvent::Load($id);
     // #TODO: some actual AAA ffs!!11
-    
-    EVA::DeleteObject($id);
+    if($e)
+    {
+        $e->Deactivate();
+    }
     $returnTo="";
     if(isset($_SESSION['returnTo']))
     {

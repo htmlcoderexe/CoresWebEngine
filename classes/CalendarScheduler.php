@@ -11,8 +11,8 @@ class CalendarScheduler
             "day","month","year",
             "hour","minute", "duration"
             ];
-        $q_events = DBHelper::Select("calendar_events",$fields,["year"=>$y,"month"=>$m,"day"=>$d]);
-        $events = DBHelper::RunTable($q_events,[$y,$m,$d]);
+        $q_events = DBHelper::Select(CALENDAR_EVENTS_TABLE,$fields,["year"=>$y,"month"=>$m,"day"=>$d, 'active'=>1]);
+        $events = DBHelper::RunTable($q_events,[$y,$m,$d,1]);
         $output =[];
         foreach($events as $value)
         {
@@ -79,8 +79,8 @@ class CalendarScheduler
             "day","month","year",
             "hour","minute", "duration"
             ];
-        $q_events = DBHelper::Select("calendar_events",$fields,["year"=>$y,"month"=>$m]);
-        $events = DBHelper::RunTable($q_events,[$y,$m]);
+        $q_events = DBHelper::Select(CALENDAR_EVENTS_TABLE,$fields,["year"=>$y,"month"=>$m, 'active'=>1]);
+        $events = DBHelper::RunTable($q_events,[$y,$m,1]);
         $output =[];
         foreach($events as $value)
         {
