@@ -545,6 +545,26 @@ class EVA
             return $r;
 	}
         
+        public static function SearchString($property,$value,$type)
+        {
+            EngineCore::Lap2Debug("running search on $type");
+            $propId=self::GetPropertyId($property);
+            if(!$propId)
+            {
+                return [];
+            }
+            $query ="
+		SELECT DISTINCT object_id FROM eva_property_values
+		INNER JOIN eva_objects
+		ON eva_objects.id = object_id
+		WHERE value LIKE ? and eva_objects.type=? and property_id=?
+		
+		";
+            $ids = DBHelper::RunList($query,["%".$value."%",$type,$propId]);
+            EngineCore::Lap2Debug("done running search");
+            return $ids;
+        }
+        
         /**
          * Gets an array of all objects of a specific type containing
          * the value of that property per objects. Each item looks like this:
