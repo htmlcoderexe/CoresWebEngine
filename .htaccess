@@ -1,5 +1,7 @@
 RewriteEngine On
 RewriteRule ^(assets-site|assets-user|css|images-site|images-user|js|ckeditor|index.php)($|/) - [L]
-RewriteRule ^/?([a-zA-Z_/0-9\.:%\s]+)$ index.php?route=$1 [B,L]
+RewriteCond %{QUERY_STRING} ^(.*)$
+RewriteRule ^/?([a-zA-Z_/0-9\.:%\?&\s]+)$ index.php?%1&route=$1 [B,L]
+RewriteRule ^/?([a-zA-Z_/0-9\.:%\?&\s]+)$ index.php?route=$1 [B,L]
 php_value upload_max_filesize 140M
 php_value post_max_size 142M

@@ -66,6 +66,8 @@ class EngineCore
     static $Rendered = "";
     
     static $PerformanceTimer = 0;
+    
+    public static $get_vars = [];
 
     //------------------------------+
     // Page operation and rendering |
@@ -316,7 +318,20 @@ class EngineCore
     public static function GET($var, $default = "")
     {
         // sssh it's like using a condom okay?
-        return isset($_GET[$var]) ? $_GET[$var] : $default;
+        if(isset($_GET[$var]))
+        {
+            return $_GET[$var];
+        }
+        // see that's why wrapping it was a good idea
+        if(!self::$get_vars)
+        {
+            parse_str(urldecode($_SERVER['QUERY_STRING']),self::$get_vars);
+        }
+        if(isset(self::$get_vars[$var]))
+        {
+            return self::$get_vars[$var];
+        }
+        return  $default;
     }
 
     /**
