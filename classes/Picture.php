@@ -462,4 +462,44 @@ class Picture
         }
         return $pics;
     }
+    
+    public static function Find($tags,$string)
+    {
+        $tag_ids=[];
+        if(count($tags)==1)
+        {
+            $tag=$tags[0];
+            $tag_ids = Tag::Find("picture", $tag);
+            //ModuleFunction_pixdb_list_thumbnail($pic_ids, "Searching by tag [$tag]");
+        }
+        elseif(count($tags)>1)
+        {
+            $tag_ids = Tag::Find("picture", $tags);
+            //$tags = implode(", ", $tags);
+            //ModuleFunction_pixdb_list_thumbnail($pic_ids, "Searching by tags [$tags]");
+        }
+        else
+        {
+
+        }
+        $search_ids = [];
+        if($string)
+        {
+            $search_ids=EVA::SearchString("picture.text",$string,'picture');
+        }
+        
+        if($tag_ids)
+        {
+            if($search_ids)
+            {
+                return array_intersect($search_ids,$tag_ids);
+            }
+            return $tag_ids;
+        }
+        else
+        {
+            return $search_ids;
+        }
+        
+    }
 }

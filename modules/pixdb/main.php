@@ -42,17 +42,17 @@ function ModuleAction_pixdb_showall($params)
 
 function ModuleAction_pixdb_tag($params)
 {
-    if(count($params)==1)
+    $searchstring = EngineCore::GET("search", "");
+    if(count($params)<1 && !$searchstring)
     {
-        $tag=$params[0];
-        $pic_ids = Tag::Find("picture", $tag);
-        ModuleFunction_pixdb_list_thumbnail($pic_ids, "Searching by tag [$tag]");
+        //#TODO: show the search form
     }
     else
     {
-        $pic_ids = Tag::Find("picture", $params);
-        $tags = implode(", ", $params);
-        ModuleFunction_pixdb_list_thumbnail($pic_ids, "Searching by tags [$tags]");
+        $pic_ids = Picture::Find($params, $searchstring);
+        //$tags = implode(", ", $params);
+        $tags="";
+        ModuleFunction_pixdb_list_thumbnail($pic_ids, "Searching by tags [$searchstring]");
     }
 }
 
