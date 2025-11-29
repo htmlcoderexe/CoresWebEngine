@@ -76,6 +76,13 @@ function ModuleAction_pixdb_showpic($params)
         // #TODO: 404?
         return;
     }
+    $redo_lang=EngineCore::POST("redo_lang","");
+    if($redo_lang)
+    {
+        JobScheduler::Schedule("tesseract",$pic->blob_id);
+        EngineCore::GTFO("/pixdb/showpic/$id");
+        return;
+    }
     $tpl = new TemplateProcessor("pixdb/singlepic");
     $tpl->tokens['blobid'] = $pic->blob_id;
     $tpl->tokens['w'] = $pic->width;
