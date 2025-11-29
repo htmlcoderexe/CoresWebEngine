@@ -91,7 +91,7 @@ class Tag
     {
         $excludestring = "";
         $evatypestring = "";
-        $params = [$prefix . "%"];
+        $params = ["%" . $prefix . "%"];
         if($evatype!=="")
         {
             $evatypestring = " AND evatype = ?";
