@@ -21,10 +21,12 @@ function ModuleAction_pixdb_albums()
     }
     $data = array_reverse($data);
     $extratext="";
+    $search=new TemplateProcessor("pixdb/searchbox");
+    EngineCore::AddPageContent($search->process(true));
     $tpl = new TemplateProcessor("pixdb/albumlist");
     $tpl->tokens['albums'] = $data;
     $tpl->tokens['extra_text'] = $extratext;
-    EngineCore::SetPageContent($tpl->process(true));
+    EngineCore::ADDPageContent($tpl->process(true));
 }
 
 function ModuleAction_pixdb_default($params)
