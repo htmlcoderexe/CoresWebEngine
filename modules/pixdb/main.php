@@ -43,9 +43,11 @@ function ModuleAction_pixdb_showall($params)
 function ModuleAction_pixdb_tag($params)
 {
     $searchstring = EngineCore::GET("search", "");
-    if(count($params)<1 && !$searchstring)
+    if((count($params)<1 || $params[0]=="")&& !$searchstring)
     {
-        //#TODO: show the search form
+        $tpl=new TemplateProcessor("pixdb/searchbox");
+        EngineCore::AddPageContent($tpl->process(true));
+        return;
     }
     else
     {
