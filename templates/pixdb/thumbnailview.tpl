@@ -16,6 +16,7 @@
     <a href="#" id="lightbox_prev" onclick="showPrev(event)">&nbsp;</a>
     <a href="#" id="lightbox_next" onclick="showNext(event)">&nbsp;</a>
     <a href="#" id="lightbox_close" onclick="showExit(event)">✕</a>
+    <a href="#" id="lightbox_clickthru">◲</a>
     <img class="singleimage" /></div>
 <script type="text/javascript">
 var imagelist = [];
@@ -40,6 +41,7 @@ imagelist.push({ id: {:id:}, src: "/files/stream/{:blob_id:}/{:blob_id:}.{:exten
         console.log(imagelist);
         document.querySelector(".lightbox").style.visibility = "visible";
         document.querySelector(".lightbox img").src = imagelist[offset].src;
+        document.querySelector("#lightbox_clickthru").href = "/pixdb/showpic/"+imagelist[offset].id;
         document.body.style.overflow ="hidden";
     }
     function showNext(e)
