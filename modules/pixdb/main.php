@@ -43,7 +43,8 @@ function ModuleAction_pixdb_showall($params)
 function ModuleAction_pixdb_tag($params)
 {
     $searchstring = EngineCore::GET("search", "");
-    if((count($params)<1 || $params[0]=="")&& !$searchstring)
+    $notags =(count($params)<1 || $params[0]=="");
+    if($notags && !$searchstring)
     {
         $tpl=new TemplateProcessor("pixdb/searchbox");
         EngineCore::AddPageContent($tpl->process(true));
@@ -52,9 +53,17 @@ function ModuleAction_pixdb_tag($params)
     else
     {
         $pic_ids = Picture::Find($params, $searchstring);
-        //$tags = implode(", ", $params);
-        $tags="";
-        ModuleFunction_pixdb_list_thumbnail($pic_ids, "Searching by tags [$searchstring]");
+        $tags = implode(", ", $params);
+        $subject ="";
+        if($searchstring)
+        {
+            $subject.=" for \"$searchstring\"";
+        }
+        if(!$notags)
+        {
+            $subject.=" in tags <em>$tags</em>";
+        }
+        ModuleFunction_pixdb_list_thumbnail($pic_ids, "Searching$subject");
     }
 }
 
