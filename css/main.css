@@ -412,6 +412,13 @@ a.tagusername::before
     justify-content: center;
     align-items: center;
 }
+.thumbnail[data-selected=true]
+{
+    border: solid #C00000 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
 .thumbnail img
 {

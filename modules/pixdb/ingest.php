@@ -10,7 +10,7 @@ function ModuleAction_pixdb_ingest_view($params)
     }
     $picIDs = EVA::GetChildren($id,"picture");
     $pics = Picture::GetGallery($picIDs);
-    $tpl = new TemplateProcessor("pixdb/thumbnailview");
+    $tpl = new TemplateProcessor("pixdb/managerview");
     $tpl->tokens['pictures'] = $pics;
     $tpl->tokens['extra_text'] = "Viewing ingest results for <strong>{$ingest->foldername}</strong>.";
     EngineCore::SetPageContent($tpl->process(true));
@@ -75,6 +75,11 @@ function ModuleAction_pixdb_ingest_manage($params)
     EngineCore::SetPageContent($tpl->process(true));
     return;
     
+}
+
+function ModuleAction_pixdb_ingest_default($params)
+{
+    ModuleAction_pixdb_ingest_list($params);
 }
 
 function ModuleAction_pixdb_ingest_list($params)
