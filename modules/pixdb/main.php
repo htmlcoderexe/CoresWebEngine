@@ -72,8 +72,8 @@ function ModuleAction_pixdb_tag($params)
 function ModuleAction_pixdb_showpic($params)
 {
     $id = intval(array_shift($params));
-    $pic = new Picture($id);
-    if($pic->id == 0)
+    $pic = Picture::Load($id);
+    if(!$pic)
     {
         // #TODO: 404?
         return;
@@ -152,7 +152,7 @@ function ModuleAction_pixdb_upload($params)
                 {
                     foreach(EngineCore::POST("new_tags",[]) as $newtag)
                     {
-                        Tag::Attach($pic->id, $newtag);
+                        Tag::Attach($pic->id, $newtag,'picture');
                     }
                 }
                 $pic_ids[]= $pic->id;
@@ -190,4 +190,80 @@ require "ingest.php";
 function ModuleAction_pixdb_ingest($params)
 {
     return Module::SPLIT_ROUTE;
+}
+
+function ModuleAction_pixdb_migrate($params)
+{
+    $q="SELECT id, type, owner FROM eva_objects WHERE type = 'picture'";
+    $result=DBHelper::RunTable($q,[]);
+    $ownerinfo=[];
+    foreach($result as $row)
+    {
+        $ownerinfo[$row['id']]=$row['owner'];
+    }
+    EngineCore::$DEBUG=true;
+    DBHelper::$DEBUG=true;
+    EngineCOre::RawModeOn();
+    $pics = EVA::GetAllOfType('picture');
+    
+    $i=0;
+    //var_dump($files);
+    echo "found ".count($pics)." to migrate <br />";
+    while($i<count($pics))
+    {
+        $batch=[];
+        for($j=0;$j<50;$j++)
+        {
+            
+            if(($j+$i)>=count($pics))
+            {
+                break;
+            }
+            $batch[]=$pics[$j+$i];
+        }
+        //var_dump($batch);
+        $i+=$j;
+        echo "batch of " . count($batch) ." to process<br />";
+        $table = $pictable = EVA::GetAsTable([
+            "blobid","thumb_blobid",
+            "picture.width","picture.height",
+            "file.extension","picture.text","title",
+            "picture.takentime","picture.takendate","filetime"],"picture",$batch);
+        foreach($table as $id=>$fileinfo)
+        {
+            //var_dump($fileinfo);
+            $edate=$fileinfo['picture.takendate']??"";
+            $etime=$fileinfo['picture.takentime']??"";
+            $exifdate = 0;
+            if($edate!="")
+            {
+                $eyyyy=substr($edate,0,4);
+                $emm=substr($edate,4,2);
+                $edd=substr($edate,6,2);
+                $ehh=substr($etime,0,2);
+                $emin=substr($etime,2,2);
+                $ess=substr($etime,4,2);
+                $exifdate=mktime($ehh,$emin,$ess,$emm,$edd,$eyyyy);
+            }
+            DBHelper::Insert(PICTURE_TABLE,[
+                null, 
+                $fileinfo['blobid'],$fileinfo['thumb_blobid'],
+                $fileinfo['picture.width'],$fileinfo['picture.height'],
+                $fileinfo['file.extension'],$fileinfo['title'],$fileinfo['picture.text']??"",
+                $exifdate, intval($fileinfo['filetime']??0),
+                $ownerinfo[$id], 0
+            ]);
+            $newid=DBHelper::GetLastId();
+            DBHelper::Update("eva_tags",['evaid'=>$newid,'evatype'=>'picture+'],['evaid'=>$id,'evatype'=>'picture']);
+            DBHelper::Update("eva_mappings",['child_id'=>$newid,'child_type'=>'picture+'],['child_id'=>$id,'child_type'=>'picture']);
+        
+            echo "migrated #" . $id . " => #".$newid."<br />";
+            }
+        ob_flush();
+        flush();
+    }
+
+    DBHelper::Update("eva_tags",['evatype'=>'picture'],['evatype'=>'picture+']);
+    DBHelper::Update("eva_mappings",['child_type'=>'picture'],['child_type'=>'picture+']);
+    
 }

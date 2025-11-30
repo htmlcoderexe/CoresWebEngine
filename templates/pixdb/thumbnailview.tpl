@@ -8,8 +8,8 @@
 <div class="picturelist">
     {#foreach|{%pictures%}|
 <div class="thumbnail">
-    <img src="/files/stream/{:blob_id:}/{:blob_id:}.{:extension:}" style="display:none" />
-    <a href="/pixdb/showpic/{:id:}" data-imageid="{:id:}" onclick="showImage(event, {:id:});"><img src="/files/stream/{:thumbnail_blob_id:}/{:blob_id:}_thumbnail.png" width="{:thumb_width:}" height="{:thumb_height:}" /></a>
+    <img src="/files/stream/{:blobid:}/{:blobid:}.{:extension:}" style="display:none" />
+    <a href="/pixdb/showpic/{:id:}" data-imageid="{:id:}" onclick="showImage(event, {:id:});"><img src="/files/stream/{:thumbnail:}/{:blobid:}_thumbnail.png" width="{:thumb_width:}" height="{:thumb_height:}" /></a>
 </div>#}
 </div>
 <div class="lightbox" style="visibility:hidden">
@@ -23,7 +23,7 @@ var imagelist = [];
 var captionlist = [];
 var offset =0;
 {#foreach|{%pictures%}|
-imagelist.push({ id: {:id:}, src: "/files/stream/{:blob_id:}/{:blob_id:}.{:extension:}" });#}
+imagelist.push({ id: {:id:}, src: "/files/stream/{:blobid:}/{:blobid:}.{:extension:}" });#}
     function showImage(e, id)
     {
         console.log("showing image ID", id);

@@ -14,12 +14,12 @@ class Tag
      * @param string $tag Tag to attach.
      * @return bool True if the tag was added, false if the tag was already present.
      */
-    public static function Attach($EVAID,$tag)
+    public static function Attach($EVAID,$tag,$type="generic")
     {
-        $e=new EVA($EVAID);
+        //$e=new EVA($EVAID);
         $existing = self::GetTags($EVAID);
         self::Remove($EVAID,$tag);
-        DBHelper::Insert("eva_tags",[$EVAID, $e->type, $tag]);
+        DBHelper::Insert("eva_tags",[$EVAID, $type, $tag]);
         return !in_array($tag,$existing);
     }
     

@@ -41,18 +41,20 @@ function ModuleAction_main_tag_add($params)
         echo '{"responseCode": "BadInput"}';
         die();
     }
+    /*
     $obj = new EVA($evaid);
     if($obj->id < 1)
     {
         echo '{"responseCode": "NotFound"}';
         die();
     }
+    //*/
     if(!EngineCore::CheckPermission("tag.super"))
     {
         echo '{"responseCode": "Denied"}';
         die();
     }
-    if(Tag::Attach($evaid,$tag))
+    if(Tag::Attach($evaid,$tag,"picture"))
     {
         echo '{"responseCode": "OK"}';
         die();

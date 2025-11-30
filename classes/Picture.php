@@ -8,6 +8,22 @@ Module::DemandProperty("picture.takendate", "Taken date", "Date this picture was
 Module::DemandProperty("picture.takentime", "Taken time", "Time this picture was taken at.");
 Module::DemandProperty("filetime","File time", "Date and time when this file was likely created");
 Module::DemandProperty("cached_count","Cached count", "Number of items that's cached for display in tables.");
+
+define("PICTURE_TABLE","pixdb");
+$pictable = [
+    "blobid"=>"VARCHAR(100)",
+    "thumbnail"=>"VARCHAR(100)",
+    "width"=>"INT",
+    "height"=>"INT",
+    "extension"=>"VARCHAR(50)",
+    "title"=>"VARCHAR(255)",
+    "text"=>"TEXT",
+    "exifdate"=>"INT",
+    "filedate"=>"INT",
+    "uid"=>"INT",
+    "gid"=>"INT"
+];
+Module::DemandTable(PICTURE_TABLE,$pictable);
 /**
  * Description of Picture
  *
@@ -36,43 +52,53 @@ class Picture
     
     public $eva;
     
-    public function __construct($id)
+    public function __construct($id,$blobid,$thumb,$w,$h,$ext,$title,$text,$edate,$fdate,$uid,$gid)
     {
-        $eva = new EVA($id);
-        $this->id = intval($eva->id);
-        if($this->id == 0)
-        {
-            return;
-        }
-        $this->blob_id = $eva->attributes["blobid"];
-        $this->thumbnail_blob_id = $eva->attributes["thumb_blobid"];
-        $this->width = $eva->attributes["picture.width"];
-        $this->height = $eva->attributes["picture.height"];
-        $this->title = $eva->attributes["title"];
-        $this->text = $eva->attributes["picture.text"];
-        $this->extension = $eva->attributes["file.extension"];
+        $this->id=$id;
+        $this->blob_id = $blobid;
+        $this->thumbnail_blob_id = $thumb;
+        $this->width = $w;
+        $this->height = $h;
+        $this->title = $title;
+        $this->text = $text;
+        $this->extension = $ext;
         // calculated properties
         
         $this->aspect_ratio = $this->width / $this->height;
         
-        if(isset($eva->attributes['picture.takendate']))
-        {
-            $this->datetaken = DateTimeImmutable::createFromFormat("YmdHis", $eva->attributes['picture.takendate'].$eva->attributes['picture.takentime']);
-        }
-        if(isset($eva->attributes['filetime']))
-        {
-            $this->filetime =$eva->attributes['filetime'];
-        }
+        $this->datetaken = $edate;
+        $this->filetime =$fdate;
+        
         // here, the scale is kept even if it enlarges the image, for display purposes
         
         $scale = self::ScaleThumbnail($this->width, $this->height);
         $this->thumb_width = $this->width * $scale;
         $this->thumb_height = $this->height * $scale;
         
-        // keep a reference to the EVA object
-        
-        $this->eva = $eva;
-        
+    }
+    
+    public static function Load($id)
+    {
+        $fields = [
+            'blobid','thumbnail',
+            'width','height',
+            'extension','title','text',
+            'exifdate','filedate',
+            'uid','gid'
+            ];
+        $q=DBHelper::Select(PICTURE_TABLE,$fields,['id'=>$id]);
+        $row = DBHelper::RunRow($q,[$id]);
+        if(!$row)
+        {
+            return null;
+        }
+        $pic=new Picture($id,
+                $row['blobid'],$row['thumbnail'],
+                $row['width'],$row['height'],
+                $row['extension'],$row['title'],$row['text'],
+                $row['exifdate'],$row['filedate'],
+                $row['uid'],$row['gid']);
+        return $pic;
     }
     
     /**
@@ -91,6 +117,15 @@ class Picture
     
     public static function Create($blob, $thumb, $w, $h, $title, $text, $ext,$filedate,$totaldate)
     {
+        DBHelper::Insert(PICTURE_TABLE,[
+            null,
+            $blob,$thumb,$w,$h,
+            $ext,$title,$text,
+            $totaldate,$filedate,
+            EngineCore::$CurrentUser->userid,0
+        ]);
+        $id=DBHelper::GetLastId();
+        return Picture::Load($id);
         $eva = EVA::CreateObject("picture");
         $eva->AddAttribute("blobid", $blob);
         $eva->AddAttribute("thumb_blobid", $thumb);
@@ -161,11 +196,11 @@ class Picture
             }
         }
         // make a date object out of it
-        $filedate = (new DateTimeImmutable())->setTimeStamp(min($candidates));
+        $filedate = min($candidates);
         
         $totaldate = $filedate;
         // fish for dates in EXIF
-        $metadate = $past0;
+        $metadate = 0;
         if($ext == "jpeg")
         {
             $exif = [];
@@ -174,13 +209,13 @@ class Picture
             if(isset($exif['EXIF']) && isset($exif['EXIF']['DateTimeOriginal']))
             {
                 $takendate = $exif['EXIF']['DateTimeOriginal'];
-                $metadate = DateTimeImmutable::createFromFormat("Y:m:d H:i:s",$takendate);
+                $metadate = strtotime($takendate);// DateTimeImmutable::createFromFormat("Y:m:d H:i:s",$takendate);
             }
             // not sure if this fallback is meaningful
             elseif(isset($exif['IDF0']) && isset($exif['IDF0']['DateTime']))
             {
                 $takendate = $exif['IDF0']['DateTime'];
-                $metadate = DateTimeImmutable::createFromFormat("Y:m:d H:i:s",$takendate);
+                $metadate = strtotime($takendate);// DateTimeImmutable::createFromFormat("Y:m:d H:i:s",$takendate);
             }
             // if exif disappoints, "zero" the date
             else
@@ -189,7 +224,7 @@ class Picture
             }
         }
         // set the cached "real" date to exif date if it exists and lower than the file date
-        if($metadate != $past0)
+        if($metadate != 0)
         {
             $totaldate = $metadate < $filedate ? $metadate : $filedate;
             
@@ -317,6 +352,18 @@ class Picture
     public static function GetGallery($picIDs)
     {
         
+        $fields = [
+            'id',
+            'blobid','thumbnail',
+            'width','height',
+            'extension','title','text',
+            'exifdate','filedate',
+            'uid','gid'
+            ];
+        $q="SELECT " . implode(",",$fields) . " FROM " . PICTURE_TABLE . 
+                " WHERE id IN (?". str_repeat(",?", count($picIDs)-1) . ")";
+        $results = DBHelper::RunTable($q,$picIDs);
+        return $results;
         $pictable = EVA::GetAsTable(["blobid","thumb_blobid","picture.width","picture.height","file.extension"],"picture",$picIDs);
         $pics = [];
         foreach($pictable as $picid=>$picdata)
@@ -355,7 +402,8 @@ class Picture
         $search_ids = [];
         if($string)
         {
-            $search_ids=EVA::SearchString("picture.text",$string,'picture');
+            $q="SELECT id FROM pixdb WHERE text LIKE ?";
+            $search_ids=DBHelper::RunList($q,['%'.$string.'%']);
         }
         
         if($tag_ids)
