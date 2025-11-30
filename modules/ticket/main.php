@@ -86,7 +86,7 @@ function ModuleAction_ticket_view($params)
             }
             foreach($flat_update['files'] as $file)
             {
-                $fileobj=File::GetByBlobID($file);
+                $fileobj=File::Load($file);
                 if($fileobj)
                 {
                     $flat_update['filedata'][]=$fileobj;

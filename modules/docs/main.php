@@ -36,7 +36,7 @@ function ModuleAction_docs_view($params)
         $fileIDs=is_array($doc->fileIDs)?$doc->fileIDs : [$doc->fileIDs];
         foreach($fileIDs as $fileid)
         {
-            $file = File::GetByBlobID($fileid);
+            $file = File::Load($fileid);
             $link->tokens['blobid']=$file->blobid;
             $link->tokens['filename']=$file->fname;
             $link->tokens['size']=Utility::FormatUnit($file->filesize);

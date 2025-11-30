@@ -135,7 +135,7 @@ class MusicTrack
         $tags = self::GetInfo($filename);
         if(!$tags['title'])
         {
-            $file = File::GetByBlobID($blobid);
+            $file = File::Load($blobid);
             $tags['title'] = $file->fullname;
         }
         $eva = EVA::CreateObject("musictrack", EVA::OWNER_CURRENT,$tags);

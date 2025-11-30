@@ -143,7 +143,7 @@ class Picture
         $past0 = (new DateTimeImmutable())->SetISODate(1600,1);
         // this will keep "to be attempted" types for later
         $sourcefile = File::GetFilePath($blobid);
-        $fobj = File::GetByBlobID($blobid);
+        $fobj = File::Load($blobid);
         $fname = $fobj->fname;
         $ext = self::GetImageType($sourcefile);
         $imagefx = "imagecreatefrom".$ext;
