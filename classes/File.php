@@ -8,6 +8,19 @@ define("FILESTORE_PATH","filestore");
         Module::DemandProperty("filesize","File size");
         Module::DemandProperty("blobid","BLOB ID","Identifies the name given to the BLOB file");
         Module::DemandProperty("timestamp","Timestamp","A Unix timestamp to uniquiely identify a point in time.");
+        
+$FAT = [
+    "blobid"=>"VARCHAR(100)",
+    "timestamp"=>"INT",
+    "mimetype"=>"VARCHAR(100)",
+    "size"=>"INT",
+    "name"=>"VARCHAR(255)",
+    "extension"=>"VARCHAR(50)",
+    "hash"=>"VARCHAR(100)"
+];
+define('Files_FAT','FAT');
+Module::DemandTable("FAT",$FAT);
+        
 class File
 {
     public $id;
@@ -19,9 +32,8 @@ class File
     public $comment;
     public $prev;
     public $type;
-    public $filesize;
+    public $size;
     public $hash;
-    private $evaobj;
     
     public static $last_error;
     
@@ -41,27 +53,38 @@ class File
     public const INGEST_BASE_DIR = "ingest";
     public const INGEST_FAIL_DIR = ".failed";
     
-    public function __construct($fileid, $nohash = false)
+    public function __construct($id,$blobid,$timestamp,$mimetype,$size,$name,$extension,$hash)
     {
-        $id = (int) $fileid;
-        $f = new EVA($id);
-        $this->fname = $f->attributes['filename'];
-        $this->filext=$f->attributes['file.extension'];
-        $this->timestamp=$f->attributes['timestamp'];
-        $this->type=$f->attributes['mimetype'];
-        $this->filesize=$f->attributes['filesize'];
-        $this->blobid=$f->attributes['blobid'];
+        $this->id = $id;
+        $this->fname = $name;
+        $this->filext=$extension;
+        $this->timestamp=$timestamp;
+        $this->type=$mimetype;
+        $this->filesize=$size;
+        $this->blobid=$blobid;
         $this->fullname=$this->fname.".".$this->filext;
-        $this->evaobj = $f;
-        if(!isset($f->attributes['hash']) && !$nohash)
-        {
-            $this->UpdateHash();
-        }
-        else
-        {
-            $this->hash = $f->attributes['hash'] ?? "";
-        }
+        $this->hash = $hash;
+    }
+    
+    public static function Load($blobid,$nohash=false)
+    {
+        $fields=['id','timestamp','mimetype','size','name','extension','hash'];
+        $q = DBHelper::Select(Files_FAT, $fields, ['blobid'=>$blobid]);
+        $result = DBHelper::RunRow($q,[$blobid]);
         
+        if(!$result)
+        {
+            return null;
+        }
+        $hash=$result['hash'];
+        
+        $f = new File($result['id'],$blobid,$result['timestamp'],$result['mimetype'],$result['size'],$result['name'],$result['extension'],$hash);
+        
+        if(!$nohash && $hash =="")
+        {
+            $f->UpdateHash();
+        }
+        return $f;
     }
     
     public function GetFileHandle($mode = "w+")
@@ -72,16 +95,14 @@ class File
     
     public function UpdateSize()
     {
-        $this->filesize = filesize(File::GetFilePath($this->blobid));
-        $this->evaobj->SetSingleAttribute("filesize", $this->filesize);
-        $this->evaobj->Save();
+        $this->size = filesize(File::GetFilePath($this->blobid));
+        DBHelper::Update(FILE_FAT,['size'=>$this->size],['blobid'=>$this->blobid]);
     }
     
     public function UpdateHash()
     {
         $this->hash = File::DoHash(File::GetFilePath($this->blobid));
-        $this->evaobj->SetSingleAttribute("hash", $this->hash);
-        $this->evaobj->Save();
+        DBHelper::Update(FILE_FAT,['hash'=>$this->hash],['blobid'=>$this->blobid]);
     }
     
     public static function DoHash($filename,$algo=self::HASH_ALGO)
@@ -170,29 +191,14 @@ class File
     
     public static function FindDupe($hash, $size)
     {
-        $files = EVA::GetByProperty("hash", $hash, "file");
-        if($files)
+        $fields = ['blobid'];
+        $q = DBHelper::Select(FILE_FAT,$fields,['hash'=>$hash,'size'=>$size]);
+        $dupe = DBHelper::RunRow($q);
+        if($dupe)
         {
-            foreach($files as $file)
-            {
-                $fsize=EVA::LoadPropFromDB($file,"filesize")[0];
-                if(intval($fsize) == $size)
-                {
-                    return EVA::LoadPropFromDB($file, "blobid")[0];
-                }
-                
-            }
+            return $dupe['blobid'];
         }
         return "";
-    }
-    
-    public static function GetByBlobID($blobid)
-    {
-        $results=EVA::GetByProperty("blobid", $blobid, "file");
-        if($results)
-        {
-            return new File($results[0]);
-        }
     }
     
     public static function GetFileDir($blobname)
@@ -242,15 +248,13 @@ class File
                 return null;
             }
         }
-        $fileobj=EVA::CreateObject("file");
-        $fileobj->AddAttribute("filename",pathinfo($filename)['filename']);
-        $fileobj->AddAttribute("mimetype",$mime);
-        $fileobj->AddAttribute("file.extension",$ext);
-        $fileobj->AddAttribute("filesize",0);
-        $fileobj->AddAttribute("blobid",$blobname);
-        $fileobj->AddAttribute("timestamp",time());
-        $fileobj->Save();
-        return new File($fileobj->id,true);
+        DBHelper::Insert(FILE_FAT,[
+            null,
+            $blobname, time(),$mime,
+            0,pathinfo($filename)['filename'],
+            $ext,""
+        ]);
+        return File::Load($blobname,true);
         
     }
     
@@ -286,9 +290,9 @@ class File
     public static function ServeByBlobID($blobid,$from=-1,$to=-1)
     {
         // find relevant file
-        $fileids=EVA::GetByProperty("blobid", $blobid, "file");
+        $fileinfo = File::Load($blobid);
         // 404 if not found
-        if(!$fileids)
+        if(!$fileinfo)
         {
             HTTPHeaders::Status(404);
             die("file [$blobid] was not found.");
@@ -303,7 +307,6 @@ class File
         }
         //open the file and get info from the database
         $file=fopen($filename,"r");
-        $fileinfo=new File($fileids[0]);
         // set content-type
         HTTPHeaders::ContentType($fileinfo->type);
         // cache for a day
