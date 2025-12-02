@@ -261,7 +261,7 @@ function addTag(inputname)
         return;
     }
     var tag = source.value;
-    if(tag="")
+    if(tag=="")
     {
         return;
     }

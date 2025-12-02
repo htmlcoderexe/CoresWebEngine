@@ -192,6 +192,59 @@ function ModuleAction_pixdb_ingest($params)
     return Module::SPLIT_ROUTE;
 }
 
+function ModuleAction_pixdb_processbatch($params)
+{
+    $picids=EngineCore::POST("picids");
+    if(!$picids)
+    {
+        EngineCore::FromWhenceYouCame();
+        die;
+    }
+    $ids=explode(",",$picids);
+    $iid=EngineCore::POST("owner");
+    $dis = EngineCore::POST("disassociate");
+    if($dis && $iid)
+    {
+        foreach($ids as $id)
+        {
+            EVA::RemoveRelation($iid,$id);
+        }
+    }
+    $tadd=EngineCore::POST("tagstoadd");
+    if($tadd)
+    {
+        foreach($ids as $id)
+        {
+            foreach($tadd as $ta)
+            {
+                Tag::Attach($id,$ta,'picture');
+            }
+        }
+    }
+    $trem=EngineCore::POST("tagstoremove");
+    if($trem)
+    {
+        foreach($ids as $id)
+        {
+            foreach($trem as $tr)
+            {
+                Tag::Remove($id,$tr);
+            }
+        }
+    }
+    $albumid=EngineCore::POST("albumid",0);
+    
+    if($albumid>0 && $album=PictureSet::Load($albumid))
+    {
+        foreach($ids as $id)
+        {
+            DBHelper::Insert("eva_mappings",['picture_album','picture',$albumid,$id]);
+        }
+    }
+    EngineCore::FromWhenceYouCame();
+    die;
+}
+
 function ModuleAction_pixdb_migrate($params)
 {
     $q="SELECT id, type, owner FROM eva_objects WHERE type = 'picture'";

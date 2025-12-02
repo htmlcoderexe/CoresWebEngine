@@ -33,6 +33,7 @@ function ModuleAction_pixdb_ingest_view($params)
     $tpl->tokens['managermode']=true;
     $tpl->tokens['extra_text'] = "Viewing ".count($picIDs_all)." ingest results for <strong>{$ingest->foldername}</strong>.";
     EngineCore::SetPageContent($tpl->process(true));
+    
 }
 function ModuleAction_pixdb_ingest_create($params)
 {

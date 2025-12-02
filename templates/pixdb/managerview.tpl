@@ -18,14 +18,17 @@
 </div>
 <div id="actionpanel" style="visibility:hidden"><span class="itemscount" onclick="toggleActions();"></span></div>
 <div id="actions" data-active="false">
-<form action="/pixdb/processbatch">
+<form action="/pixdb/processbatch" method="POST">
 <input type="hidden" name="picids" id="picids" />
+<input type="hidden" name="owner" value="{%iid|%}" />
 <label for="disassociate">Remove from ingest</label><input type="checkbox" name="disassociate" id="disassociate" /><br />
 <h3>Add these tags:</h3>
   {{tagpicker|inputname=tagstoadd}}
 <h3>Remove these tags:</h3>
   {{tagpicker|inputname=tagstoremove}}
-
+<label for="doalbum">Add to album ID (WIP):</label><input type="checkbox" name="doalbum" id="doalbum" /><br />
+<input name="albumid" id="albumid" type="number" />
+<button type="submit" id="gobutton">go</button>
 </form>
 </div>
 <div class="lightbox" style="visibility:hidden">
@@ -81,10 +84,14 @@ imagelist.push({ id: {:id:}, src: "/files/stream/{:blobid:}/{:blobid:}.{:extensi
             let txt_count = selection.length + " item" + (selection.length>1?"s":"") + " selected";
             actionpanel.querySelector(".itemscount").innerText=txt_count;
             actionpanel.style.visibility="visible";
+            document.getElementById('gobutton').disabled=false;
+            document.getElementById('picids').value = selection.join(",");
         }
         else
         {
+        document.getElementById('picids').value = "";
             actionpanel.style.visibility="hidden";
+            document.getElementById('gobutton').disabled=true;
         }
         e.preventDefault();
     }

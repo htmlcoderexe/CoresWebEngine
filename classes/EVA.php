@@ -411,7 +411,7 @@ class EVA
          */
         public static function RemoveRelation($parent, $child)
         {
-            DBHelper::Delete("eva_mappings",['parent_id'=>$parent,['child_id']=>$child]);
+            DBHelper::Delete("eva_mappings",['parent_id'=>$parent,'child_id'=>$child]);
         }
         
         // helper methods to be used on instances
