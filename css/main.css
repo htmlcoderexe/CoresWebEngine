@@ -499,3 +499,31 @@ a.tagusername::before
     max-height: 100vh;
     object-fit: contain;
 }
+
+#actionpanel
+{
+    position:fixed;
+    padding: 1em;
+    left: 50%;
+    bottom: 1em;
+    transform: translate(-50%,0);
+    background-color: #205020;
+}
+
+#actions
+{
+    position:fixed;
+    padding: 1em;
+    left: 50%;
+    transform: translate(-50%,0);
+    top: 100vh;
+    transition: top 0.2s, opacity 0.2s;
+    background-color: #205020;
+    opacity:0;
+}
+
+#actions[data-active=true]
+{
+    top: 2vh;
+    opacity:1;
+}
