@@ -96,13 +96,13 @@ class File
     public function UpdateSize()
     {
         $this->size = filesize(File::GetFilePath($this->blobid));
-        DBHelper::Update(FILE_FAT,['size'=>$this->size],['blobid'=>$this->blobid]);
+        DBHelper::Update(Files_FAT,['size'=>$this->size],['blobid'=>$this->blobid]);
     }
     
     public function UpdateHash()
     {
         $this->hash = File::DoHash(File::GetFilePath($this->blobid));
-        DBHelper::Update(FILE_FAT,['hash'=>$this->hash],['blobid'=>$this->blobid]);
+        DBHelper::Update(Files_FAT,['hash'=>$this->hash],['blobid'=>$this->blobid]);
     }
     
     public static function DoHash($filename,$algo=self::HASH_ALGO)
@@ -192,8 +192,8 @@ class File
     public static function FindDupe($hash, $size)
     {
         $fields = ['blobid'];
-        $q = DBHelper::Select(FILE_FAT,$fields,['hash'=>$hash,'size'=>$size]);
-        $dupe = DBHelper::RunRow($q);
+        $q = DBHelper::Select(Files_FAT,$fields,['hash'=>$hash,'size'=>$size]);
+        $dupe = DBHelper::RunRow($q,[$hash,$size]);
         if($dupe)
         {
             return $dupe['blobid'];
@@ -248,7 +248,7 @@ class File
                 return null;
             }
         }
-        DBHelper::Insert(FILE_FAT,[
+        DBHelper::Insert(Files_FAT,[
             null,
             $blobname, time(),$mime,
             0,pathinfo($filename)['filename'],
