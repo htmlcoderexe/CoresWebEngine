@@ -5,16 +5,28 @@
 <br />
 <div class="extra_text">{%extra_text|%}</div>
 <span class="user_error">{#foreach|{#errors|error#}|{:*:}<br />#}</span><br />
-<form id="selected_form">
-    {{tagpicker|inputname=tagstoadd}}
-    
-</form>
+<button onclick="toggleManagerMode()">Manage</button>
 <div class="picturelist">
     {#foreach|{%pictures%}|
 <div class="thumbnail" data-selected="false">
     <img src="/files/stream/{:blobid:}/{:blobid:}.{:extension:}" style="display:none" />
-    <a href="/pixdb/showpic/{:id:}" data-imageid="{:id:}" onclick="toggleSelect(event, {:id:});"><img src="/files/stream/{:thumbnail:}/{:blobid:}_thumbnail.png" width="{:thumb_width:}" height="{:thumb_height:}" /></a>
+    <a href="/pixdb/showpic/{:id:}" data-imageid="{:id:}" onclick="itemClicked(event, {:id:});"><img src="/files/stream/{:thumbnail:}/{:blobid:}_thumbnail.png" width="{:thumb_width:}" height="{:thumb_height:}" /></a>
 </div>#}
+<div>
+{#ifset|prev|<a href="/pixdb/ingest/view/{%iid%}/{%prev%}">Previous page</a>#}{#ifset|page| <strong>{%page%}</strong> {#ifset|next|<a href="/pixdb/ingest/view/{%iid%}/{%next%}">Next page</a>#}
+</div>
+</div>
+<div id="actionpanel" style="visibility:hidden"><span class="itemscount" onclick="toggleActions();"></span></div>
+<div id="actions" data-active="false">
+<form action="/pixdb/processbatch">
+<input type="hidden" name="picids" id="picids" />
+<label for="disassociate">Remove from ingest</label><input type="checkbox" name="disassociate" id="disassociate" /><br />
+<h3>Add these tags:</h3>
+  {{tagpicker|inputname=tagstoadd}}
+<h3>Remove these tags:</h3>
+  {{tagpicker|inputname=tagstoremove}}
+
+</form>
 </div>
 <div class="lightbox" style="visibility:hidden">
     <a href="#" id="lightbox_prev" onclick="showPrev(event)">&nbsp;</a>
@@ -23,6 +35,7 @@
     <a href="#" id="lightbox_clickthru">◲</a>
     <img class="singleimage" /></div>
 <script type="text/javascript">
+var managermode = {#ifset|managermode|true|false#}
 var imagelist = [];
 var captionlist = [];
 var offset =0;
@@ -30,6 +43,22 @@ var selection = [];
 {#foreach|{%pictures%}|
 imagelist.push({ id: {:id:}, src: "/files/stream/{:blobid:}/{:blobid:}.{:extension:}" });#}
     
+    function toggleManagerMode(e)
+    {
+        managermode = !managermode;
+    }
+    
+    function toggleActions(e)
+    {
+        let ap=document.getElementById("actions");
+        ap.dataset.active = !(ap.dataset.active=="true");
+    }
+
+    function itemClicked(e,id)
+    {
+        managermode ? toggleSelect(e,id) : showImage(e, id);
+    }
+
     function toggleSelect(e,id)
     {
         let img = document.querySelector('[data-imageid="'+id+'"]').parentNode;
@@ -46,6 +75,17 @@ imagelist.push({ id: {:id:}, src: "/files/stream/{:blobid:}/{:blobid:}.{:extensi
             selection.push(id);
         }
         console.log(selection);
+        if(selection.length>0)
+        {
+            let actionpanel = document.getElementById('actionpanel');
+            let txt_count = selection.length + " item" + (selection.length>1?"s":"") + " selected";
+            actionpanel.querySelector(".itemscount").innerText=txt_count;
+            actionpanel.style.visibility="visible";
+        }
+        else
+        {
+            actionpanel.style.visibility="hidden";
+        }
         e.preventDefault();
     }
     
