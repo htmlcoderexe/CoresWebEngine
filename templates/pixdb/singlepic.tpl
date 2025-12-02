@@ -2,7 +2,7 @@
 
 function loadTag(tag)
 {
-    var container = document.getElementById("tags_container");
+    var container = document.getElementById("tags_container_singlepic");
     console.log(container);
     var newlink = document.createElement("a");
     console.log(newlink);
@@ -22,7 +22,7 @@ function loadTag(tag)
     console.log(newlink);
 }
 
-function addTag(id, button)
+function attachTag(id, button)
 {
     button.disabled = true;
     var source = document.getElementById(id);
@@ -85,11 +85,11 @@ function addTag(id, button)
 </script>
 <a href="/pixdb/">Back</a>
 <h3>{%w%} x {%h%} </h3>
-<div class="tags_container" id="tags_container">
+<div class="tags_container" id="tags_container_singlepic">
     {#foreach|{%tags%}|<a class="tag{$tagtype|{:*:}$}" href="/pixdb/tag/{:*:}">{$tagbare|{:*:}$}</a> #}
 </div>
 <div class="suggestable_input_container">
-    <input data-suggestionsource="/main/tag/suggest/" data-evaobject="{%id%}" oninput="doSuggest(this);" onkeydown="doKeyboardNav(event);" onblur="" id="tag_input" name="tag_input" size=20 /><button type="button" onclick="addTag('tag_input',this);">Add tag</button>
+    <input data-suggestionsource="/main/tag/suggest/" data-evaobject="{%id%}" oninput="doSuggest(this);" onkeydown="doKeyboardNav(event);" onblur="" id="tag_input" name="tag_input" size=20 /><button type="button" onclick="attachTag('tag_input',this);">Add tag</button>
 </div>
 <br />
 <img class="singleimage" src="/files/stream/{%blobid%}/{%blobid%}.{%ext%}" />

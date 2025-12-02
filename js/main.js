@@ -147,15 +147,7 @@ function displaySuggestions(recipient, suggestions)
     
 }
 
-function addTag(id)
-{
-    var source = document.getElementById(id);
-    if(!source)
-    {
-        return;
-    }
-    
-}
+
 
 function doKeyboardNav(e)
 {
@@ -250,6 +242,54 @@ function doSuggest(target)
     };
     ajax.open("GET",suggestURL+encodeURIComponent(target.value),true);
     ajax.send(null);
+}
+
+
+function removeTag(tag,inputname)
+{
+    var elements = document.querySelectorAll('[data-tag'+inputname+'="'+tag+'"]');
+    elements.forEach((e)=>{e.parentNode.removeChild(e);});
+}
+
+function addTag(inputname)
+{
+    let id = 'tag_input_' + inputname;
+    console.log(id);
+    var source = document.getElementById(id);
+    if(!source)
+    {
+        return;
+    }
+    var tag = source.value;
+    if(tag="")
+    {
+        return;
+    }
+    console.log(tag);
+    var container = document.getElementById("tags_container_"+inputname);
+    var newlink = document.createElement("a");
+    newlink.setAttribute("href", "#"+tag);
+    newlink.dataset.tag = tag;
+    newlink.addEventListener("click",(e)=>{removeTag(tag)});
+    var forminput = document.createElement("input");
+    forminput.setAttribute("type","hidden");
+    forminput.value = tag;
+    forminput.dataset['tag'+inputname] = tag;
+    forminput.name=inputname + "[]";
+    
+    var tagstructure = tag.split(":");
+    var tagtype = "";
+    var tagbase = tag;
+    if(tagstructure.length >1)
+    {
+        tagtype = tagstructure[0];
+        tagbase = tagstructure[1];
+    }
+    newlink.setAttribute("class", "tag"+tagtype);
+    newlink.innerText = tagbase;
+    container.appendChild(newlink);
+    container.appendChild(forminput);
+    source.value="";
 }
 
 function AttachPostUpdate()
