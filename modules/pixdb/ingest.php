@@ -3,16 +3,35 @@
 function ModuleAction_pixdb_ingest_view($params)
 {
     $id = array_shift($params);
+    $page=1;
+    $pagesize=100;
+    if(count($params)>0)
+    {
+        $page=$params[0];
+    }
+    $page-=1;
     $ingest = PictureIngest::Load($id);
     if(!$ingest)
     {
         EngineCore::SetPageContent("fuck");
     }
-    $picIDs = EVA::GetChildren($id,"picture");
+    $picIDs_all = EVA::GetChildren($id,"picture");
+    $picIDs = array_slice($picIDs_all,$page*$pagesize,$pagesize);
     $pics = Picture::GetGallery($picIDs);
     $tpl = new TemplateProcessor("pixdb/managerview");
+    if($page>0)
+    {
+        $tpl->tokens['prev']=$page;
+    }
+    if(($page+1)*$pagesize<count($picIDs_all))
+    {
+        $tpl->tokens['next']=$page+2;
+    }
+    $tpl->tokens['page']=$page+1;
+    $tpl->tokens['iid']=$id;
     $tpl->tokens['pictures'] = $pics;
-    $tpl->tokens['extra_text'] = "Viewing ingest results for <strong>{$ingest->foldername}</strong>.";
+    $tpl->tokens['managermode']=true;
+    $tpl->tokens['extra_text'] = "Viewing ".count($picIDs_all)." ingest results for <strong>{$ingest->foldername}</strong>.";
     EngineCore::SetPageContent($tpl->process(true));
 }
 function ModuleAction_pixdb_ingest_create($params)
