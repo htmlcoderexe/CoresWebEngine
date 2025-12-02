@@ -71,8 +71,7 @@ class PictureIngest
             return $result;
         }
         // otherwise, a picture was ingested
-        $result->eva->AddAttribute("visibility",$this->visibility_level);
-        $this->eva->Adopt($result->id);
+        DBHelper::Insert("eva_mappings",["picture.ingest", "picture", $this->id, $result->id]);
         User::ClearSU();
         return true;
     }

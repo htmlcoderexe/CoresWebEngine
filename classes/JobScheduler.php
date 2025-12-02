@@ -64,8 +64,7 @@ class JobScheduler
                 $cmd = "tesseract " . $filepath . " stdout -l eng+rus+pol+nor+nld";
                 exec($cmd,$result);
                 $text = implode("\r\n",$result);
-                $eid = EVA::GetByProperty("blobid",$job['params'],"picture");
-                EVA::WritePropByName($eid[0],"picture.text",$text);
+                DBHelper::Update(PICTURE_TABLE,['text'=>$text],['blobid'=>$job['params']]);
                 DBHelper::Update("scheduled_jobs",['state'=>2],['id'=>$job['id']]);
                 EngineCore::RawModeOn();
                 echo "OCR for file {$job['params']} complete.<br />Command: <pre>$cmd</pre><br /><pre> $text </pre>";
