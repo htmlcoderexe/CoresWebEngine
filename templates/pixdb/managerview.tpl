@@ -12,11 +12,11 @@
     <img src="/files/stream/{:blobid:}/{:blobid:}.{:extension:}" style="display:none" />
     <a href="/pixdb/showpic/{:id:}" data-imageid="{:id:}" onclick="itemClicked(event, {:id:});"><img src="/files/stream/{:thumbnail:}/{:blobid:}_thumbnail.png" width="{:thumb_width:}" height="{:thumb_height:}" /></a>
 </div>#}
-<div>
+<div style="width:100%;text-align:center;">
 {#ifset|prev|<a href="/pixdb/ingest/view/{%iid%}/{%prev%}">Previous page</a>#}{#ifset|page| <strong>{%page%}</strong> {#ifset|next|<a href="/pixdb/ingest/view/{%iid%}/{%next%}">Next page</a>#}
 </div>
 </div>
-<div id="actionpanel" style="visibility:hidden"><span class="itemscount" onclick="toggleActions();"></span></div>
+<div id="actionpanel" style="display:none" onclick="toggleActions();"><span class="itemscount"></span></div>
 <div id="actions" data-active="false">
 <form action="/pixdb/processbatch" method="POST">
 <input type="hidden" name="picids" id="picids" />
@@ -83,14 +83,14 @@ imagelist.push({ id: {:id:}, src: "/files/stream/{:blobid:}/{:blobid:}.{:extensi
             let actionpanel = document.getElementById('actionpanel');
             let txt_count = selection.length + " item" + (selection.length>1?"s":"") + " selected";
             actionpanel.querySelector(".itemscount").innerText=txt_count;
-            actionpanel.style.visibility="visible";
+            actionpanel.style.display="block";
             document.getElementById('gobutton').disabled=false;
             document.getElementById('picids').value = selection.join(",");
         }
         else
         {
         document.getElementById('picids').value = "";
-            actionpanel.style.visibility="hidden";
+            actionpanel.style.display="none";
             document.getElementById('gobutton').disabled=true;
         }
         e.preventDefault();

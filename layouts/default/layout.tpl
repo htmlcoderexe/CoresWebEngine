@@ -11,6 +11,7 @@
         <link rel="stylesheet" href="/css/sorTable.css" />
         <script type="text/javascript" src="/js/main.js"></script>
         <script type="text/javascript" src="/js/sorTable.js"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!--{.{websitejs}}-->
     </head>
@@ -18,13 +19,13 @@
     <body>
         <div id="wrapper">
         {%menu|%}
-            <div id="rightcolumn">
-                {%sidebar|%}
-            </div>
         <!--end #rightcolumn -->
             <div id="leftcolumn">
             {%content|{#lipsum|500#}%}
             </div><!--end #leftcolumn-->
+            <div id="rightcolumn">
+                {%sidebar|%}
+            </div>
             {{system/clear}}
         </div><!--end #wrapper-->
         <script type="text/javascript">
