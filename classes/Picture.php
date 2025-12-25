@@ -126,19 +126,6 @@ class Picture
         ]);
         $id=DBHelper::GetLastId();
         return Picture::Load($id);
-        $eva = EVA::CreateObject("picture");
-        $eva->AddAttribute("blobid", $blob);
-        $eva->AddAttribute("thumb_blobid", $thumb);
-        $eva->AddAttribute("picture.width",$w);
-        $eva->AddAttribute("picture.height",$h);
-        $eva->AddAttribute("title",$title);
-        $eva->AddAttribute("picture.text",$text);
-        $eva->AddAttribute("file.extension",$ext);
-        $eva->AddAttribute("picture.takendate",$totaldate->format("Ymd"));
-        $eva->AddAttribute("picture.takentime",$totaldate->format("His"));
-        $eva->AddAttribute("filetime",$filedate->getTimeStamp());
-        $eva->Save();
-        return new Picture($eva->id);
     }
     
     public static function GetImageType($filename)
@@ -351,6 +338,28 @@ class Picture
     
     public static function GetGallery($picIDs)
     {
+        if(!is_array($picIDs) || count($picIDs)<1)
+        {
+            return [];
+        }
+        $cleans = [];
+        $justIDs=[];
+        foreach($picIDs as $entry)
+        {
+            if(!is_array($entry))
+            {
+                $id=$entry;
+                $desc=null;
+            }
+            else
+            {
+                $id=$entry['id'];
+                $desc=$entry['description'];
+            }
+            $justIDs[]=$id;
+            $cleans[$id]=$desc;
+            
+        }
         
         $fields = [
             'id',
@@ -361,23 +370,16 @@ class Picture
             'uid','gid'
             ];
         $q="SELECT " . implode(",",$fields) . " FROM " . PICTURE_TABLE . 
-                " WHERE id IN (?". str_repeat(",?", count($picIDs)-1) . ")";
-        $results = DBHelper::RunTable($q,$picIDs);
-        return $results;
-        $pictable = EVA::GetAsTable(["blobid","thumb_blobid","picture.width","picture.height","file.extension"],"picture",$picIDs);
-        $pics = [];
-        foreach($pictable as $picid=>$picdata)
+                " WHERE id IN (?". str_repeat(",?", count($justIDs)-1) . ")";
+        $results = DBHelper::RunTable($q,$justIDs);
+        foreach($results as $row)
         {
-            $pics[]=[
-                "id"=>$picid,
-                "blob_id"=>$picdata['blobid'],
-                "thumbnail_blob_id"=>$picdata['thumb_blobid'],
-                "width"=>$picdata['picture.width'],
-                "height"=>$picdata['picture.height'],
-                "extension"=>$picdata['file.extension'],
-            ];
+            if(isset($cleans[$row['id']]) && $cleans[$row['id']]!==null)
+            {
+                $row['description']=$cleans[$row['id']];
+            }
         }
-        return $pics;
+        return $results;
     }
     
     public static function Find($tags,$string)
