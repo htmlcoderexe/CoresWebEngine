@@ -56,8 +56,7 @@ class PictureSet
     
     public function __destruct()
     {
-        if($this->is_dirty)
-            $this->SaveToDB();
+        $this->SaveToDB();
     }
     
     /**
@@ -181,7 +180,9 @@ class PictureSet
      */
     public function SaveToDB()
     {
-        if(!$this->pictures)
+        // update cached count and other data
+        DBHelper::Update(PIXDB_ALBUMS,['cached_count'=>$this->cached_count,'thumbnail'=>$this->thumbnail,'title'=>$this->title,'description'=>$this->description],['id'=>$this->id]);
+        if(!$this->pictures || !$this->is_dirty)
         {
             return false;
         }
@@ -196,8 +197,6 @@ class PictureSet
             DBHelper::Insert(PIXDB_ALBUM_PICS,[$this->id,$entry['id'],$ord,$entry['description']]);
         }
         DBHelper::Commit();
-        // update cached count and other data
-        DBHelper::Update(PIXDB_ALBUMS,['cached_count'=>$this->cached_count,'thumbnail'=>$this->thumbnail,'title'=>$this->title,'description'=>$this->description],['id'=>$this->id]);
         $this->is_dirty=false;
         return true;
     }
