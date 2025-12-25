@@ -27,7 +27,11 @@
 <h3>Remove these tags:</h3>
   {{tagpicker|inputname=tagstoremove}}
 <label for="doalbum">Add to album ID (WIP):</label><input type="checkbox" name="doalbum" id="doalbum" /><br />
-<input name="albumid" id="albumid" type="number" />
+<select name="albumid" id="albumid" >
+<option value="-1">New...</option>
+{#foreach|{%albums%}|<option value="{:albumid:}">{:albumname:}</option>#}
+</select>
+<input name="albumname" placeholder="put album number here ok" />
 <button type="submit" id="gobutton">go</button>
 </form>
 </div>
