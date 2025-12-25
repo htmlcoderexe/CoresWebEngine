@@ -166,6 +166,19 @@ class DBHelper
         return $stmt;
     }
     
+    public static function BeginTransaction()
+    {
+        (DBHelper::$DBLink->prepare("START TRANSACTION"))->execute();
+    }
+    public static function Commit()
+    {
+        (DBHelper::$DBLink->prepare("COMMIT"))->execute();
+    }
+    public static function Rollback()
+    {
+        (DBHelper::$DBLink->prepare("ROLLBACK"))->execute();
+    }
+    
     /**
      * Runs a query and gets the results
      * @param string $query The query to prepare and run
