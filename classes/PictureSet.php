@@ -33,6 +33,7 @@ class PictureSet
     public $created;
     public $pictures;
     public $cached_count;
+    private $is_dirty=false;
     
     
     /**
@@ -55,7 +56,8 @@ class PictureSet
     
     public function __destruct()
     {
-        $this->SaveToDB();
+        if($this->is_dirty)
+            $this->SaveToDB();
     }
     
     /**
@@ -196,6 +198,7 @@ class PictureSet
         DBHelper::Commit();
         // update cached count and other data
         DBHelper::Update(PIXDB_ALBUMS,['cached_count'=>$this->cached_count,'thumbnail'=>$this->thumbnail,'title'=>$this->title,'description'=>$this->description],['id'=>$this->id]);
+        $this->is_dirty=false;
         return true;
     }
     /**
@@ -286,6 +289,7 @@ class PictureSet
         {
             $this->pictures = array_values($this->pictures);
         }
+        $this->is_dirty=true;
     }
     
     /**
@@ -318,6 +322,7 @@ class PictureSet
     {
         $this->GetPictures();
         $this->pictures[$position]=['id'=>$id,'description'=>$description];
+        $this->is_dirty=true;
     }
     
     /**
@@ -348,6 +353,7 @@ class PictureSet
             $this->pictures[$i+1]=$this->pictures[$i];
         }
         unset($this->pictures[$start]);
+        $this->is_dirty=true;
     }
     
     /**
@@ -405,6 +411,7 @@ class PictureSet
             if($posInAlbum==-1)
             {
                 $this->SetPictureAt(count($this->pictures),$id,$description);
+                $this->is_dirty=true;
                 return;
             }
             // otherwise, do nothing
@@ -425,6 +432,7 @@ class PictureSet
             {
                 $this->ShiftUp($position);                
                 $this->SetPictureAt($position,$id,$description);
+                $this->is_dirty=true;
                 return;
             }
             // if new position is higher than old position, subtract one from new position
@@ -447,6 +455,7 @@ class PictureSet
             }
             // put the picture into the now free slot
             $this->SetPictureAt($position,$id,$description);
+            $this->is_dirty=true;
             return;
         }
     }
