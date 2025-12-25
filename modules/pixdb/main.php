@@ -11,6 +11,7 @@ function ModuleFunction_pixdb_list_thumbnail($idlist, $extratext="")
 
 function ModuleAction_pixdb_albums()
 {
+    /*
     $list = EVA::GetAsTable(["title","description","cached_count"],"picture_album");
     $data =[];
     foreach($list as $evaid=>$props)
@@ -20,6 +21,9 @@ function ModuleAction_pixdb_albums()
         $data[]=$props;
     }
     $data = array_reverse($data);
+    //*/
+    $q=DBHelper::Select(PIXDB_ALBUMS,["id","title","description","cached_count"],['1'=>'1'],['id'=>'DESC']);
+    $data=DBHelper::RunTable($q,[1]);
     $extratext="";
     $search=new TemplateProcessor("pixdb/searchbox");
     EngineCore::AddPageContent($search->process(true));
@@ -105,8 +109,8 @@ function ModuleAction_pixdb_viewalbum($params)
     {
         die();
     }
-    $pic_ids = $a->pictures;
-    ModuleFunction_pixdb_list_thumbnail($pic_ids, "{$a->title}");
+    $pix = $a->GetPictures();
+    ModuleFunction_pixdb_list_thumbnail($pix, "{$a->title}");
 }
 
 
@@ -234,15 +238,51 @@ function ModuleAction_pixdb_processbatch($params)
     }
     $albumid=EngineCore::POST("albumid",0);
     
-    if($albumid>0 && $album=PictureSet::Load($albumid))
+    if(EngineCore::POST("doalbum"))
     {
-        foreach($ids as $id)
+        if($albumid==-1)
         {
-            DBHelper::Insert("eva_mappings",['picture_album','picture',$albumid,$id]);
+            $album = PictureSet::Create(EngineCore::POST("albumname","untitled"),"",$ids);
+        }
+        else
+        {
+            $album = PictureSet::Load($albumid);
+            if($album)
+            {
+                foreach($ids as $id)
+                {
+                    $album->AddPicture($id);
+                }
+            }
         }
     }
+    
     EngineCore::FromWhenceYouCame();
     die;
+}
+
+function ModuleAction_pixdb_migratealbums($param)
+{
+    $q="SELECT id, owner FROM eva_objects WHERE type = 'picture_album'";
+    $result=DBHelper::RunTable($q,[]);
+    $data=[];
+    foreach($result as $row)
+    {
+        $data[$row['id']]=$row['owner'];
+    }
+    EngineCore::$DEBUG=true;
+    DBHelper::$DEBUG=true;
+    EngineCOre::RawModeOn();
+    $list = EVA::GetAsTable(["title","description"],"picture_album");
+    foreach($list as $evaid=>$props)
+    {
+        $title=$props['title'];
+        $description=$props['description'];
+        $owner=$data[$evaid]??0;
+        $pics = Eva::GetChildren($evaid, "picture");
+        $album = PictureSet::Create($title,$description,$pics,null,intval($owner));
+        var_dump($album);
+    }
 }
 
 function ModuleAction_pixdb_migrate($params)

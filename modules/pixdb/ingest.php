@@ -27,10 +27,13 @@ function ModuleAction_pixdb_ingest_view($params)
     {
         $tpl->tokens['next']=$page+2;
     }
+    $q="SELECT id as albumid, title as albumname FROM ".PIXDB_ALBUMS;
+    $albums = DBHelper::RunTable($q,[]);
     $tpl->tokens['page']=$page+1;
     $tpl->tokens['iid']=$id;
     $tpl->tokens['pictures'] = $pics;
     $tpl->tokens['managermode']=true;
+    $tpl->tokens['albums']=$albums;
     $tpl->tokens['extra_text'] = "Viewing ".count($picIDs_all)." ingest results for <strong>{$ingest->foldername}</strong>.";
     EngineCore::SetPageContent($tpl->process(true));
     
