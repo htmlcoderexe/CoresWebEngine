@@ -335,6 +335,44 @@ class Picture
         return null;        
     }
     
+    public static function FromURL($URL)
+    {
+        $tmp = tmpfile();
+        $tempname = stream_get_meta_data($tmp)['uri'];
+        $output = file_get_contents($URL);
+        fwrite($tmp,$output);
+        // is it a picture?
+        $imagetype = self::GetImageType($tempname);
+        if(!$imagetype)
+        {
+            // if not, can't do anything
+            fclose($tmp); 
+            return null;
+        }
+        // check for dupes
+        $filesize = filesize($tempname);
+        $dupeBlobID = File::FindDupe(File::DoHash($tempname),$filesize);
+        if($dupeBlobID)
+        {
+            // re-use the existing file
+            fclose($tmp); 
+            return self::FromFile($dupeBlobID);
+        }
+        // upload
+        $newFile = File::New($tempname);
+        if($newFile)
+        {
+            // use new file if success
+            $targetpath = File::GetFilePath($newFile->blobid);
+            file_put_contents($targetpath,$output);
+            fclose($tmp); 
+            return self::FromFile($newFile->blobid);
+        }
+        // fail...
+        fclose($tmp);
+        return null;   
+    }
+    
     
     public static function GetGallery($picIDs)
     {

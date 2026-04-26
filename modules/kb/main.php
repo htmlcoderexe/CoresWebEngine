@@ -57,6 +57,7 @@ function ModuleAction_kb_edit($params)
 
 function ModuleAction_kb_save($params)
 {
+    //var_dump($_REQUEST);die;
 	$cu=User::GetCurrentUser();
 	if(!($cu->HasPermission('kb.edit')))
 	{
@@ -65,7 +66,21 @@ function ModuleAction_kb_save($params)
 		return;
 	}
 	$text=$_POST['text'];
-	$id=$_POST['pageid'];
+        $matches=[];
+        preg_match_all("/\<img.+src\=(?:\"|\')(.+?)(?:\"|\')(?:.+?)\>/", $text, $matches);
+        $URLs = $matches[1];
+        for($i=0;$i<count($URLs);$i++)
+        {
+            $img = Picture::FromURL($URLs[$i]);
+            if($img)
+            {
+                $text=str_replace($URLs[$i],"/files/stream/{$img->blob_id}/{$img->blob_id}.{$img->extension}",$text);
+                //var_dump($img);
+                //echo $URLs[$i];
+            }
+        }
+        //echo($text);die;
+        $id=$_POST['pageid'];
 	//Utility::ddump($_POST);
 	KB_Page::SaveToDatabase($id,$text);
 	//Utility::ddump(mysql_error());

@@ -1,15 +1,52 @@
 <script src="/ckeditor/ckeditor.js"></script>
 <script>
-    
+    function doExtImages(element)
+    {
+        if(!element || !element.value)
+            return;
+        let text = element.value;
+        console.log(text);
+        let images = [];
+        let matches = text.matchAll(/\<img.+src\=(?:\"|\')(.+?)(?:\"|\')(?:.*?)\>/g);
+        matches.forEach(e=>images.push(e[1]));
+        console.log(images);
+        window.TBD=images.length;
+        images.forEach((img,i)=>{
+            downloadAndAttach(img,"image"+i);
+        });
+        
+        
+    }
+    function downloadAndAttach(link,fn)
+    {
+        fetch(link,{
+  mode: "no-cors"})
+            .then(response => response.blob())
+            .then(blob => {
+                let file = new File([blob], fn,{type:"image/jpeg", lastModified:new Date().getTime()});
+                let container = new DataTransfer();
+                container.items.add(file);
+                let filein=document.createElement("input");
+                filein.type="file";
+                filein.files = container.files;
+                console.log(container.files);
+                document.getElementById("kbform").appendChild(filein);
+                window.TBD--;
+                if(window.TBD<=0)
+                {
+                    //document.getElementById("kbform").submit();
+                }
+            });
+    }
     
 </script>
-<form action="/kb/save" method="POST">
+<form enctype="multipart/form-data" action="/kb/save" method="POST" id="kbform">
 <textarea name="text" id ="text" cols="56" rows="20">{%pagetext|%}</textarea>
 <script>
 CKEDITOR.replace("text");
 </script>
-<input name="pageid" type="hidden" value="{%pageid|-1%}" />
-<button type="submit">Save page</button>
+<input name="pageid" type="hidden" value="{%pageid|-1%}" /><!-- onclick="doExtImages(this.parentElement.querySelector('#text'));event.preventDefault();"-->
+<button>Save page</button>
 </form> 
 <script src="/js/peeler.js"></script>
 <style>
