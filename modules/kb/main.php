@@ -62,7 +62,7 @@ function ModuleAction_kb_view($params)
 function ModuleAction_kb_edit($params)
 {
 	$id=(int)$params[0];
-	$pagetext=KB_Page::GetLastRevision($id)['content_raw'];
+	$pagetext=KB_Page::GetLastRevision($id)['content_raw']??"";
 	$t=new TemplateProcessor("pageeditor");
 	$t->tokens['pagetext']=$pagetext;
 	$t->tokens['pageid']=$id;
