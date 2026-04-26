@@ -71,10 +71,16 @@ function ModuleAction_kb_save($params)
         $URLs = $matches[1];
         for($i=0;$i<count($URLs);$i++)
         {
-            $img = Picture::FromURL($URLs[$i]);
+            $URL=$URLs[$i];
+            // local reference, do not redo
+            if($URL[0]=="/")
+            {
+                continue;
+            }
+            $img = Picture::FromURL($URL);
             if($img)
             {
-                $text=str_replace($URLs[$i],"/files/stream/{$img->blob_id}/{$img->blob_id}.{$img->extension}",$text);
+                $text=str_replace($URL,"/files/stream/{$img->blob_id}/{$img->blob_id}.{$img->extension}",$text);
                 //var_dump($img);
                 //echo $URLs[$i];
             }
