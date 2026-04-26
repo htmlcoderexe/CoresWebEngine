@@ -11,17 +11,6 @@ function ModuleFunction_pixdb_list_thumbnail($idlist, $extratext="")
 
 function ModuleAction_pixdb_albums()
 {
-    /*
-    $list = EVA::GetAsTable(["title","description","cached_count"],"picture_album");
-    $data =[];
-    foreach($list as $evaid=>$props)
-    {
-        $props["id"]=$evaid;
-        $props["cached_count"]=$props["cached_count"]===""?"?":$props["cached_count"];
-        $data[]=$props;
-    }
-    $data = array_reverse($data);
-    //*/
     $q=DBHelper::Select(PIXDB_ALBUMS,["id","title","description","cached_count"],['1'=>'1'],['id'=>'DESC']);
     $data=DBHelper::RunTable($q,[1]);
     $extratext="";
