@@ -24,6 +24,21 @@ class KB
 	//	return $buffer;
 		//return "<pre>start job: <1B>3<0F1B>p<00C8FA>\r\nend job<1B>e<101B>i</pre>";
 	}
+        public static function CurrentProjectID()
+        {
+            return $_SESSION['kb_project_id'] ?? 0;
+        }
+        public static function SwitchProject($projId)
+        {
+            $_SESSION['kb_project_id']=$projId;
+        }
+        public static function ListPages($projId)
+        {
+            $fields = ["id,title,created,project_id,modified,creator_id"];
+            $q = DBHelper::Select("kb_pages",$fields,["project_id"=>$projId]);
+            $pages = DBHelper::RunTable($q,[$projId]);
+            return $pages;
+        }
 	public static function ScheduleJob($jobtype,$pageaffected,$param,$priority)
 	{
 		$time=(int)time();

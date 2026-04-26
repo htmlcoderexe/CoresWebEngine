@@ -5,10 +5,29 @@ function ModuleAction_kb_default($params)
 	ModuleAction_kb_index($params);
 }
 
+function ModuleAction_kb_project($params)
+{
+    $projID = intval($params[0]);
+    $_SESSION['kb_project_id']=$projID;
+    EngineCore::GTFO("/kb/index");
+}
+
 function ModuleAction_kb_index($params)
 {
 	//$content=KB::ListProjects();
 	//
+        //if(KB::CurrentProjectID() >0)
+        //{
+    $pid=KB::CurrentProjectID();
+            $pages = KB::ListPages($pid);
+            $tpl=new TemplateProcessor("kbindex");
+            $tpl->tokens['pagelist']=$pages;
+            $tpl->tokens['prev']=$pid-1;
+            $tpl->tokens['cur']=$pid;
+            $tpl->tokens['next']=$pid+1;
+            EngineCore::AddPageContent($tpl->process(true));
+            return;
+        //}//*/
 	$cu=User::GetCurrentUser();
 	if($cu->HasPermission('super'))
 	{

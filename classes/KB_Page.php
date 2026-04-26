@@ -35,10 +35,14 @@ class KB_Page
         DBHelper::Insert('kb_page_revisions',$d);
         //Utility::ddump(mysql_error());
     }
-    public static function CreatePage($title)
+    public static function CreatePage($title,$projId=-1)
     {
+        if($projId==-1)
+        {
+            $projId=KB::CurrentProjectID();
+        }
         DBHelper::$DBLink->beginTransaction();
-        DBHelper::Insert('kb_pages',Array(null,$title,time(),0,time(),1));
+        DBHelper::Insert('kb_pages',Array(null,$title,time(),$projId,time(),1));
         //Utility::Debug(mysql_error());
         $id=DBHelper::GetLastId();
         DBHelper::$DBLink->commit();
