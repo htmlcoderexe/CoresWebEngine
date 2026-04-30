@@ -59,8 +59,13 @@ CKEDITOR.replace("text");
 {
     display:inline-block;
     width:24%;
-    height: 16em;
+    height: 10em;
     overflow: scroll;
+}
+#peeler iframe
+{
+    width:100%;
+    height: 100%;
 }
 </style>
 <div id="peeler">
@@ -71,7 +76,7 @@ CKEDITOR.replace("text");
     <ul id="depthinfo"></ul>
     <ol id="toc"></ol>
 </div>
-<input type="checkbox" id="autodetect" />
+<input type="checkbox" id="autodetect" checked />
 <input type="range" min="0" max="10" id="scraperdepth" />
 <span>Skip first </span><input type="number" id="skipfirst" value="0" />
 <span> and last </span><input value="0" type="number" id="skiplast" />
