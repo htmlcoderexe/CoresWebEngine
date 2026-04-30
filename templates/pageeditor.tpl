@@ -63,54 +63,96 @@ CKEDITOR.replace("text");
     overflow: scroll;
 }
 </style>
-<div id="peeler"><div id="target" contenteditable></div><div id="output" contenteditable></div><ul id="depthinfo"></ul><ol id="toc"></ol></div>
-<button id="scrape">go</button><input value="0" type="range" min="0" max="10" id="scraperdepth" /><span>Skip first </span><input type="number" id="skipfirst" value="0" /><span> and last </span><input value="0" type="number" id="skiplast" /><span> blocks.</span>
+<div id="peeler">
+    <div id="targetcontainer">
+        <iframe sandbox="allow-same-origin" id="target" srcdoc="<!doctype html><head></head><body contenteditable>a</body></html>"></iframe>
+    </div>
+    <div id="output" contenteditable></div>
+    <ul id="depthinfo"></ul>
+    <ol id="toc"></ol>
+</div>
+<input type="checkbox" id="autodetect" />
+<input type="range" min="0" max="10" id="scraperdepth" />
+<span>Skip first </span><input type="number" id="skipfirst" value="0" />
+<span> and last </span><input value="0" type="number" id="skiplast" />
+<span> blocks.</span>
+<br />
+<button id="scrape">go</button>
 
 <script>
-let input=document.getElementById("target");
-let output=document.getElementById("output");
+// pasting area
+let inputframe=document.getElementById("target");
+// settings
+let ad = document.getElementById("autodetect");
 let depthslider = document.getElementById("scraperdepth");
-let depthinfo = document.getElementById("depthinfo");
-let gobutton=document.getElementById("scrape");
-let toc = document.getElementById("toc");
 let skiplast = document.getElementById("skiplast");
 let skipfirst = document.getElementById("skipfirst");
-gobutton.addEventListener("click",(e)=>{
-    let scraper = new HTMLPeeler(input);
-    scraper.depth=depthslider.value;
-    scraper.scrape();
-    console.error("DONE SCRAPING WITH CLASS");
-    
-    output.innerHTML="";
-    let formatter = new HTMLFormatter(scraper.blocks);
-    formatter.outputHTMLDoc(output,skipfirst.value,skiplast.value);
-    // scraper.outputHTMLDoc(output,skipfirst.value,skiplast.value);
-    toc.innerHTML="";
-    let headers = formatter.headers;
-    console.log(formatter.images);
-    console.log(scraper.blocks);
-    for(let i=0;i<headers.length;i++)
-    {
-        let li=document.createElement("li");
-        let a = document.createElement("a");
-        a.href="#header"+i;
-        a.innerText=headers[i][0];
-        li.appendChild(a);
-        toc.appendChild(li);
-    }
+// runs the peeler/formatter
+let gobutton=document.getElementById("scrape");
+// outputs
+let output = document.getElementById("output");
+let depthinfo = document.getElementById("depthinfo");
+let toc = document.getElementById("toc");
+
+ad.addEventListener("change",(e)=>{
+    depthslider.disabled=ad.checked;
 });
+// actually running the process
+gobutton.addEventListener("click",(e)=>{
+    // clear out everything
+    output.innerHTML="";
+    toc.innerHTML="";
+    // init peeler with given settings
+    let scraper = new HTMLPeeler(inputframe.contentDocument.body);
+    // autodetect mode or manual
+    scraper.depth=ad.checked?-1:depthslider.value;
+    // run peeler
+    let doc = scraper.scrape();
+    // drop first/last blocks as needed
+    doc.trim(skipfirst.value,skiplast.value);
+    // prepare and run formatter
+    let formatter = new HTMLFormatter(doc);
+    formatter.outputHTMLDoc(output);
+    //document.getElementById("text").innerText=output.innerHTML;
+    CKEDITOR.instances.text.setData(output.innerHTML);
+    formatter.outputTOC(toc);
+    // output results to console for debugging and admiration
+    console.log(doc.images);
+    console.log(doc.headers);
+    console.log(formatter.outline);
+    console.log(doc);
+});
+// moving the slider shows a preview of detected tags on given depth
 depthslider.addEventListener("input",(e)=>{
     depthinfo.innerHTML="";
-    let scraper=new HTMLPeeler(input);
+    let scraper=new HTMLPeeler(inputframe.contentDocument.body);
     scraper.depth=depthslider.value;
     let tags = scraper.tagList;
     Object.entries(tags).forEach((tag)=>{
-        let li = document.createElement("li");
+        let li = output.ownerDocument.createElement("li");
         let t="<"+tag[0]+"> x"+tag[1];
-        li.appendChild(document.createTextNode(t));
+        li.appendChild(output.ownerDocument.createTextNode(t));
         depthinfo.appendChild(li);
     });
 });
-input.addEventListener("blur",(e)=>{
-depthslider.dispatchEvent(new Event("input"));})
+// only run this on load as the srcdoc replaces the body after the page loads
+inputframe.addEventListener("load",(e)=> 
+{
+    // add an onPaste event to get the clipboard data and inject into body
+    // default paste filters out iframes and other possibly useful things
+    inputframe.contentDocument.body.addEventListener("paste",(e)=>{
+        let d = e.clipboardData.getData('text/html');
+        // keep this for inspection purposes
+        console.log(d);
+        // this is probably not a good idea - check for proper way
+        inputframe.contentDocument.body.innerHTML = d;
+        e.preventDefault();
+    });
+});
+// trigger a redo of the depth preview procedure - #TODO better place for this to trigger
+inputframe.addEventListener("blur",(e)=>{
+    depthslider.dispatchEvent(new Event("input"));
+});
+
+ad.dispatchEvent(new Event("change"));
 </script>
