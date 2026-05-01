@@ -3,17 +3,46 @@ class KB_Page
 {
     private $raw;
     private $processed;
-    private $title;
-    private $id;
-    public function __construct($id=-1)
+    
+    public $last_revision;
+    public $title;
+    public $id;
+    public $project_id;
+    
+    public $created;
+    public $modified;
+    public $creator;
+    
+    public function __construct($id,$title,$content_raw,$content_html,$project_id = 0)
     {
-        if($id == -1)
-        {
-            return;
-        }
-        $page=KB_Page::GetLastRevision($id);
-        $this->raw=$page['content_raw'];
+
+        $this->title=$title;
+        $this->raw=$content_raw;
         $this->id=$id;
+        $this->processed=$content_html;
+        $this->project_id=$project_id;
+    }
+    public static function Load($id)
+    {
+        $fields = ["id,title,created,project_id,modified,creator_id"];
+        $q = DBHelper::Select("kb_pages",$fields,["id"=>$id]);
+        $page = DBHelper::RunRow($q,[$id]);
+        if(!$page)
+        {
+            return null;
+        }
+        $raw="";
+        $html="";
+        $content = KB_Page::GetLastRevision($id);
+        if($content)
+        {
+            $raw=$content["content_raw"];
+            $html=$content["content_html"];
+        }
+        $result = new KB_Page($id,$page['title'],$raw,$html,$page['project_id']);
+        $result->created =$page['created'];
+        
+        return $result;
     }
     public function GetAffectedPages()
     {
@@ -55,6 +84,10 @@ class KB_Page
     public function GetRaw()
     {
         return $this->raw;
+    }
+    public function GetHTML()
+    {
+        return $this->processed;
     }
     public static function GetLastRevision($id)
     {

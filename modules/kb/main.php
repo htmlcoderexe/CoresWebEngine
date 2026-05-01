@@ -44,18 +44,25 @@ function ModuleAction_kb_index($params)
 	EngineCore::AddPageContent($t->process(true));
 	
 }
-
+// migrated to proper OOP
 function ModuleAction_kb_view($params)
 {
 	$id=$params[0];
-	$cu=User::GetCurrentUser();
+	$page = KB_Page::Load($id);
+        if(!$page)
+        {
+            return;
+        }
+        $cu=User::GetCurrentUser();
 	if($cu->HasPermission('super'))
 	{
 		EngineCore::AddPageContent((new TemplateProcessor("pagebar,id=$id"))->process(true));
 	}
-	$pagedata=KB_Page::GetLastRevision($id)['content_html'];
+	// $pagedata=KB_Page::GetLastRevision($id)['content_html'];
+        $pagedata = $page->GetHTML();
 	$t=new TemplateProcessor("kbpage");
 	$t->tokens['text']=$pagedata;
+        $t->tokens['title']=$page->title;
 	EngineCore::AddPageContent($t->process(true));
 }
 
