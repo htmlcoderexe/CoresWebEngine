@@ -104,36 +104,101 @@ class KB_Page
         $rev=DBHelper::RunRow($q,[$id]);
         return $rev['content_html'];
     }
-    public static function process_links($input)
+    static function doSpecialLinks($input,&$matches)
     {
-        $matchesbuffer=Array();
-        //$vars=Array();
-        preg_match_all("/\[\[[\w]{1,}[|][^\]]{0,}\]\]/",$input,$matchesbuffer);
-
-        $matches=$matchesbuffer[0];
-
+        $output = $input;
+        $nextId=-1;
+        $prevId=-1;
         for($i=0;$i<count($matches);$i++)
         {
-            $linkmeat=substr($matches[$i],2,-2);
-            list($key,$default)=explode("|",$linkmeat);
-            /*     	if(!isset($vars[$key])) 
-            { 
-                    $vars[$key]=$default;
+            list($pageId,$linkText,$fullmatch)=$matches[$i];
+            if($linkText[0]=="#")
+            {
+                $cmd = substr($linkText,1);
+                switch($cmd)
+                {
+                    case "next":
+                    {
+                        $nextId = $pageId;
+                        break;
+                    }
+                    case "prev":
+                    {
+                        $prevId = $pageId;
+                        break;
+                    }
+                }
+                $output=str_replace($fullmatch,"",$output);
+                $matches[$i]=null;
             }
-            //*/
-            $tpl="<a href=\"/kb/view/%s\">%s</a>";
-            $input=str_replace($matches[$i],sprintf($tpl,$key,$default),$input);
+            else
+            {
+                
+            }
+        }
+        $prevlink="";
+        $nextlink="";
+        $prevlinktpl = "<div class=\"prevlink\"><a href=\"/kb/view/%s\">&lt; %s</a></div>";
+        $nextlinktpl = "<div class=\"nextlink\"><a href=\"/kb/view/%s\">%s &gt;</a></div>";
+        $topnav="";
+        $bottomnav="";
+        if($prevId>0)
+        {
+            $prevpage=KB_Page::Load($prevId);
+            if($prevpage)
+            {
+                $prevlink=sprintf($prevlinktpl,$prevId,$prevpage->title);
+            }
+        }
+        if($nextId>0)
+        {
+            $nextpage=KB_Page::Load($nextId);
+            if($nextpage)
+            {
+                $nextlink=sprintf($nextlinktpl,$nextId,$nextpage->title);
+            }
+        }
+        if($nextId>0 || $prevId>0)
+        {
+            $topnavtpl="<nav id=\"kb_top_nav\">%s%s</nav>\n";
+            
+            $bottomnavtpl="\n<nav id=\"kb_bottom_nav\">%s%s</nav>";
+            
+            $topnav=sprintf($topnavtpl,$prevlink,$nextlink);
+            $bottomnav=sprintf($bottomnavtpl,$prevlink,$nextlink);
+        }
+        return $topnav.$output.$bottomnav;
+    }
+    public static function process_links($input,$matches)
+    {
+        for($i=0;$i<count($matches);$i++)
+        {
+            list($pageId,$linkText,$fullmatch)=$matches[$i];
+            $tpl = "<a href=\"/kb/view/%s\">%s</a>";
+            $input=str_replace($fullmatch,sprintf($tpl,$pageId,$linkText),$input);
         }
         return $input;
     }
     public static function ProcessMarkup($input)
     {
-        $output="";
         /*
          * The rest of the fucking owl...
          * 
          */
-        $output.=KB_Page::process_links($input);
+        $matchesbuffer=[];
+        preg_match_all("/\[\[[\w]{1,}[|][^\]]{0,}\]\]/",$input,$matchesbuffer);
+
+        $matches=[];
+        foreach($matchesbuffer[0] as $match)
+        {
+            $line=explode("|",substr($match,2,-2));
+            $line[]=$match;
+            $matches[]=$line;
+        }
+        
+        $output=KB_Page::doSpecialLinks($input,$matches);
+        $matches = array_filter($matches);
+        $output=KB_Page::process_links($output,$matches);
         return $output;
     }
 }
