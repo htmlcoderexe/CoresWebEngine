@@ -5,9 +5,7 @@ function ModuleAction_main_tag_suggest($params)
     $evatype = count($params) > 1 ? $params[0] : "";
     $prefix = count($params) > 1 ? $params[1] : $params [0];
     $suggestions = Tag::GetSuggestions($prefix, $evatype);
-    EngineCore::RawModeOn();
-    HTTPHeaders::ContentType("application/json");
-    echo "[\"" . implode("\", \"", $suggestions) . "\"]";
+    EngineCore::EmitJSON($suggestions);
 }
 function ModuleAction_main_tag_find($params)
 {
@@ -15,9 +13,7 @@ function ModuleAction_main_tag_find($params)
     $evatype = count($params) > 1 ? $params[0] : "";
     $tag = count($params) > 1 ? $params[1] : $params [0];
     $results = Tag::Find($evatype,$tag);
-    EngineCore::RawModeOn();
-    HTTPHeaders::ContentType("application/json");
-    echo "[\"" . implode("\", \"", $results) . "\"]";
+    EngineCore::EmitJSON($results);
     
 }
 
@@ -25,40 +21,26 @@ function ModuleAction_main_tag_get($params)
 {
     $evaid = $params[0];
     $results = Tag::GetTags($evaid);
-    EngineCore::RawModeOn();
-    HTTPHeaders::ContentType("application/json");
-    echo "[\"" . implode("\", \"", $results) . "\"]";
+    EngineCore::EmitJSON($results);
 }
 
 function ModuleAction_main_tag_add($params)
 {
-    $evaid = $params[0];
+    $evaid = intval($params[1]);
+    $objtype=$params[0];
     $tag = EngineCore::POST("tag","");
-    EngineCore::RawModeOn();
-    HTTPHeaders::ContentType("application/json");
     if(!$tag)
     {
-        echo '{"responseCode": "BadInput"}';
-        die();
+        EngineCore::EmitJSON(['responseCode'=>"BadInput"]);
     }
-    /*
-    $obj = new EVA($evaid);
-    if($obj->id < 1)
-    {
-        echo '{"responseCode": "NotFound"}';
-        die();
-    }
-    //*/
     if(!EngineCore::CheckPermission("tag.super"))
     {
-        echo '{"responseCode": "Denied"}';
-        die();
+        
+        EngineCore::EmitJSON(['responseCode'=>"Denied"]);
     }
-    if(Tag::Attach($evaid,$tag,"picture"))
+    if(Tag::Attach($evaid,$tag,$objtype))
     {
-        echo '{"responseCode": "OK"}';
-        die();
+        EngineCore::EmitJSON(['responseCode'=>"OK"]);
     }
-        echo '{"responseCode": "NoChange"}';
-    die();
+    EngineCore::EmitJSON(['responseCode'=>"NoChange"]);
 }
