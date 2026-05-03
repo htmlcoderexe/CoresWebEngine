@@ -228,7 +228,15 @@ class TemplateProcessor
             foreach($node['params'] as $param)
             {
                 $paramname = $this->process_nodelist($param['name']);
+                // check if something got put on the stack (complex datatype)
+                $stacksize = count($this->varstack);
                 $paramvalue = $this->process_nodelist($param['value']);
+                $stacksize2 = count($this->varstack);
+                // if empty param and stack increased, likely to be compound, so use that
+                if($paramvalue=="" && $stacksize2>$stacksize)
+                {
+                    $paramvalue = array_pop($this->varstack);
+                }
                 $params[$paramname]=$paramvalue;
             }
             $t = new TemplateProcessor($template);
