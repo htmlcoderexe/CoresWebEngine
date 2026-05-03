@@ -149,6 +149,15 @@ class EngineCore
     {
         self::$RawMode = true;
     }
+    
+    
+    public static function EmitJSON($data)
+    {
+        self::RawModeOn();
+        HTTPHeaders::ContentType("application/json");
+        echo json_encode($data);
+        exit();
+    }
 
     /**
      * Check if raw mode is enabled.
