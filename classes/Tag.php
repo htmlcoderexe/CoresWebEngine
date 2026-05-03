@@ -73,10 +73,18 @@ class Tag
      * @param int $EVAID Object ID to find the tags for.
      * @return array of tags found.
      */
-    public static function GetTags($EVAID)
+    public static function GetTags($EVAID,$type=null)
     {
-        $query = DBHelper::Select("eva_tags", ["tag"],["evaid"=>$EVAID]);
-        return DBHelper::RunList($query, [$EVAID]);
+        $where = ["evaid"=>$EVAID];
+        $params = [$EVAID];
+        if($type!=null)
+        {
+            $where['evatype'] = $type;
+            $params []= $type;
+        }
+        
+        $query = DBHelper::Select("eva_tags", ["tag"],$where);
+        return DBHelper::RunList($query, $params);
     }
     
     /**
