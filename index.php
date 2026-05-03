@@ -58,6 +58,7 @@ require_once CLASS_DIR."Picture.php";
 require_once CLASS_DIR."PictureSet.php";
 require_once CLASS_DIR."PictureIngest.php";
 header("Content-Security-Policy:  frame-ancestors 'self' ".BASE_URI);
+ini_set("session.cache_limiter","");
 session_start();
 EngineCore::$CurrentUser=User::GetCurrentUser();
 $_PAGE_SIDEBAR=Array();
