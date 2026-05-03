@@ -1,4 +1,5 @@
-<h3>List of albums</h3>
+{%extra_text|
+%}<h3>List of albums</h3>
 <table class="sortable" style="width:100%">
     <thead>
         <tr>
@@ -14,3 +15,4 @@
             <td>{:cached_count:}</td>
         </tr>#}
     </tbody>
+</table>
