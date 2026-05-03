@@ -44,6 +44,22 @@ function ModuleAction_kb_index($params)
 	EngineCore::AddPageContent($t->process(true));
 	
 }
+
+function ModuleAction_kb_tag($params)
+{
+    // for now just the one lol
+    $tag=$params[0];
+    $results = Tag::Find("kbpage",$tag);
+    $fields = ['id','title'];
+    $q="SELECT " . implode(",",$fields) . " FROM kb_pages WHERE id IN (?". str_repeat(",?", count($results)-1) . ")";
+    $pages = DBHelper::RunTable($q,$results);
+    $tpl=new TemplateProcessor("kbpagelist");
+    $tpl->tokens['pagelist']=$pages;
+    EngineCore::AddPageContent($tpl->process(true));
+    return;
+    
+}
+
 // migrated to proper OOP
 function ModuleAction_kb_view($params)
 {
@@ -63,6 +79,8 @@ function ModuleAction_kb_view($params)
 	$t=new TemplateProcessor("kbpage");
 	$t->tokens['text']=$pagedata;
         $t->tokens['title']=$page->title;
+        $tags = Tag::GetTags($page->id,"kbpage");
+        $t->tokens['tags'] = $tags;
         EngineCore::SetPageTitle($page->title);
 	EngineCore::AddPageContent($t->process(true));
 }
@@ -87,6 +105,8 @@ function ModuleAction_kb_edit($params)
 	$t->tokens['pagetext']=$pagetext;
 	$t->tokens['pageid']=$id;
         $t->tokens['title']=$page->title;
+        $tags = Tag::GetTags($page->id,"kbpage");
+        $t->tokens['tags'] = $tags;
         EngineCore::SetPageTitle("Editing ".$page->title);
 	EngineCore::AddPageContent($t->process(true));
 } 

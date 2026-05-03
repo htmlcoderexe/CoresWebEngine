@@ -40,6 +40,7 @@
     }
     
 </script>
+{{system/tagenable|id={%pageid%}|type=kbpage|linkprefix=/kb/tag/|boxid=tags_container_kb|tags={%tags%}}}
 <form enctype="multipart/form-data" action="/kb/save" method="POST" id="kbform">
     <input name="title" id="title" size="50" value="{%title|%}" />
 <textarea name="text" id ="text" cols="56" rows="20">{%pagetext|%}</textarea>
