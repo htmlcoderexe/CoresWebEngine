@@ -55,6 +55,10 @@ function ModuleAction_kb_tag($params)
     $pages = DBHelper::RunTable($q,$results);
     $tpl=new TemplateProcessor("kbpagelist");
     $tpl->tokens['pagelist']=$pages;
+    $tagtpl=new TemplateProcessor("system/showtags");
+    $tagtpl->tokens['tags']=[$tag];
+    $tagtpl->tokens['boxid']="tag_box_search";
+    EngineCore::AddPageContent($tagtpl->process(true));
     EngineCore::AddPageContent($tpl->process(true));
     return;
     
