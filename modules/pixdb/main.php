@@ -13,7 +13,7 @@ function ModuleAction_pixdb_albums()
 {
     $q=DBHelper::Select(PIXDB_ALBUMS,["id","title","description","cached_count"],['1'=>'1'],['id'=>'DESC']);
     $data=DBHelper::RunTable($q,[1]);
-    $extratext="";
+    $extratext="<a href=\"/pixdb/ingest/list\">Ingests</a><br />";
     $search=new TemplateProcessor("pixdb/searchbox");
     EngineCore::AddPageContent($search->process(true));
     $tpl = new TemplateProcessor("pixdb/albumlist");
@@ -84,7 +84,7 @@ function ModuleAction_pixdb_showpic($params)
     $tpl->tokens['h'] = $pic->height;
     $tpl->tokens['id'] = $pic->id;
     $tpl->tokens['ext'] = $pic->extension;
-    $tags = Tag::GetTags($pic->id);
+    $tags = Tag::GetTags($pic->id,'picture');
     $tpl->tokens['tags'] = $tags;
     $tpl->tokens['text'] = $pic->text;
     EngineCore::SetPageContent($tpl->process(true));
