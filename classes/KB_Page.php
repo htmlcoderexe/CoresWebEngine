@@ -57,12 +57,18 @@ class KB_Page
     {
 
     }
+    public function Save()
+    {
+        DBHelper::Update("kb_pages",['title'=>$this->title,'project_id'=>$this->project_id],['id'=>$this->id]);
+        $d=[null,$this->id,$this->raw,$this->processed,time(),0];
+        DBHelper::Insert('kb_page_revisions',$d);
+    }
     public static function  SaveToDatabase($id,$text)
     {
         $processed=KB_Page::ProcessMarkup($text);
         $d=Array(null,$id,$text,$processed,time(),0);
         DBHelper::Insert('kb_page_revisions',$d);
-        //Utility::ddump(mysql_error());
+        return $processed;
     }
     public static function CreatePage($title,$projId=-1)
     {
@@ -84,6 +90,11 @@ class KB_Page
     public function GetRaw()
     {
         return $this->raw;
+    }
+    public function SetBody($body)
+    {
+        $this->raw=$body;
+        $this->processed=KB_Page::ProcessMarkup($body);
     }
     public function GetHTML()
     {

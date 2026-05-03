@@ -63,35 +63,50 @@ function ModuleAction_kb_view($params)
 	$t=new TemplateProcessor("kbpage");
 	$t->tokens['text']=$pagedata;
         $t->tokens['title']=$page->title;
+        EngineCore::SetPageTitle($page->title);
 	EngineCore::AddPageContent($t->process(true));
 }
 
 function ModuleAction_kb_edit($params)
 {
 	$id=(int)$params[0];
-	$pagetext=KB_Page::GetLastRevision($id)['content_raw']??"";
+	$cu=User::GetCurrentUser();
+	if(!$cu->HasPermission('kb.edit'))
+	{
+            EngineCore::SetPageTitle("Access Denied");
+            EngineCore::SetPageContent("I'm sorry, I'm afraid I can't let you do that.");
+            return;
+	}
+	$page = KB_Page::Load($id);
+        if(!$page)
+        {
+            return;
+        }
+	$pagetext=$page->GetRaw();
 	$t=new TemplateProcessor("pageeditor");
 	$t->tokens['pagetext']=$pagetext;
 	$t->tokens['pageid']=$id;
-	$cu=User::GetCurrentUser();
-	if($cu->HasPermission('kb.edit'))
-	{
-		EngineCore::AddPageContent((new TemplateProcessor("pagebar,id=$id"))->process(true));
-	}
+        $t->tokens['title']=$page->title;
+        EngineCore::SetPageTitle("Editing ".$page->title);
 	EngineCore::AddPageContent($t->process(true));
 } 
 
 function ModuleAction_kb_save($params)
 {
-    //var_dump($_REQUEST);die;
 	$cu=User::GetCurrentUser();
 	if(!($cu->HasPermission('kb.edit')))
 	{
-		EngineCore::SetPageContent("I'm sorry, I'm afraid I can't let you do that.");
-		//EngineCore::SetPageContent(var_dump_ob($cu));
-		return;
+            EngineCore::SetPageContent("I'm sorry, I'm afraid I can't let you do that.");
+            return;
 	}
+        $id=intval($_POST['pageid']);
+        $page = KB_Page::Load($id);
+        if(!$page)
+        {
+            return;
+        }
 	$text=$_POST['text'];
+        $title=EngineCore::POST("title","<untitled>");
         $matches=[];
         preg_match_all("/\<img.+src\=(?:\"|\')(.+?)(?:\"|\')(?:.+?)\>/", $text, $matches);
         $URLs = $matches[1];
@@ -107,16 +122,12 @@ function ModuleAction_kb_save($params)
             if($img)
             {
                 $text=str_replace($URL,"/files/stream/{$img->blob_id}/{$img->blob_id}.{$img->extension}",$text);
-                //var_dump($img);
-                //echo $URLs[$i];
             }
         }
-        //echo($text);die;
-        $id=$_POST['pageid'];
-	//Utility::ddump($_POST);
-	KB_Page::SaveToDatabase($id,$text);
-	//Utility::ddump(mysql_error());
-	EngineCore::FromWhenceYouCame();
+        $page->title=$title;
+        $page->SetBody($text);
+        $page->Save();
+        EngineCore::GTFO("/kb/view/".$id);
 }
 
 function ModuleAction_kb_create($params)

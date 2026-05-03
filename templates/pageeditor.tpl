@@ -41,6 +41,7 @@
     
 </script>
 <form enctype="multipart/form-data" action="/kb/save" method="POST" id="kbform">
+    <input name="title" id="title" size="50" value="{%title|%}" />
 <textarea name="text" id ="text" cols="56" rows="20">{%pagetext|%}</textarea>
 <script>
 CKEDITOR.replace("text");
@@ -120,6 +121,10 @@ gobutton.addEventListener("click",(e)=>{
     formatter.outputHTMLDoc(output);
     //document.getElementById("text").innerText=output.innerHTML;
     CKEDITOR.instances.text.setData(output.innerHTML);
+    if(doc.title!="")
+    {
+        document.getElementById("title").value=doc.title;
+    }
     formatter.outputTOC(toc);
     // output results to console for debugging and admiration
     console.log(doc.images);
