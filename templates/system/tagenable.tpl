@@ -83,7 +83,7 @@ function attachTag(id, button)
     ajax.send("tag="+encodeURIComponent(tag));
 }
 </script>
-    {{system/showtags|boxid={%boxid%}|tags={%tags%}|linkprefix=linkprefix}}
+    {{system/showtags|boxid={%boxid%}|tags={%tags%}|linkprefix={%linkprefix%}}}
 
 
 <div class="suggestable_input_container">
