@@ -16,11 +16,11 @@
  *
  * 
  */
-class OrderedDBCollection
+class OrderedDBCollection implements Countable
 {
     public $table;
     public $id;
-    public $items;
+    public $items=[];
     public $extraFields = [];
     private $is_dirty=false;
     
@@ -41,6 +41,10 @@ class OrderedDBCollection
         $this->table = $table;
         $this->items=$items;
         $this->extraFields = $extraFields;
+    }
+    public function count()
+    {
+        return count($this->items);
     }
     /**
      * Ensures the list can be automatically saved.
@@ -80,9 +84,9 @@ class OrderedDBCollection
         $items=[];
         foreach($result as $row)
         {
-            
-            $items[$row['ordinal']]=$row;
+            $ord=$row['ordinal'];
             unset($row['ordinal']);
+            $items[$ord]=$row;
             
         }
         return $items;
@@ -97,7 +101,7 @@ class OrderedDBCollection
     {
         $fields = ['collectionId'];
         $q=DBHelper::Select($table, $fields, ['entityId'=>$entityId]);
-        return DBHelper::RunList($q);
+        return DBHelper::RunList($q,[$entityId]);
     }
     /**
      * Commits the current state of the collection to the database.
@@ -109,6 +113,12 @@ class OrderedDBCollection
         {
             return false;
         }
+        _p("<h2>Saving to DB!!</h2>");
+        //var_dump($this->items);
+        ksort($this->items);
+        _p("after ksort");
+        //var_dump($this->items);
+        
         // safty frist!
         DBHelper::BeginTransaction();
         // erase current entries
@@ -119,6 +129,7 @@ class OrderedDBCollection
         {
             // always collectionId, ordinal, entityId [, ...]
             $row = array_merge([$this->id,$ord],array_values($item));
+            //var_dump($row);
             DBHelper::Insert($this->table,$row);
         }
         DBHelper::Commit();
@@ -170,6 +181,7 @@ class OrderedDBCollection
      */
     public function RemoveItem($entityId,$noupdate=false)
     {
+        _p("<h2>RemoveItem called with $entityId, $noupdate</h2>");
         $ord = $this->IndexOf($entityId);
         if($ord!=-1)
         {
@@ -204,11 +216,13 @@ class OrderedDBCollection
     
     public function RemoveItemAt($position,$noupdate=false)
     {
+        _p("<h2>RemoveItemAt called with $position, $noupdate</h2>");
         // remove from array
         unset($this->items[$position]);
         // renumber array to close the gap unless requested not to
         if(!$noupdate)
         {
+            ksort($this->items);
             $this->items = array_values($this->items);
         }
         $this->is_dirty=true;
@@ -241,13 +255,23 @@ class OrderedDBCollection
      */
     public function SetItemAt($position,$entityId,$extraData=[])
     {
+        _p("<h2>SetItemAt called with $position, $entityId, extradata</h2>");
         $newItem = ['entityId'=>$entityId];
         // write fields in the same order as the spec
         foreach($this->extraFields as $field)
         {
             $newItem[$field] = $extraData[$field]??null;
         }
+        _p("before set");
+        //var_dump($newItem);
+        //var_dump($this->items);
+        
         $this->items[$position]=$newItem;
+        _p("before ksort");
+        //var_dump($this->items);
+        ksort($this->items);
+        _p("after ksort");
+        //var_dump($this->items);
         $this->is_dirty=true;
     }
     
@@ -274,6 +298,7 @@ class OrderedDBCollection
      */
     public function ShiftUp($start)
     {
+        _p("Shiftup called with $start");
         $oldcount=count($this->items);
         for($i=$oldcount-1; $i >=$start;$i--)
         {
@@ -338,14 +363,18 @@ class OrderedDBCollection
      */
     public function AddItem($entityId,$extraData=null,$position=-1)
     {
-        
+        _p("additem called with  $entityId, extra data, $position");
         $ord=$this->IndexOf($entityId);
         if($position==-1 || $position > count($this->items))
         {
             // if the item isn't in the collection yet, add to end
             if($ord==-1)
             {
-                $this->SetItemAt(count($this->items),$entityId,$extraData);
+                $ic=count($this->items);
+                _p("items count: $ic");
+                //var_dump($this->items);
+                $this->SetItemAt($ic,$entityId,$extraData);
+                ksort($this->items);
                 $this->is_dirty=true;
                 return;
             }

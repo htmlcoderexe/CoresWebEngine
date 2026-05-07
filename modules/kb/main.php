@@ -114,6 +114,42 @@ function ModuleAction_kb_edit($params)
         EngineCore::SetPageTitle("Editing ".$page->title);
 	EngineCore::AddPageContent($t->process(true));
 } 
+function _p($text)
+{
+    return;
+    echo "<br>$text<br>";
+}
+function ModuleAction_kb_test($params)
+{
+        //DBHelper::RunStmt("TRUNCATE TABLE `intranet_basic`.`kbgroups`", []);return;
+        $ddd=['TEST','TEST'];
+        _p("loading collection");
+        $col = OrderedDBCollection::Load("kbgroups","test1",['prev','next']);
+        $col->AddItem(100,$ddd);
+        $col->AddItem(101,$ddd);
+        _p("added items, saving");
+        $col->SaveToDB();
+        _p("col looks like");
+        var_dump($col);
+        _p("loading col2");
+        $col2=OrderedDBCollection::Load("kbgroups","test1",['prev','next']);
+        _p("col2 looks like");
+        var_dump($col2);
+        _p("loading col3");
+        $col3=OrderedDBCollection::Load("kbgroups","test2",['prev','next']);
+        $col3->AddItem(102,$ddd);
+        $col3->AddItem(103,$ddd);
+        _p("added items to col3, col3 looks like");
+        var_dump($col3);
+        _p("saving col3 to db");
+        $col3->SaveToDB();
+        _p("adding item in col2");
+        $col2->AddItem(104,$ddd,0);
+        var_dump($col2);
+        _p("saving col2 to db");
+        
+        die;
+}
 
 function ModuleAction_kb_save($params)
 {
