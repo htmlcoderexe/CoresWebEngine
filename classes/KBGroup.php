@@ -34,7 +34,7 @@ class KBPageSequence
         $findgroup = OrderedDBCollection::FindContaining(self::TABLE_NAME, $pageId);
         if(count($findgroup)>0)
         {
-            return self::Load(self::TABLE_NAME,$findgroup[0],self::FIELDS);
+            return self::Load($findgroup[0]);
         }
         return null;
     }
