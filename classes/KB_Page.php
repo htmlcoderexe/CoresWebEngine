@@ -83,9 +83,55 @@ class KB_Page
         DBHelper::$DBLink->commit();
         return $id;
     }
-    public function ProcessHTML()
+    
+    public function updatesomefuckingshit()
     {
-
+        $output = $this->raw;
+        $matches = KB_Page::GetLinkMarkupMatches($output);
+        $grouptags = KB_Page::doGroupLinks($output, $matches);
+        $updates = KBPageSequence::ProcessMove($this->id,$grouptags['group'],$grouptags['prev'],$grouptags['next']);
+        //var_dump($grouptags);
+        if(count($updates)<1)
+        {
+            return;
+        }
+        //var_dump($updates);die;
+        foreach($updates as $update)
+        {
+            if($update['id']==$this->id)
+            {
+                $this->raw=KB_Page::updateGroupLinks($grouptags,$update,$output);
+                continue;
+            }
+            
+            $page = KB_Page::Load($update['id']);
+            if(!$page)
+            {
+                continue;
+            }
+            $page->UpdateRefs($update['group'],$update['prev'],$update['next']);
+            
+        }
+    }
+    public function ProcessHTML($passive=false)
+    {
+        /*
+         * The rest of the fucking owl...
+         * 
+         */
+        if(!$passive)
+        {
+            $this->updatesomefuckingshit();
+        }
+        
+        $output = $this->raw;
+        $matches = KB_Page::GetLinkMarkupMatches($output);
+        $output=KB_Page::doSpecialLinks($output,$matches);
+        $matches = array_filter($matches);
+        $output=KB_Page::process_links($output,$matches);
+        $output.=self::generateIndex($this->id);
+        $this->processed = $output;
+    
     }
     public function GetRaw()
     {
@@ -94,6 +140,8 @@ class KB_Page
     public function SetBody($body)
     {
         $this->raw=$body;
+        $this->ProcessHTML();
+        return;
         $r=KB_Page::ProcessMarkup($this->id, $body);
         if($r)
         {
@@ -177,6 +225,7 @@ class KB_Page
         $output = $input;
         $nextId=-1;
         $prevId=-1;
+        $gId=-1;
         for($i=0;$i<count($matches);$i++)
         {
             list($pageId,$linkText,$fullmatch)=$matches[$i];
@@ -195,6 +244,11 @@ class KB_Page
                         $prevId = $pageId;
                         break;
                     }
+                    case "index":
+                    {
+                        $gId = $pageId;
+                        break;
+                    }
                 }
                 $output=str_replace($fullmatch,"",$output);
                 $matches[$i]=null;
@@ -206,8 +260,10 @@ class KB_Page
         }
         $prevlink="";
         $nextlink="";
+        $indexlink="";
         $prevlinktpl = "<div class=\"prevlink\"><a href=\"/kb/view/%s\">&lt; %s</a></div>";
         $nextlinktpl = "<div class=\"nextlink\"><a href=\"/kb/view/%s\">%s &gt;</a></div>";
+        $indexlinktpl = "<div class=\"indexlink\"><a href=\"/kb/view/%s\">%s</a></div>";
         $topnav="";
         $bottomnav="";
         if($prevId>0)
@@ -226,14 +282,22 @@ class KB_Page
                 $nextlink=sprintf($nextlinktpl,$nextId,$nextpage->title);
             }
         }
+        if($gId>0)
+        {
+            $indexpage=KB_Page::Load($gId);
+            if($indexpage)
+            {
+                $indexlink=sprintf($indexlinktpl,$gId,$indexpage->title);
+            }
+        }
         if($nextId>0 || $prevId>0)
         {
-            $topnavtpl="<nav id=\"kb_top_nav\">%s%s</nav>\n";
+            $topnavtpl="<nav id=\"kb_top_nav\">%s%s%s</nav>\n";
             
-            $bottomnavtpl="\n<nav id=\"kb_bottom_nav\">%s%s</nav>";
+            $bottomnavtpl="\n<nav id=\"kb_bottom_nav\">%s%s%s</nav>";
             
-            $topnav=sprintf($topnavtpl,$prevlink,$nextlink);
-            $bottomnav=sprintf($bottomnavtpl,$prevlink,$nextlink);
+            $topnav=sprintf($topnavtpl,$prevlink,$indexlink,$nextlink);
+            $bottomnav=sprintf($bottomnavtpl,$prevlink,$indexlink,$nextlink);
         }
         return $topnav.$output.$bottomnav;
     }
@@ -277,7 +341,33 @@ class KB_Page
             $output="[[".$values['next']."|#next]]".$output;
         }
         return $output;
+    }    
+    public static function generateIndex($id)
+    {
+        $output="";
+        //_p("INDEX GENERATED");die;
+        $cat=KBPageSequence::Load($id);
+        $li ="\n\t<li><a href=\"/kb/view/%s\">%s</a></li>";
+        $list_acc="";
+        if($cat)
+        {
+            
+            for($i=0;$i<count($cat->pages);$i++)
+            {
+                $page = KB_Page::Load($cat->pages->items[$i]['entityId']);
+                if($page)
+                {
+                    $list_acc.=sprintf($li,$page->id,$page->title);
+                }
+            }
+            if($list_acc!="")
+            {
+                $output="\n<ul class=\"articleindex\">".$list_acc.'</ul>';
+            }
+        }
+        return $output;
     }
+    
     public static function readLinksAndMovePage($id,$input,$matches)
     {
         $output = $input;

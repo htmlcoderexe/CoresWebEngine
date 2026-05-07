@@ -51,7 +51,7 @@ class OrderedDBCollection implements Countable
      */
     public function __destruct()
     {
-        $this->SaveToDB();
+        //$this->SaveToDB();
     }
     
     /**
@@ -80,6 +80,7 @@ class OrderedDBCollection implements Countable
     {
         $fields = array_merge(['ordinal','entityId'],$extrafields);
         $q=DBHelper::Select($table, $fields, ['collectionId'=>$collectionId],['ordinal'=>'ASC']);
+        //var_dump($q);die;
         $result = DBHelper::RunTable($q,[$collectionId]);
         $items=[];
         foreach($result as $row)
