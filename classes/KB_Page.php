@@ -95,7 +95,8 @@ class KB_Page
         {
             return;
         }
-        //var_dump($updates);die;
+        //var_dump($updates);
+        $gid=-1;
         foreach($updates as $update)
         {
             if($update['id']==$this->id)
@@ -110,7 +111,16 @@ class KB_Page
                 continue;
             }
             $page->UpdateRefs($update['group'],$update['prev'],$update['next']);
-            
+            if($update['group']!=$gid)
+            {
+                $groupPage = KB_Page::Load($update['group']);
+                if($groupPage)
+                {
+                    $groupPage->SetBody($groupPage->raw);
+                    $groupPage->Save();
+                }
+                $gid=$update['group'];
+            }
         }
     }
     public function ProcessHTML($passive=false)
@@ -131,6 +141,7 @@ class KB_Page
         $output=KB_Page::process_links($output,$matches);
         $output.=self::generateIndex($this->id);
         $this->processed = $output;
+        //die;
     
     }
     public function GetRaw()

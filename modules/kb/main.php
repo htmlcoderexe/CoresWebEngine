@@ -121,7 +121,22 @@ function _p($text)
 }
 function ModuleAction_kb_test($params)
 {
-        //DBHelper::RunStmt("TRUNCATE TABLE `intranet_basic`.`kbgroups`", []);return;
+    if(!EngineCore::$CurrentUser->HasPermission("super"))
+    {
+        return;
+    }
+        DBHelper::RunStmt("TRUNCATE TABLE `intranet_basic`.`kbgroups`", []);
+        
+        $g11 = KBPageSequence::Create(11);
+        $g11->AddPage(8,null,null);
+        var_dump($g11);
+        $g11->AddPage(7,null,null);
+        var_dump($g11);
+        $g11->AddPage(10,null,8);
+        $g11->pages->SaveToDB();
+        var_dump($g11);
+        
+        //return;
         $ddd=['TEST','TEST'];
         _p("loading collection");
         $col = OrderedDBCollection::Load("kbgroups","test1",['prev','next']);
@@ -148,6 +163,7 @@ function ModuleAction_kb_test($params)
         var_dump($col2);
         _p("saving col2 to db");
         
+        $col2->SaveToDB();
         die;
 }
 

@@ -80,7 +80,8 @@ class OrderedDBCollection implements Countable
     {
         $fields = array_merge(['ordinal','entityId'],$extrafields);
         $q=DBHelper::Select($table, $fields, ['collectionId'=>$collectionId],['ordinal'=>'ASC']);
-        //var_dump($q);die;
+        //////var_dump($q);
+        //die;
         $result = DBHelper::RunTable($q,[$collectionId]);
         $items=[];
         foreach($result as $row)
@@ -115,10 +116,10 @@ class OrderedDBCollection implements Countable
             return false;
         }
         _p("<h2>Saving to DB!!</h2>");
-        //var_dump($this->items);
+        ////var_dump($this->items);
         ksort($this->items);
         _p("after ksort");
-        //var_dump($this->items);
+        ////var_dump($this->items);
         
         // safty frist!
         DBHelper::BeginTransaction();
@@ -130,7 +131,7 @@ class OrderedDBCollection implements Countable
         {
             // always collectionId, ordinal, entityId [, ...]
             $row = array_merge([$this->id,$ord],array_values($item));
-            //var_dump($row);
+            ////var_dump($row);
             DBHelper::Insert($this->table,$row);
         }
         DBHelper::Commit();
@@ -144,6 +145,8 @@ class OrderedDBCollection implements Countable
      */
     public function IndexOf($entityId)
     {
+        _p("called IndexOf $entityId on collection");
+        //var_dump($this->items);
         foreach($this->items as $ord=>$item)
         {
             if($item['entityId']==$entityId)
@@ -264,15 +267,15 @@ class OrderedDBCollection implements Countable
             $newItem[$field] = $extraData[$field]??null;
         }
         _p("before set");
-        //var_dump($newItem);
-        //var_dump($this->items);
+        ////var_dump($newItem);
+        ////var_dump($this->items);
         
         $this->items[$position]=$newItem;
         _p("before ksort");
-        //var_dump($this->items);
+        ////var_dump($this->items);
         ksort($this->items);
         _p("after ksort");
-        //var_dump($this->items);
+        ////var_dump($this->items);
         $this->is_dirty=true;
     }
     
@@ -373,7 +376,7 @@ class OrderedDBCollection implements Countable
             {
                 $ic=count($this->items);
                 _p("items count: $ic");
-                //var_dump($this->items);
+                ////var_dump($this->items);
                 $this->SetItemAt($ic,$entityId,$extraData);
                 ksort($this->items);
                 $this->is_dirty=true;

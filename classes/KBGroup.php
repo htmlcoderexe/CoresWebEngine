@@ -41,6 +41,7 @@ class KBPageSequence
     
     public function CheckNOP($id, $prev, $next)
     {
+        _p("checking NOP");
         $idx = $this->IndexOf($id);
         if($idx==-1)
         {
@@ -71,6 +72,8 @@ class KBPageSequence
         _p("iprev $iprev inext $inext");
         if($prev && $iprev!=-1)
         {
+            _p("adding to prev");
+            //var_dump($prev);
             // attach after this
             $prevref = $this->pages->items[$iprev];
             if($prevref['next'])
@@ -93,8 +96,6 @@ class KBPageSequence
                 }
                 
             }
-            // mutate list
-            $this->pages->AddItem($id,$item,$inext);
             // modify previous item to point to this;
             $this->pages->items[$iprev]['next']=$id;
             // generate update
@@ -103,14 +104,20 @@ class KBPageSequence
             $update['id']=$previd;
             $update['group']=$this->id;
             $updates[]=$update;
+            // mutate list
+            $this->pages->AddItem($id,$item,$iprev);
             $updates[]=$item;
             return $updates;
         }
         // try next... next
         if($next && $inext!=-1)
         {
+            _p("adding to next");
+            //var_dump($next);
             // attach after this
             $nextref = $this->pages->items[$inext];
+                _p("found nextref");
+                //var_dump($nextref);
             if($nextref['prev'])
             {
                 // if there's a pre-existing prev, shove it up
@@ -131,9 +138,7 @@ class KBPageSequence
                 }
                 
             }
-            // mutate list
-            $this->pages->AddItem($id,$item,$iprev);
-            // modify nextious item to point to this;
+            // modify next item to point to this;
             $this->pages->items[$inext]['prev']=$id;
             // generate update
             $update = $this->pages->items[$inext];
@@ -141,6 +146,8 @@ class KBPageSequence
             $update['id']=$nextid;
             $update['group']=$this->id;
             $updates[]=$update;
+            // mutate list
+            $this->pages->AddItem($id,$item,$inext);
             $updates[]=$item;
             return $updates;
         }
@@ -208,7 +215,7 @@ class KBPageSequence
         }
         $this->pages->RemoveItemAt($ord);
         $this->pages->SaveToDB();
-        
+        return $updates;
     }
     
     
