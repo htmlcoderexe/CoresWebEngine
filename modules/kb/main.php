@@ -89,6 +89,33 @@ function ModuleAction_kb_view($params)
 	EngineCore::AddPageContent($t->process(true));
 }
 
+function ModuleAction_kb_neweditor($params)
+{
+    
+	$id=(int)$params[0];
+	$cu=User::GetCurrentUser();
+	if(!$cu->HasPermission('kb.edit'))
+	{
+            EngineCore::SetPageTitle("Access Denied");
+            EngineCore::SetPageContent("I'm sorry, I'm afraid I can't let you do that.");
+            return;
+	}
+	$page = KB_Page::Load($id);
+        if(!$page)
+        {
+            return;
+        }
+	$pagetext=$page->GetRaw();
+	$t=new TemplateProcessor("pageeditor");
+	$t->tokens['pagetext']=$pagetext;
+	$t->tokens['pageid']=$id;
+        $t->tokens['title']=$page->title;
+        $tags = Tag::GetTags($page->id,"kbpage");
+        $t->tokens['tags'] = $tags;
+        EngineCore::SetPageTitle("Editing ".$page->title);
+	EngineCore::AddPageContent($t->process(true));
+}
+
 function ModuleAction_kb_edit($params)
 {
 	$id=(int)$params[0];
@@ -105,7 +132,7 @@ function ModuleAction_kb_edit($params)
             return;
         }
 	$pagetext=$page->GetRaw();
-	$t=new TemplateProcessor("pageeditor");
+	$t=new TemplateProcessor("pageeditor_old");
 	$t->tokens['pagetext']=$pagetext;
 	$t->tokens['pageid']=$id;
         $t->tokens['title']=$page->title;
@@ -164,6 +191,32 @@ function ModuleAction_kb_test($params)
         _p("saving col2 to db");
         
         $col2->SaveToDB();
+        die;
+}
+
+function ModuleAction_kb_savenew($params)
+{
+    $cu=User::GetCurrentUser();
+	if(!($cu->HasPermission('kb.edit')))
+	{
+            EngineCore::SetPageContent("I'm sorry, I'm afraid I can't let you do that.");
+            return;
+	}
+        $id=intval($_POST['pageid']);
+        $page = KB_Page::Load($id);
+        if(!$page)
+        {
+            return;
+        }
+	$text=$_POST['text'];
+        $postObj = EditorJSDocument::FromJSON($text);
+        if(!$postObj)
+        {
+            // throw an error idk
+        }
+        
+        var_dump($postObj);
+        echo "<pre>";echo $postObj->GetPlainText();
         die;
 }
 

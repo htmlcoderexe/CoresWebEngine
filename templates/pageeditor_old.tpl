@@ -1,28 +1,4 @@
-
-<script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/@editorjs/list@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/@editorjs/header@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/@editorjs/simple-image"></script>
-<script src="https://cdn.jsdelivr.net/npm/@editorjs/table@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/@editorjs/quote"></script>
-<script src="https://cdn.jsdelivr.net/npm/@editorjs/code@latest"></script>
-<script>
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-</script>
-
-
-
-
+<script src="/ckeditor/ckeditor.js"></script>
 <script>
     function doExtImages(element)
     {
@@ -62,23 +38,17 @@
                 }
             });
     }
-    function saveAndSubmit(e)
-    {
-        window.editor.save().then((obj)=>{
-            document.getElementById("text").value = JSON.stringify(obj);
-            document.getElementById("kbform").submit();
-        });
-        e.preventDefault();
-    }
+    
 </script>
 {{system/tagenable|id={%pageid%}|type=kbpage|linkprefix=/kb/tag/|boxid=tags_container_kb|tags={%tags%}}}
-<form enctype="multipart/form-data" action="/kb/savenew" method="POST" id="kbform">
+<form enctype="multipart/form-data" action="/kb/save" method="POST" id="kbform">
     <input name="title" id="title" size="50" value="{%title|%}" />
-<!--<textarea name="text" id ="text" cols="56" rows="20">{%pagetext|%}</textarea>-->
-    <input name="text" id="text" type="hidden" />
-    <div id="editorjs"></div>
+<textarea name="text" id ="text" cols="56" rows="20">{%pagetext|%}</textarea>
+<script>
+CKEDITOR.replace("text");
+</script>
 <input name="pageid" type="hidden" value="{%pageid|-1%}" /><!-- onclick="doExtImages(this.parentElement.querySelector('#text'));event.preventDefault();"-->
-<button id="savebutton">Save page</button>
+<button>Save page</button>
 </form> 
 <script src="/js/peeler.js"></script>
 <style>
@@ -117,39 +87,6 @@
 <button id="scrape">go</button>
 
 <script>
-    
-    document.getElementById("savebutton").addEventListener("click",(e)=>{
-        saveAndSubmit(e);
-    });
-    
-    function editor(data){
-    window.editor = new EditorJS({
-        tools: {
-            list: {
-                class: EditorjsList,
-                inlineToolbar: true,
-                config: {
-                    defaultStyle: 'unordered'
-                },
-            },
-            header: Header,
-            image: SimpleImage,
-            table: Table,
-            quote: {
-                class: Quote,
-                inlineToolbar: true,
-                config: {
-                    quotePlaceholder: 'Enter a quote',
-                    captionPlaceholder: '',
-                },
-            },
-            code: {
-                class: CodeTool,
-            },
-        },
-        data: data
-    });
-}
 // pasting area
 let inputframe=document.getElementById("target");
 // settings
@@ -183,18 +120,13 @@ gobutton.addEventListener("click",(e)=>{
     // prepare and run formatter
     let formatter = new HTMLFormatter(doc);
     formatter.outputDoc(output);
+    //document.getElementById("text").innerText=output.innerHTML;
+    CKEDITOR.instances.text.setData(output.innerHTML);
     if(doc.title!="")
     {
         document.getElementById("title").value=doc.title;
     }
     formatter.outputTOC(toc);
-    let ejsformatter = new EditorJSFormatter(doc);
-    let ejsdoc = {
-        time: 0,
-        blocks:[]
-    };
-    ejsformatter.outputDoc(ejsdoc);
-    window.editor(ejsdoc);
     // output results to console for debugging and admiration
     console.log(doc.images);
     console.log(doc.headers);
