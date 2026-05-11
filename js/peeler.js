@@ -1,16 +1,6 @@
-class MDFormatter
+class DocFormatter
 {
-    #doc = null;
-    #headers = [];
-    #images = [];
-}
-
-/**
- * Provides functions to output a StructuredDocument as HTML.
- */
-class HTMLFormatter
-{
-    #doc = null;
+    doc = null;
     /**
      * List of every image in the document.
      */
@@ -35,21 +25,19 @@ class HTMLFormatter
      */
     constructor(doc)
     {
-        this.#doc = doc;
+        this.doc = doc;
         // note these are copies and do not interact with the original document
-        this.headers = this.#doc.headers;
-        this.images = this.#doc.images;
-        this.outline = this.#doc.outline;
+        this.headers = this.doc.headers;
+        this.images = this.doc.images;
+        this.outline = this.doc.outline;
     }
     /**
-     * Formats the document as HTML and inserts into target element
-     * @param {HTMLElement} output Target Element
-     * @param {number} skipfirst Amount of blocks to skip from the beginning
-     * @param {number} skiplast Amount of blocks to skip from the end
+     * Formats the document's blocks inserts into target object
+     * @param {object} output Target Object
      */
-    outputHTMLDoc(output)
+    outputDoc(output)
     {
-        this.#doc.blocks.forEach((block, i)=>{
+        this.doc.blocks.forEach((block, i)=>{
             if(block.isEmpty())
             {
                 //console.log("Skipping empty block "+i);
@@ -84,6 +72,275 @@ class HTMLFormatter
             }
         });
     }
+    outputParagraph(block, i, output)
+    {
+        
+    }
+    outputHeader(block, i, output)
+    {
+        
+    }
+    outputImage(block, i, output)
+    {
+        
+    }
+    outputList(block, i, output)
+    {
+        
+    }
+    outputTable(block, i, output)
+    {
+        
+    }
+    outputCodeBlock(block, i, output)
+    {
+        
+    }
+    outputBlockQuote(block, i, output)
+    {
+        
+    }
+    outputEmbed(block, i, output)
+    {
+        
+    }
+}
+
+class MDFormatter
+{
+    outFormattedText(elements)
+    {
+
+    }
+
+    outputParagraph(block, i, text)
+    {
+
+    }
+}
+
+class EditorJSFormatter extends DocFormatter
+{
+    elementsToText(elements)
+    {
+        if(!elements || elements.length<1)
+        {
+            return "";
+        }
+        let container = document.createElement("div");
+        let lastElement=container;
+        let currentImg=null;
+        elements.forEach((e)=>{
+            let img = e.image??null;
+            if(img=="")
+            {
+                img=null;
+            }
+            if(currentImg!=img)
+            {
+                if(img==null)
+                {
+                    lastElement= this.outputElement(e,false);
+                    container.append(lastElement);
+                    lastElement=container;
+                }
+                else
+                {
+                    lastElement = this.outputElement(e,true);
+                    container.append(lastElement);
+                }
+            }
+            else
+            {
+                //console.log(lastElement,e,elements,target);
+                lastElement.append(this.outputElement(e,false));
+            }
+            currentImg=img;
+        });
+        return container.innerHTML;
+    }
+
+    outputElement(element, imgContainer)
+    {
+// contains the text
+        let textNode = document.createTextNode(element.text);
+        // currently innermost node
+        let currentNode = null;
+        // the node containing the entire stack
+        let topNode = null;
+        if(element.special)
+        {
+            return document.createElement(element.special);
+        }
+        // create a top-level <A> element if there's a link
+        if(element.link)
+        {
+            currentNode = document.createElement("a");
+            topNode = currentNode;
+            currentNode.href = element.link;
+        }
+        if(element.image && imgContainer)
+        {
+            currentNode = document.createElement("div");
+            topNode = currentNode;
+            currentNode.className="inlineImg";
+            let img = document.createElement("img");
+            img.src=element.image;
+            this.images.push([element.image,img]);
+            topNode.appendChild(img);
+            topNode.appendChild(document.createElement("br"));
+        }
+        // create and nest any formatting tags like <EM> and <CODE>
+        if(element.styles && element.styles.length>0)
+        {
+            element.styles.forEach((style)=>{
+                let newNode = document.createElement(style);
+                // if no top-level node exists yet, set it and the innermost
+                if(!topNode)
+                {
+                    topNode = newNode;
+                }
+                // if innermost node exists, append to it and make the new node the innermost node
+                if(currentNode)
+                {
+                    currentNode.appendChild(newNode);
+                }
+                currentNode=newNode;
+            });
+        }
+        // if any nodes were created, append the text to innermost
+        if(currentNode)
+        {
+            currentNode.appendChild(textNode);
+        }
+        // otherwise emit the text node
+        else
+        {
+            topNode = textNode;
+        }
+        return topNode;
+    }
+
+    outputParagraph(block, i, output)
+    {
+        let obj = {
+            type:"paragraph",
+            data:{
+                text: ""
+            }
+        };
+        obj.data.text= this.elementsToText(block.elements);
+        obj.data.num = i;
+        output.blocks.push(obj);
+    }
+    outputHeader(block, i, output)
+    {
+        let obj = {
+            type:"header",
+            data:{
+                text: "",
+                level: 0
+            }
+        };
+        obj.data.text = this.elementsToText(block.elements);
+        obj.data.level = block.level;
+        obj.data.num = i;
+        output.blocks.push(obj);
+    }
+    outputImage(block, i, output)
+    {
+        let obj = {
+            type:"image",
+            data:{
+                caption: "",
+                url: 0
+            }
+        };
+        obj.data.caption = this.elementsToText(block.elements);
+        obj.data.url = block.src;
+        obj.data.num = i;
+        output.blocks.push(obj);
+    }
+    outputList(block, i, output)
+    {
+        let obj = {
+            type:"list",
+            data:{
+                style: "unordered",
+                items: []
+            }
+        };
+        obj.data.style = block.listType;
+        obj.data.num = i;
+        block.items.forEach((item)=>{
+            let li = {
+                content: "",
+                meta: {},
+                items: []
+            };
+            li.content = this.elementsToText(item);
+            obj.data.items.push(li);
+        });
+        output.blocks.push(obj);
+    }
+    outputTable(block, i, output)
+    {
+        let obj = {
+            type:"table",
+            data:{
+                withHeadings: true,
+                content: []
+            }
+        };
+        obj.data.style = block.listType;
+        obj.data.num = i;
+        block.rows.forEach((row)=>{
+            let tr = [];
+            row.forEach((col)=>{
+                tr.push(this.elementsToText(col));
+            });
+            obj.data.content.push(tr);
+        });
+        output.blocks.push(obj);
+        
+    }
+    outputCodeBlock(block, i, output)
+    {
+        let obj = {
+            type:"code",
+            data:{
+                code: ""
+            }
+        };
+        obj.data.code= this.elementsToText(block.elements);
+        obj.data.num = i;
+        output.blocks.push(obj);
+        
+    }
+    outputBlockQuote(block, i, output)
+    {
+        let obj = {
+            type:"quote",
+            data:{
+                text: ""
+            }
+        };
+        obj.data.text= this.elementsToText(block.elements);
+        obj.data.num = i;
+        output.blocks.push(obj);
+    }
+    outputEmbed(block, i, output)
+    {
+        
+    }
+
+}
+
+/**
+ * Provides functions to output a StructuredDocument as HTML.
+ */
+class HTMLFormatter extends DocFormatter
+{
     
     /**
      * Outputs a nested TOC based on the document's outline.
@@ -107,6 +364,11 @@ class HTMLFormatter
     static outputTOCBranch(output, branch)
     {
         branch.forEach((item)=>{
+            if(!item.element)
+            {
+                console.log(item);
+                return;
+            }
             let li = output.ownerDocument.createElement("li");
             let a = output.ownerDocument.createElement("a");
             li.appendChild(a);
@@ -552,19 +814,26 @@ class DocumentBlock
         }
     }
 
+    static getTextFromElements(elementList)
+    {
+        if(!elementList || elementList.length<0)
+            return false;
+        let accumulator = "";
+        elementList.forEach((e)=>{
+            if(e.text)
+                accumulator+=e.text;
+        });
+        accumulator = accumulator.trim();
+        return accumulator;
+    } 
+
     get text()
     {
         if(!this.elements)
             return "";
         if(this.elements.length<1)
             return "";
-        let accumulator = "";
-        this.elements.forEach((e)=>{
-            if(e.text)
-                accumulator+=e.text;
-        });
-        accumulator = accumulator.trim();
-        return accumulator;
+        return DocumentBlock.getTextFromElements(this.elements);
     }
 
     get images()
@@ -660,6 +929,21 @@ class DocumentList extends DocumentBlock
                 this.listType = listType;
         }
         this.items = items?[...items]:[];
+    }
+
+    isEmpty()
+    {
+        if(this.items.length<1)
+        {
+            return true;
+        }
+        let accumulator = "";
+        this.items.forEach((li)=>{
+            accumulator+=DocumentBlock.getTextFromElements(li.elements);
+        });
+        if(accumulator=="")
+            return true;
+        return false;
     }
     postProcess()
     {
@@ -1108,9 +1392,10 @@ class HTMLPeeler
         let TN = element.nodeName;
         
         // h1..7
-        if(TN[0]=="H" && TN.length==2 && this.#currentblock)
+        if(TN[0]=="H" && TN.length==2 && this.#currentblock && this.#currentblock.type!="header")
         {
             //HTMLPeeler.simplify(this.#currentblock);
+            console.log(this.#currentblock);
             this.#doc.push(this.#currentblock);
             let newblock =  DocumentBlock.continue(this.#currentblock);
             let comp = new DocumentHeader(Number.parseInt(TN[1]));
