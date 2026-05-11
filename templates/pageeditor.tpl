@@ -8,8 +8,52 @@
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/code@latest"></script>
 <script>
     
+    // fuck this for now, will probably need a proper search API or some stupid shite like that lol
+    // alternatively create 2 types of blocks
+    // one is just the 3 numbers and is in the source, so can be edited/updated
+    // other is the nav links
+    // backend preprocesses the received doc and swaps out one block type for the other
     
-    
+class ChapterNavEditable {
+    static get toolbox() {
+        return {
+            title: 'Chapter Navigation',
+            icon: '<svg width="17" height="15" viewBox="0 0 336 276" xmlns="http://www.w3.org/2000/svg"><path d="M291 150V79c0-19-15-34-34-34H79c-19 0-34 15-34 34v42l67-44 81 72 56-29 42 30zm0 52l-43-30-56 30-81-67-66 39v23c0 19 15 34 34 34h178c17 0 31-13 34-29zM79 0h178c44 0 79 35 79 79v118c0 44-35 79-79 79H79c-44 0-79-35-79-79V79C0 35 35 0 79 0z"/></svg>'
+        };
+    }
+    constructor({data}){
+        this.data = data;
+    }
+    render(){
+        let container = document.createElement("div");
+        let prev = document.createElement('input');
+        let next = document.createElement('input');
+        let index = document.createElement('input');
+        prev.type="number";
+        prev.dataset.prev="true";
+        prev.value=this.data.prev;
+        index.value=this.data.index;
+        next.value=this.data.next;
+        container.appendChild(prev);
+        index.type="number";
+        index.dataset.index="true";
+        container.appendChild(index);
+        next.type="number";
+        next.dataset.next="true";
+        container.appendChild(next);
+        return container;
+    }
+
+    save(blockContent){
+        return {
+            prev: blockContent.querySelector("[data-prev]").value,
+            index: blockContent.querySelector("[data-index]").value,
+            next: blockContent.querySelector("[data-next]").value
+        };
+    }
+}    
+
+
     
     
     
@@ -146,6 +190,7 @@
             code: {
                 class: CodeTool,
             },
+            chapternav: ChapterNavEditable
         },
         data: data
     });
