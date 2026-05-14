@@ -216,7 +216,7 @@ function ModuleAction_kb_savenew($params)
         }
         
         var_dump($postObj);
-        echo "<pre>";echo $postObj->GetPlainText();
+        echo $postObj->GetHTML();
         die;
 }
 
