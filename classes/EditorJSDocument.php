@@ -228,7 +228,7 @@ class EditorJSDocument
     {
         $acc ="";
         $acc.=$list['content'] ?? "";
-        if($list['items'] && count($list['items'])>0)
+        if(isset($list['items']) && count($list['items'])>0)
         {
             foreach($list['items'] as $item)
             {
@@ -313,6 +313,17 @@ class EditorJSDocument
                     $this->blocks[$i]['data']['url']=$imagemap[$this->blocks[$i]['data']['url']];
                 }
                 $this->images[]=$this->blocks[$i]['data']['url'];
+            }
+        }
+    }
+    
+    public function GetIndexBlock()
+    {
+        foreach($this->blocks as $block)
+        {
+            if($block['type'] == 'chapterindex')
+            {
+                return $block;
             }
         }
     }

@@ -143,12 +143,13 @@ class KB_Page
     public function ProcessDoc()
     {
         //no logical changes, only processes ejsdoc into html and plaintext
+        $doc = self::ProcessIndexBlock($this->ejsdoc,$this->id);
         $chapternav = $this->ejsdoc->GetChapterNav();
-        $doc = $this->ejsdoc;
         if($chapternav)
         {
-            $doc = $this->ProcessChapterNav();
+            $doc = self::ProcessChapterNav($this->ejsdoc);
         }
+        
         $this->raw = $this->ejsdoc->GetPlainText();
         $this->processed = $doc->GetHTML();
     }
@@ -457,17 +458,78 @@ class KB_Page
         return $processednav;
     }
     
-    public function ProcessChapterNav()
+    public static function GenerateIndexBlock($id)
     {
-        $chapternav = $this->ejsdoc->GetChapterNav();
+        $cat=KBPageSequence::Load($id);
+        $li ="<a href=\"/kb/view/%s\">%s</a>";
+        if(!$cat)
+        {
+            return null;
+        }    
+        $block = [
+            'type'=>'list',
+            'data'=> [
+                'style'=>'unordered',
+                'items'=>[]
+            ]
+        ];
+        $items = false;
+        for($i=0;$i<count($cat->pages);$i++)
+        {
+            $page = KB_Page::Load($cat->pages->items[$i]['entityId']);
+            if($page)
+            {
+                $block['data']['items'][]=['content'=>sprintf($li,$page->id,$page->title)];
+                $items = true;
+            }
+        }
+        if($items)
+        {
+            return $block;
+        }
+        
+        return null;
+        
+    }
+    
+    public static function ProcessIndexBlock($doc,$id)
+    {
+        $indexblock = self::GenerateIndexBlock($id);
+        $newblocks = [];
+        $indexblockplaced = false;
+        foreach($doc->blocks as $block)
+        {
+            if($block['type']=='chapterindex')
+            {
+                if(!$indexblockplaced && $indexblock)
+                {
+                    $newblocks[]=$indexblock;
+                    $indexblockplaced = true;
+                }
+            }
+            else
+            {
+                $newblocks[]=$block;
+            }
+        }
+        if(!$indexblockplaced && $indexblock)
+        {
+            $newblocks[]=$indexblock;
+        }
+        return EditorJSDocument::FromBlocks($newblocks);
+    }
+    
+    public static function ProcessChapterNav($doc)
+    {
+        $chapternav = $doc->GetChapterNav();
         $prev = $chapternav['data']['prev'] ?? -1;
         $index = $chapternav['data']['index'] ?? -1;
         $next = $chapternav['data']['next'] ?? -1;
-        $topnav = $this::MakeChapterNav($prev,$index,$next,true);
+        $topnav = self::MakeChapterNav($prev,$index,$next,true);
         $bottomnav = $topnav;
         $bottomnav['data']['bottom']=true;
         $newblocks = [$topnav];
-        foreach($this->ejsdoc->blocks as $block)
+        foreach($doc->blocks as $block)
         {
             if($block['type']!='chapternav')
             {
@@ -506,7 +568,9 @@ class KB_Page
                     $groupPage = KB_Page::Load($update['group']);
                     if($groupPage)
                     {
-                        // update index!!!!!!!!!!
+                        Logger::log("updated group page");
+                        $groupPage->ProcessDoc();
+                        $groupPage->Save();
                     }
                     $gid=$update['group'];
                 }
