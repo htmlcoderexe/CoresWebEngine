@@ -13,11 +13,14 @@ class KB_Page
     public $modified;
     public $creator;
     
-    public function __construct($id,$title,$content_raw,$content_html,$project_id = 0)
+    public $ejsdoc;
+    
+    public function __construct($id,$title,$content_ejsdoc,$content_plaintext,$content_html,$project_id = 0)
     {
 
         $this->title=$title;
-        $this->raw=$content_raw;
+        $this->raw=$content_plaintext;
+        $this->ejsdoc=$content_ejsdoc;
         $this->id=$id;
         $this->processed=$content_html;
         $this->project_id=$project_id;
@@ -33,13 +36,15 @@ class KB_Page
         }
         $raw="";
         $html="";
+        $doc = null;
         $content = KB_Page::GetLastRevision($id);
         if($content)
         {
             $raw=$content["content_raw"];
+            $doc = EditorJSDocument::FromJSON($content["content_json"]);
             $html=$content["content_html"];
         }
-        $result = new KB_Page($id,$page['title'],$raw,$html,$page['project_id']);
+        $result = new KB_Page($id,$page['title'],$doc,$raw,$html,$page['project_id']);
         $result->created =$page['created'];
         
         return $result;
@@ -60,7 +65,7 @@ class KB_Page
     public function Save()
     {
         DBHelper::Update("kb_pages",['title'=>$this->title,'project_id'=>$this->project_id],['id'=>$this->id]);
-        $d=[null,$this->id,$this->raw,$this->processed,time(),0];
+        $d=[null,$this->id,json_encode($this->ejsdoc),$this->raw,$this->processed,time(),0];
         DBHelper::Insert('kb_page_revisions',$d);
     }
     public static function  SaveToDatabase($id,$text)
@@ -123,6 +128,31 @@ class KB_Page
             }
         }
     }
+    public function ProcessPage()
+    {
+        // when actual source changed 
+        $chapternav = $this->ejsdoc->GetChapterNav();
+        // update index links if necessary
+        if($chapternav)
+        {
+            $this->ActionChapterNav($chapternav);
+        }
+        $this->ProcessDoc();
+    }
+    
+    public function ProcessDoc()
+    {
+        //no logical changes, only processes ejsdoc into html and plaintext
+        $chapternav = $this->ejsdoc->GetChapterNav();
+        $doc = $this->ejsdoc;
+        if($chapternav)
+        {
+            $doc = $this->ProcessChapterNav();
+        }
+        $this->raw = $this->ejsdoc->GetPlainText();
+        $this->processed = $doc->GetHTML();
+    }
+    
     public function ProcessHTML($passive=false)
     {
         /*
@@ -148,17 +178,18 @@ class KB_Page
     {
         return $this->raw;
     }
+    
+    
     public function SetBody($body)
     {
         $this->raw=$body;
         $this->ProcessHTML();
-        return;
-        $r=KB_Page::ProcessMarkup($this->id, $body);
-        if($r)
-        {
-            $this->processed=$r;
+    }
+    
+    public function SetDoc($doc)
+    {
+        $this->ejsdoc = $doc;
         
-        }
     }
     public function UpdateRefs($group,$prev,$next)
     {
@@ -166,6 +197,13 @@ class KB_Page
         $specials = KB_Page::doGroupLinks($this->raw,$matches);
         $this->raw = KB_Page::updateGroupLinks($specials,['prev'=>$prev,'next'=>$next,'group'=>$group],$this->raw);
         $this->processed=KB_Page::ProcessMarkup($this->id,$this->raw,true);
+        $this->Save();
+    }
+    public function UpdateRefsNew($group,$prev,$next)
+    {
+        $chapternav = self::MakeChapterNav($prev, $group, $next);
+        $this->ejsdoc->SetChapterNav($chapternav);
+        $this->ProcessDoc();
         $this->Save();
     }
     public function GetHTML()
@@ -177,13 +215,13 @@ class KB_Page
         //$stmt = DBHelper::$DBLink->prepare("SELECT id,content_raw,content_html FROM kb_page_revisions WHERE page_id=? ORDER BY timestamp DESC");
         //$stmt->bindParam(1, $id);
         //$rev=DBHelper::GetOneRow($stmt);
-        $rev=DBHelper::RunRow("SELECT id,content_raw,content_html FROM kb_page_revisions WHERE page_id=? ORDER BY timestamp DESC",[$id]);
+        $rev=DBHelper::RunRow("SELECT id,content_json,content_raw,content_html FROM kb_page_revisions WHERE page_id=? ORDER BY timestamp DESC",[$id]);
         return $rev;
     }
     public static function GetSpecificRevision($id)
     {
         //note, this does not check if any revision belongs to the page yet.
-        $q=DBHelper::Select("kb_page_revisions",['id','content_raw','content_html'],['id'=>$id],['timestamp'=>'DESC']);
+        $q=DBHelper::Select("kb_page_revisions",['id','content_json','content_raw','content_html'],['id'=>$id],['timestamp'=>'DESC']);
         $rev=DBHelper::RunRow($q,[$id]);
         return $rev['content_html'];
     }
@@ -377,6 +415,104 @@ class KB_Page
             }
         }
         return $output;
+    }
+    
+    public static function MakeChapterNav($prev, $index, $next,$full = false)
+    {
+        if(!$full)
+        {
+            $chapternav = [
+                'type'=>'chapternav',
+                'data'=>[
+                    'modified'=> false,
+                    'prev'=>$prev,
+                    'index'=>$index,
+                    'next'=>$next
+                ]
+            ];
+            return $chapternav;
+        }
+        $processednav = [
+            'type'=>'chapternav',
+            'data'=>[]
+        ];
+        $ppage = KB_PAGE::Load($prev);
+        $npage = KB_PAGE::Load($next);
+        $ipage = KB_PAGE::Load($index);
+        if($ppage)
+        {
+            $processednav['data']['prev'] = $prev;
+            $processednav['data']['prevtitle'] = $ppage->title;
+        }
+        if($npage)
+        {
+            $processednav['data']['next'] = $next;
+            $processednav['data']['nexttitle'] = $npage->title;
+        }
+        if($ipage)
+        {
+            $processednav['data']['index'] = $index;
+            $processednav['data']['indextitle'] = $ipage->title;
+        }
+        return $processednav;
+    }
+    
+    public function ProcessChapterNav()
+    {
+        $chapternav = $this->ejsdoc->GetChapterNav();
+        $prev = $chapternav['data']['prev'] ?? -1;
+        $index = $chapternav['data']['index'] ?? -1;
+        $next = $chapternav['data']['next'] ?? -1;
+        $topnav = $this::MakeChapterNav($prev,$index,$next,true);
+        $bottomnav = $topnav;
+        $bottomnav['data']['bottom']=true;
+        $newblocks = [$topnav];
+        foreach($this->ejsdoc->blocks as $block)
+        {
+            if($block['type']!='chapternav')
+            {
+                $newblocks[]=$block;
+            }
+        }
+        $newblocks[]=$bottomnav;
+        return EditorJSDocument::FromBlocks($newblocks);
+        
+    }
+    
+    public function ActionChapterNav($chapternav)
+    {
+        $updates = KBPageSequence::ProcessMove($this->id,$chapternav['data']['index'],$chapternav['data']['prev'],$chapternav['data']['next']);
+        $updatednav = $chapternav;
+        if(count($updates)>1)
+        {
+            $gid=-1;
+            foreach($updates as $update)
+            {
+                if($update['id']==$this->id)
+                {
+                    $updatednav = self::MakeChapterNav($update['prev'],$update['group'],$update['next']);
+                    $this->ejsdoc->SetChapterNav($updatednav);
+                    continue;
+                }
+
+                $page = KB_Page::Load($update['id']);
+                if(!$page)
+                {
+                    continue;
+                }
+                $page->UpdateRefsNew($update['group'],$update['prev'],$update['next']);
+                if($update['group']!=$gid)
+                {
+                    $groupPage = KB_Page::Load($update['group']);
+                    if($groupPage)
+                    {
+                        // update index!!!!!!!!!!
+                    }
+                    $gid=$update['group'];
+                }
+            }    
+        }
+        return $updatednav;
     }
     
     public static function readLinksAndMovePage($id,$input,$matches)

@@ -89,7 +89,7 @@ function ModuleAction_kb_view($params)
 	EngineCore::AddPageContent($t->process(true));
 }
 
-function ModuleAction_kb_neweditor($params)
+function ModuleAction_kb_edit($params)
 {
     
 	$id=(int)$params[0];
@@ -107,7 +107,7 @@ function ModuleAction_kb_neweditor($params)
         }
 	$pagetext=$page->GetRaw();
 	$t=new TemplateProcessor("pageeditor");
-	$t->tokens['pagetext']=$pagetext;
+	$t->tokens['ejsdoc']=json_encode($page->ejsdoc);
 	$t->tokens['pageid']=$id;
         $t->tokens['title']=$page->title;
         $tags = Tag::GetTags($page->id,"kbpage");
@@ -116,7 +116,7 @@ function ModuleAction_kb_neweditor($params)
 	EngineCore::AddPageContent($t->process(true));
 }
 
-function ModuleAction_kb_edit($params)
+function ModuleAction_kb_editold($params)
 {
 	$id=(int)$params[0];
 	$cu=User::GetCurrentUser();
@@ -194,7 +194,7 @@ function ModuleAction_kb_test($params)
         die;
 }
 
-function ModuleAction_kb_savenew($params)
+function ModuleAction_kb_save($params)
 {
     $cu=User::GetCurrentUser();
 	if(!($cu->HasPermission('kb.edit')))
@@ -209,18 +209,40 @@ function ModuleAction_kb_savenew($params)
             return;
         }
 	$text=$_POST['text'];
+        $title=EngineCore::POST("title","<untitled>");
         $postObj = EditorJSDocument::FromJSON($text);
         if(!$postObj)
         {
             // throw an error idk
         }
-        
-        var_dump($postObj);
-        echo $postObj->GetHTML();
-        die;
+        $URLs = $postObj->images;
+        $map = [];
+        for($i=0;$i<count($URLs);$i++)
+        {
+            $URL=$URLs[$i];
+            // local reference, do not redo
+            if(substr($URL,0,strlen(BASE_URI))===BASE_URI)
+            {
+                continue;
+            }
+            $img = Picture::FromURL($URL);
+            if($img)
+            {
+                $map[$URL] = BASE_URI."/files/stream/{$img->blob_id}/{$img->blob_id}.{$img->extension}";
+            }
+        }
+        if(count($map)>0)
+        {        
+            $postObj->UpdateImages($map);
+        }
+        $page->title=$title;
+        $page->ejsdoc = $postObj;
+        $page->ProcessPage();
+        $page->Save();
+        EngineCore::GTFO("/kb/view/".$id);
 }
 
-function ModuleAction_kb_save($params)
+function ModuleAction_kb_saveold($params)
 {
 	$cu=User::GetCurrentUser();
 	if(!($cu->HasPermission('kb.edit')))

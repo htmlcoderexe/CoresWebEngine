@@ -215,6 +215,14 @@ class EditorJSDocument
         $result->GetPlainText();
         return $result;
     }
+    public static function FromBlocks($blocks)
+    {
+        $result = new EditorJSDocument();
+        $result->blocks = $blocks;
+        $result->RefreshImageList();
+        $result->GetPlainText();
+        return $result;
+    }
     
     public static function ExtractFromList($list)
     {
@@ -290,5 +298,46 @@ class EditorJSDocument
                 $this->images[]=$block['data']['url'];
             }
         }
+    }
+    
+    public function UpdateImages($imagemap)
+    {
+        $this->images = [];
+        $c=count($this->blocks);
+        for($i=0;$i<$c;$i++)
+        {
+            if($this->blocks[$i]['type']=="image")
+            {
+                if(isset($imagemap[$this->blocks[$i]['data']['url']]))
+                {
+                    $this->blocks[$i]['data']['url']=$imagemap[$this->blocks[$i]['data']['url']];
+                }
+                $this->images[]=$this->blocks[$i]['data']['url'];
+            }
+        }
+    }
+    
+    public function GetChapterNav()
+    {
+        foreach($this->blocks as $block)
+        {
+            if($block['type'] == 'chapternav')
+            {
+                return $block;
+            }
+        }
+    }
+    public function SetChapterNav($newnav)
+    {
+        $c=count($this->blocks);
+        for($i=0;$i<$c;$i++)
+        {
+            if($this->blocks[$i]['type'] == 'chapternav')
+            {
+                $this->blocks[$i]=$newnav;
+                return true;
+            }
+        }
+        return false;
     }
 }

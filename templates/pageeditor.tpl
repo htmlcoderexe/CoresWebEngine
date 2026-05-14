@@ -108,7 +108,7 @@ class ChapterNavEditable {
     }
     function saveAndSubmit(e)
     {
-        window.editor.save().then((obj)=>{
+        window.jseditor.save().then((obj)=>{
             document.getElementById("text").value = JSON.stringify(obj);
             document.getElementById("kbform").submit();
         });
@@ -116,7 +116,7 @@ class ChapterNavEditable {
     }
 </script>
 {{system/tagenable|id={%pageid%}|type=kbpage|linkprefix=/kb/tag/|boxid=tags_container_kb|tags={%tags%}}}
-<form enctype="multipart/form-data" action="/kb/savenew" method="POST" id="kbform">
+<form enctype="multipart/form-data" action="/kb/save" method="POST" id="kbform">
     <input name="title" id="title" size="50" value="{%title|%}" />
 <!--<textarea name="text" id ="text" cols="56" rows="20">{%pagetext|%}</textarea>-->
     <input name="text" id="text" type="hidden" />
@@ -165,9 +165,7 @@ class ChapterNavEditable {
     document.getElementById("savebutton").addEventListener("click",(e)=>{
         saveAndSubmit(e);
     });
-    
-    function editor(data){
-    window.editor = new EditorJS({
+    window.jseditor = new EditorJS({
         tools: {
             list: {
                 class: EditorjsList,
@@ -191,9 +189,11 @@ class ChapterNavEditable {
                 class: CodeTool,
             },
             chapternav: ChapterNavEditable
-        },
-        data: data
+        }{#ifset|ejsdoc|,
+        data: {%ejsdoc%}||#}
     });
+    function editor(data){
+    window.jseditor.render(data);
 }
 // pasting area
 let inputframe=document.getElementById("target");
