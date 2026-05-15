@@ -239,3 +239,8 @@ function ModuleAction_kb_create($params)
 		EngineCore::GTFO("/kb/edit/".$id);
 	}
 }
+function ModuleAction_kb_api($params)
+{
+    require "api.php";
+    return Module::SPLIT_ROUTE;
+}

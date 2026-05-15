@@ -23,6 +23,11 @@ class KBPageSequence
         return new KBPageSequence($result,$gid);
     }
     
+    public static function Exists($gid)
+    {
+        return DBHelper::Count(self::TABLE_NAME,'collectionId',['collectionId'=>$gid]);
+    }
+    
     public static function Create($gid)
     {
         $result = OrderedDBCollection::Load(self::TABLE_NAME,$gid,self::FIELDS);
