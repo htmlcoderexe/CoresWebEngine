@@ -5,7 +5,10 @@ function innerHTML($element)
 { 
     $innerHTML = ""; 
     $children  = $element->childNodes;
-
+    if(!$children || count($children)<1)
+    {
+        return "";
+    }
     foreach ($children as $child) 
     { 
         $innerHTML .= $element->ownerDocument->saveHTML($child);
@@ -18,6 +21,10 @@ function innerHTMLButWithLessHTML($element)
     $innerHTML = ""; 
     $children  = $element->childNodes;
 
+    if(!$children || count($children)<1)
+    {
+        return "";
+    }
     foreach ($children as $child) 
     { 
         $innerHTML .= innerHTML($child);
@@ -35,6 +42,10 @@ function getP($node)
         ]
     ];
     $prop = 'text';
+    if(!$node->childNodes || count($node->childNodes)<1)
+    {
+        return null;
+    }
     foreach($node->childNodes as $cn)
     {
         if($cn->nodeName=='img')
@@ -85,9 +96,17 @@ function getTable($node)
         ]
     ];
     $withHeaders=false;
+    if(!$node->childNodes || count($node->childNodes)<1)
+    {
+        return null;
+    }
     foreach($node->childNodes as $child)
     {
         if($child->nodeName!="tr")
+        {
+            continue;
+        }
+        if(!$child->childNodes || count($child->childNodes)<1)
         {
             continue;
         }
@@ -126,6 +145,10 @@ function getList($node)
             'items'=>[]
         ]
     ];
+    if(!$node->childNodes || count($node->childNodes)<1)
+    {
+        return null;
+    }
     foreach($node->childNodes as $child)
     {
         if($child->nodeName!="li")
