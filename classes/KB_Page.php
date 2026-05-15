@@ -4,7 +4,7 @@ class KB_Page
     public $raw;
     private $processed;
     
-    public $last_revision;
+    public $latest_revision;
     public $title;
     public $id;
     public $project_id;
@@ -27,22 +27,19 @@ class KB_Page
     }
     public static function Load($id)
     {
-        $fields = ["id,title,created,project_id,modified,creator_id"];
+        $fields = ["id,title,created,project_id,modified,creator_id,latest,html,text,ejsdoc"];
         $q = DBHelper::Select("kb_pages",$fields,["id"=>$id]);
         $page = DBHelper::RunRow($q,[$id]);
         if(!$page)
         {
             return null;
         }
-        $raw="";
-        $html="";
-        $doc = null;
-        $content = KB_Page::GetLastRevision($id);
-        if($content)
+        $raw=$page['text'];
+        $html=$page['html'];
+        $doc = EditorJSDocument::FromJSON($page['ejsdoc']);
+        if(!$doc)
         {
-            $raw=$content["content_raw"];
-            $doc = EditorJSDocument::FromJSON($content["content_json"]);
-            $html=$content["content_html"];
+            $doc = new EditorJSDocument();
         }
         $result = new KB_Page($id,$page['title'],$doc,$raw,$html,$page['project_id']);
         $result->created =$page['created'];
@@ -51,9 +48,22 @@ class KB_Page
     }
     public function Save()
     {
-        DBHelper::Update("kb_pages",['title'=>$this->title,'project_id'=>$this->project_id],['id'=>$this->id]);
-        $d=[null,$this->id,json_encode($this->ejsdoc),$this->raw,$this->processed,time(),0];
+        DBHelper::Update("kb_pages",
+                ['title'=>$this->title,
+                    'project_id'=>$this->project_id,
+                    'ejsdoc'=>json_encode($this->ejsdoc),
+                    'text'=>$this->raw,
+                    'html'=>$this->processed,
+                    'latest'=>$this->latest_revision],
+                ['id'=>$this->id]);
+    }
+    public function SaveNewRevision()
+    {
+        $d=[null,$this->id,$this->title,json_encode($this->ejsdoc),$this->raw,$this->processed,time(),0];
         DBHelper::Insert('kb_page_revisions',$d);
+        $latest = DBHelper::GetLastId();
+        $this->latest_revision = $latest;
+        $this->Save();
     }
     public static function CreatePage($title,$projId=-1)
     {
@@ -62,7 +72,7 @@ class KB_Page
             $projId=KB::CurrentProjectID();
         }
         DBHelper::$DBLink->beginTransaction();
-        DBHelper::Insert('kb_pages',Array(null,$title,time(),$projId,time(),1));
+        DBHelper::Insert('kb_pages',Array(null,$title,time(),$projId,time(),1,0,'','',''));
         //Utility::Debug(mysql_error());
         $id=DBHelper::GetLastId();
         DBHelper::$DBLink->commit();
@@ -128,7 +138,7 @@ class KB_Page
         //$stmt = DBHelper::$DBLink->prepare("SELECT id,content_raw,content_html FROM kb_page_revisions WHERE page_id=? ORDER BY timestamp DESC");
         //$stmt->bindParam(1, $id);
         //$rev=DBHelper::GetOneRow($stmt);
-        $rev=DBHelper::RunRow("SELECT id,content_json,content_raw,content_html FROM kb_page_revisions WHERE page_id=? ORDER BY timestamp DESC",[$id]);
+        $rev=DBHelper::RunRow("SELECT id,content_json,content_plaintext,content_html FROM kb_page_revisions WHERE page_id=? ORDER BY timestamp DESC",[$id]);
         return $rev;
     }
     public static function generateIndex($id)

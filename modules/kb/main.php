@@ -213,7 +213,7 @@ function ModuleAction_kb_save($params)
         $page->title=$title;
         $page->ejsdoc = $postObj;
         $page->ProcessPage();
-        $page->Save();
+        $page->SaveNewRevision();
         EngineCore::GTFO("/kb/view/".$id);
 }
 
@@ -242,5 +242,15 @@ function ModuleAction_kb_create($params)
 function ModuleAction_kb_api($params)
 {
     require "api.php";
+    return Module::SPLIT_ROUTE;
+}
+function ModuleAction_kb_migrate($params)
+{
+    $cu=User::GetCurrentUser();
+	if(!($cu->HasPermission('super')))
+        {
+            return;
+        }
+    require "migrate.php";
     return Module::SPLIT_ROUTE;
 }
