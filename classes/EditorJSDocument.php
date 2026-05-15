@@ -349,6 +349,7 @@ class EditorJSDocument
                 return true;
             }
         }
+        array_unshift($this->blocks,$newnav);
         return false;
     }
 }
