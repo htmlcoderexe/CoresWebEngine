@@ -402,8 +402,10 @@ function ModuleAction_kb_migrate_newrev($params)
         if($p)
         {
             echo "<br >doing ".$p->id;
-            var_dump($entry);
+            //var_dump($entry);
             $p->UpdateRefsNew($entry['collectionId'],$entry['prev'],$entry['next']);
+            $p->SaveNewRevision();
+//var_dump($p->ejsdoc);
         }
     }
     DBHelper::Commit();
