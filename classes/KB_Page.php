@@ -68,13 +68,6 @@ class KB_Page
         $d=[null,$this->id,json_encode($this->ejsdoc),$this->raw,$this->processed,time(),0];
         DBHelper::Insert('kb_page_revisions',$d);
     }
-    public static function  SaveToDatabase($id,$text)
-    {
-        $processed=KB_Page::ProcessMarkup($id, $text);
-        $d=Array(null,$id,$text,$processed,time(),0);
-        DBHelper::Insert('kb_page_revisions',$d);
-        return $processed;
-    }
     public static function CreatePage($title,$projId=-1)
     {
         if($projId==-1)
@@ -89,45 +82,6 @@ class KB_Page
         return $id;
     }
     
-    public function updatesomefuckingshit()
-    {
-        $output = $this->raw;
-        $matches = KB_Page::GetLinkMarkupMatches($output);
-        $grouptags = KB_Page::doGroupLinks($output, $matches);
-        $updates = KBPageSequence::ProcessMove($this->id,$grouptags['group'],$grouptags['prev'],$grouptags['next']);
-        //var_dump($grouptags);
-        if(count($updates)<1)
-        {
-            return;
-        }
-        //var_dump($updates);
-        $gid=-1;
-        foreach($updates as $update)
-        {
-            if($update['id']==$this->id)
-            {
-                $this->raw=KB_Page::updateGroupLinks($grouptags,$update,$output);
-                continue;
-            }
-            
-            $page = KB_Page::Load($update['id']);
-            if(!$page)
-            {
-                continue;
-            }
-            $page->UpdateRefs($update['group'],$update['prev'],$update['next']);
-            if($update['group']!=$gid)
-            {
-                $groupPage = KB_Page::Load($update['group']);
-                if($groupPage)
-                {
-                    $groupPage->SetBody($groupPage->raw);
-                    $groupPage->Save();
-                }
-                $gid=$update['group'];
-            }
-        }
-    }
     public function ProcessPage()
     {
         // when actual source changed 
@@ -154,27 +108,6 @@ class KB_Page
         $this->processed = $doc->GetHTML();
     }
     
-    public function ProcessHTML($passive=false)
-    {
-        /*
-         * The rest of the fucking owl...
-         * 
-         */
-        if(!$passive)
-        {
-            $this->updatesomefuckingshit();
-        }
-        
-        $output = $this->raw;
-        $matches = KB_Page::GetLinkMarkupMatches($output);
-        $output=KB_Page::doSpecialLinks($output,$matches);
-        $matches = array_filter($matches);
-        $output=KB_Page::process_links($output,$matches);
-        $output.=self::generateIndex($this->id);
-        $this->processed = $output;
-        //die;
-    
-    }
     public function GetRaw()
     {
         return $this->raw;
@@ -191,14 +124,6 @@ class KB_Page
     {
         $this->ejsdoc = $doc;
         
-    }
-    public function UpdateRefs($group,$prev,$next)
-    {
-        $matches = KB_Page::GetLinkMarkupMatches($this->raw);
-        $specials = KB_Page::doGroupLinks($this->raw,$matches);
-        $this->raw = KB_Page::updateGroupLinks($specials,['prev'=>$prev,'next'=>$next,'group'=>$group],$this->raw);
-        $this->processed=KB_Page::ProcessMarkup($this->id,$this->raw,true);
-        $this->Save();
     }
     public function UpdateRefsNew($group,$prev,$next)
     {
@@ -226,172 +151,6 @@ class KB_Page
         $rev=DBHelper::RunRow($q,[$id]);
         return $rev['content_html'];
     }
-    
-    static function doGroupLinks($input, $matches)
-    {
-        $output = $input;
-        $nextId=null;
-        $prevId=null;
-        $groupId=null;
-        $tags = ['prev'=>null,'next'=>null,'group'=>null];
-        for($i=0;$i<count($matches);$i++)
-        {
-            list($pageId,$linkText,$fullmatch)=$matches[$i];
-            if($linkText[0]=="#")
-            {
-                $cmd = substr($linkText,1);
-                switch($cmd)
-                {
-                    case "next":
-                    {
-                        $tags['next'] = $pageId;
-                        $tags['nextmatch']=$fullmatch;
-                        break;
-                    }
-                    case "prev":
-                    {
-                        $tags['prev'] = $pageId;
-                        $tags['prevmatch']=$fullmatch;
-                        break;
-                    }
-                    case "index":
-                    {
-                        $tags['group'] = $pageId;
-                        $tags['groupmatch']=$fullmatch;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                
-            }
-        }
-        return $tags;
-    }
-    
-    static function doSpecialLinks($input,&$matches)
-    {
-        $output = $input;
-        $nextId=-1;
-        $prevId=-1;
-        $gId=-1;
-        for($i=0;$i<count($matches);$i++)
-        {
-            list($pageId,$linkText,$fullmatch)=$matches[$i];
-            if($linkText[0]=="#")
-            {
-                $cmd = substr($linkText,1);
-                switch($cmd)
-                {
-                    case "next":
-                    {
-                        $nextId = $pageId;
-                        break;
-                    }
-                    case "prev":
-                    {
-                        $prevId = $pageId;
-                        break;
-                    }
-                    case "index":
-                    {
-                        $gId = $pageId;
-                        break;
-                    }
-                }
-                $output=str_replace($fullmatch,"",$output);
-                $matches[$i]=null;
-            }
-            else
-            {
-                
-            }
-        }
-        $prevlink="";
-        $nextlink="";
-        $indexlink="";
-        $prevlinktpl = "<div class=\"prevlink\"><a href=\"/kb/view/%s\">&lt; %s</a></div>";
-        $nextlinktpl = "<div class=\"nextlink\"><a href=\"/kb/view/%s\">%s &gt;</a></div>";
-        $indexlinktpl = "<div class=\"indexlink\"><a href=\"/kb/view/%s\">%s</a></div>";
-        $topnav="";
-        $bottomnav="";
-        if($prevId>0)
-        {
-            $prevpage=KB_Page::Load($prevId);
-            if($prevpage)
-            {
-                $prevlink=sprintf($prevlinktpl,$prevId,$prevpage->title);
-            }
-        }
-        if($nextId>0)
-        {
-            $nextpage=KB_Page::Load($nextId);
-            if($nextpage)
-            {
-                $nextlink=sprintf($nextlinktpl,$nextId,$nextpage->title);
-            }
-        }
-        if($gId>0)
-        {
-            $indexpage=KB_Page::Load($gId);
-            if($indexpage)
-            {
-                $indexlink=sprintf($indexlinktpl,$gId,$indexpage->title);
-            }
-        }
-        if($nextId>0 || $prevId>0)
-        {
-            $topnavtpl="<nav id=\"kb_top_nav\">%s%s%s</nav>\n";
-            
-            $bottomnavtpl="\n<nav id=\"kb_bottom_nav\">%s%s%s</nav>";
-            
-            $topnav=sprintf($topnavtpl,$prevlink,$indexlink,$nextlink);
-            $bottomnav=sprintf($bottomnavtpl,$prevlink,$indexlink,$nextlink);
-        }
-        return $topnav.$output.$bottomnav;
-    }
-    public static function process_links($input,$matches)
-    {
-        for($i=0;$i<count($matches);$i++)
-        {
-            list($pageId,$linkText,$fullmatch)=$matches[$i];
-            $tpl = "<a href=\"/kb/view/%s\">%s</a>";
-            $input=str_replace($fullmatch,sprintf($tpl,$pageId,$linkText),$input);
-        }
-        return $input;
-    }
-    public static function updateGroupLinks($matches,$values,$input)
-    {
-        $output=$input;
-        //var_dump([$matches],$values,$input);
-        if($matches['prevmatch']??null)
-        {
-            $output = str_replace($matches['prevmatch'],"[[".$values['prev']."|#prev]]",$output);
-            
-        }
-        elseif($values['prev']??null)
-        {
-            $output="[[".$values['prev']."|#prev]]".$output;
-        }
-        if($matches['groupmatch']??null)
-        {
-            $output = str_replace($matches['groupmatch'],"[[".$values['group']."|#index]]",$output);
-        }
-        elseif($values['group']??null)
-        {
-            $output="[[".$values['group']."|#index]]".$output;
-        }
-        if($matches['nextmatch']??null)
-        {
-            $output = str_replace($matches['nextmatch'],"[[".$values['next']."|#next]]",$output);
-        }
-        elseif($values['next']??null)
-        {
-            $output="[[".$values['next']."|#next]]".$output;
-        }
-        return $output;
-    }    
     public static function generateIndex($id)
     {
         $output="";
@@ -579,36 +338,11 @@ class KB_Page
         return $updatednav;
     }
     
-    public static function readLinksAndMovePage($id,$input,$matches)
-    {
-        $output = $input;
-        $grouptags = KB_Page::doGroupLinks($output, $matches);
-        //$ttt=KBPageSequence::Load($grouptags['group']);
-        //var_dump($ttt);
-        //var_dump($ttt->pages);
-        $updates = KBPageSequence::ProcessMove($id,$grouptags['group'],$grouptags['prev'],$grouptags['next']);
-        //var_dump($updates);
-        foreach($updates as $update)
-        {
-            
-            
-            
-            $page = KB_Page::Load($update['id']);
-            if(!$page)
-            {
-                continue;
-            }
-            if($update['id']==$id)
-            {
-                $output = KB_Page::updateGroupLinks($grouptags,$update,$output);
-                $page->raw=$output;
-            }
-            $page->UpdateRefs($update['group'],$update['prev'],$update['next']);
-            
-        }
-        //die;
-        return $output;
-    }
+    
+    //////////////////////////////////////////////////////////////////////
+    //////// legacy stuff remove once not needed
+    
+    
     public static function GetLinkMarkupMatches($input)
     {
         
@@ -624,23 +358,90 @@ class KB_Page
         }
         return $matches;
     }
-    public static function ProcessMarkup($id, $input,$passive=false)
+    
+    
+    static function doGroupLinks($input, $matches)
     {
-        /*
-         * The rest of the fucking owl...
-         * 
-         */
         $output = $input;
-        $matches = KB_Page::GetLinkMarkupMatches($input);
-        if(!$passive)
+        $nextId=null;
+        $prevId=null;
+        $groupId=null;
+        $tags = ['prev'=>null,'next'=>null,'group'=>null];
+        for($i=0;$i<count($matches);$i++)
         {
-            $output = KB_Page::readLinksAndMovePage($id,$output,$matches);
-            return;
+            list($pageId,$linkText,$fullmatch)=$matches[$i];
+            if($linkText[0]=="#")
+            {
+                $cmd = substr($linkText,1);
+                switch($cmd)
+                {
+                    case "next":
+                    {
+                        $tags['next'] = $pageId;
+                        $tags['nextmatch']=$fullmatch;
+                        break;
+                    }
+                    case "prev":
+                    {
+                        $tags['prev'] = $pageId;
+                        $tags['prevmatch']=$fullmatch;
+                        break;
+                    }
+                    case "index":
+                    {
+                        $tags['group'] = $pageId;
+                        $tags['groupmatch']=$fullmatch;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                
+            }
         }
-        
-        $output=KB_Page::doSpecialLinks($output,$matches);
-        $matches = array_filter($matches);
-        $output=KB_Page::process_links($output,$matches);
-        return $output;
+        return $tags;
     }
+    
+    public static function process_links($input,$matches)
+    {
+        for($i=0;$i<count($matches);$i++)
+        {
+            list($pageId,$linkText,$fullmatch)=$matches[$i];
+            $tpl = "<a href=\"/kb/view/%s\">%s</a>";
+            $input=str_replace($fullmatch,sprintf($tpl,$pageId,$linkText),$input);
+        }
+        return $input;
+    }
+    public static function updateGroupLinks($matches,$values,$input)
+    {
+        $output=$input;
+        //var_dump([$matches],$values,$input);
+        if($matches['prevmatch']??null)
+        {
+            $output = str_replace($matches['prevmatch'],"[[".$values['prev']."|#prev]]",$output);
+            
+        }
+        elseif($values['prev']??null)
+        {
+            $output="[[".$values['prev']."|#prev]]".$output;
+        }
+        if($matches['groupmatch']??null)
+        {
+            $output = str_replace($matches['groupmatch'],"[[".$values['group']."|#index]]",$output);
+        }
+        elseif($values['group']??null)
+        {
+            $output="[[".$values['group']."|#index]]".$output;
+        }
+        if($matches['nextmatch']??null)
+        {
+            $output = str_replace($matches['nextmatch'],"[[".$values['next']."|#next]]",$output);
+        }
+        elseif($values['next']??null)
+        {
+            $output="[[".$values['next']."|#next]]".$output;
+        }
+        return $output;
+    }    
 }

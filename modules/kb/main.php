@@ -116,31 +116,6 @@ function ModuleAction_kb_edit($params)
 	EngineCore::AddPageContent($t->process(true));
 }
 
-function ModuleAction_kb_editold($params)
-{
-	$id=(int)$params[0];
-	$cu=User::GetCurrentUser();
-	if(!$cu->HasPermission('kb.edit'))
-	{
-            EngineCore::SetPageTitle("Access Denied");
-            EngineCore::SetPageContent("I'm sorry, I'm afraid I can't let you do that.");
-            return;
-	}
-	$page = KB_Page::Load($id);
-        if(!$page)
-        {
-            return;
-        }
-	$pagetext=$page->GetRaw();
-	$t=new TemplateProcessor("pageeditor_old");
-	$t->tokens['pagetext']=$pagetext;
-	$t->tokens['pageid']=$id;
-        $t->tokens['title']=$page->title;
-        $tags = Tag::GetTags($page->id,"kbpage");
-        $t->tokens['tags'] = $tags;
-        EngineCore::SetPageTitle("Editing ".$page->title);
-	EngineCore::AddPageContent($t->process(true));
-} 
 function _p($text)
 {
     return;
@@ -242,44 +217,6 @@ function ModuleAction_kb_save($params)
         EngineCore::GTFO("/kb/view/".$id);
 }
 
-function ModuleAction_kb_saveold($params)
-{
-	$cu=User::GetCurrentUser();
-	if(!($cu->HasPermission('kb.edit')))
-	{
-            EngineCore::SetPageContent("I'm sorry, I'm afraid I can't let you do that.");
-            return;
-	}
-        $id=intval($_POST['pageid']);
-        $page = KB_Page::Load($id);
-        if(!$page)
-        {
-            return;
-        }
-	$text=$_POST['text'];
-        $title=EngineCore::POST("title","<untitled>");
-        $matches=[];
-        preg_match_all("/\<img.+src\=(?:\"|\')(.+?)(?:\"|\')(?:.+?)\>/", $text, $matches);
-        $URLs = $matches[1];
-        for($i=0;$i<count($URLs);$i++)
-        {
-            $URL=$URLs[$i];
-            // local reference, do not redo
-            if($URL[0]=="/")
-            {
-                continue;
-            }
-            $img = Picture::FromURL($URL);
-            if($img)
-            {
-                $text=str_replace($URL,"/files/stream/{$img->blob_id}/{$img->blob_id}.{$img->extension}",$text);
-            }
-        }
-        $page->title=$title;
-        $page->SetBody($text);
-        $page->Save();
-        EngineCore::GTFO("/kb/view/".$id);
-}
 
 function ModuleAction_kb_create($params)
 {
