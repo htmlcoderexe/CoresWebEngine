@@ -49,19 +49,6 @@ class KB_Page
         
         return $result;
     }
-    public function GetAffectedPages()
-    {
-        $id=$this->id;
-        $stmt = DBHelper::$DBLink->prepare("SELECT id,page_updated,page_affected FROM kb_page_dependencies WHERE page_updated=?");
-        $stmt->bindParam(1,$id);
-        $q = DBHelper::Select("kb_page_dependencies",['id','page_updated','page_affected'], ['page_updated'=>$id]);
-        $pages=DBHelper::RunTable($q,[$id]);
-        return $pages;
-    }
-    public function CheckUpdate()
-    {
-
-    }
     public function Save()
     {
         DBHelper::Update("kb_pages",['title'=>$this->title,'project_id'=>$this->project_id],['id'=>$this->id]);
@@ -143,13 +130,6 @@ class KB_Page
         //$rev=DBHelper::GetOneRow($stmt);
         $rev=DBHelper::RunRow("SELECT id,content_json,content_raw,content_html FROM kb_page_revisions WHERE page_id=? ORDER BY timestamp DESC",[$id]);
         return $rev;
-    }
-    public static function GetSpecificRevision($id)
-    {
-        //note, this does not check if any revision belongs to the page yet.
-        $q=DBHelper::Select("kb_page_revisions",['id','content_json','content_raw','content_html'],['id'=>$id],['timestamp'=>'DESC']);
-        $rev=DBHelper::RunRow($q,[$id]);
-        return $rev['content_html'];
     }
     public static function generateIndex($id)
     {
@@ -444,4 +424,24 @@ class KB_Page
         }
         return $output;
     }    
+    public function GetAffectedPages()
+    {
+        $id=$this->id;
+        $stmt = DBHelper::$DBLink->prepare("SELECT id,page_updated,page_affected FROM kb_page_dependencies WHERE page_updated=?");
+        $stmt->bindParam(1,$id);
+        $q = DBHelper::Select("kb_page_dependencies",['id','page_updated','page_affected'], ['page_updated'=>$id]);
+        $pages=DBHelper::RunTable($q,[$id]);
+        return $pages;
+    }
+    public function CheckUpdate()
+    {
+
+    }
+    public static function GetSpecificRevision($id)
+    {
+        //note, this does not check if any revision belongs to the page yet.
+        $q=DBHelper::Select("kb_page_revisions",['id','content_json','content_raw','content_html'],['id'=>$id],['timestamp'=>'DESC']);
+        $rev=DBHelper::RunRow($q,[$id]);
+        return $rev['content_html'];
+    }
 }

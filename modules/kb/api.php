@@ -24,3 +24,18 @@ function ModuleAction_kb_api_head($params)
     HTTPHeaders::Status(404);
     EngineCore::EmitJSON($data);
 }
+
+function ModuleAction_kb_api_suggest($params)
+{
+    $prefix = $params[0] ?? "";
+    $data = [];
+    if($prefix != "")
+    {
+    
+        $query_params = ["%" . $prefix . "%"];
+        $q = "SELECT title,id FROM kb_pages WHERE title LIKE ?";
+        $data = DBHelper::RunTable($q,$query_params);
+    }
+    HTTPHeaders::Status(200);
+    EngineCore::EmitJSON($data);
+}
