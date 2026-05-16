@@ -9,7 +9,20 @@ define("KB_JOB_PRIORITY_CRITICAL",4);
 define("KB_JOB_ARGUMENT_NONE",0);
 class KB
 {
-
+        
+        public static function CreatePage($title,$projId=-1)
+        {
+            if($projId==-1)
+            {
+                $projId=KB::CurrentProjectID();
+            }
+            DBHelper::$DBLink->beginTransaction();
+            DBHelper::Insert('kb_pages',Array(null,$title,time(),$projId,time(),1,0,'','',''));
+            //Utility::Debug(mysql_error());
+            $id=DBHelper::GetLastId();
+            DBHelper::$DBLink->commit();
+            return $id;
+        }
 	public static function ListProjects()
 	{
 		$buffer="";

@@ -234,7 +234,7 @@ function ModuleAction_kb_create($params)
 	}
 	else
 	{
-		$id=KB_Page::CreatePage($_POST['title']);
+		$id=KB::CreatePage($_POST['title']);
 		
 		EngineCore::GTFO("/kb/edit/".$id);
 	}

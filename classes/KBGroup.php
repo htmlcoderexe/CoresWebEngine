@@ -111,7 +111,11 @@ class KBPageSequence
             $updates[]=$update;
             // mutate list
             $this->pages->AddItem($id,$item,$iprev);
-            $updates[]=$item;
+            $newIndex = $this->IndexOf($id);
+            $newItem = $this->pages->items[$newIndex];
+            $newItem['group']=$this->id;
+            $newItem['id']=$id;
+            $updates[]=$newItem;
             return $updates;
         }
         // try next... next
@@ -153,7 +157,12 @@ class KBPageSequence
             $updates[]=$update;
             // mutate list
             $this->pages->AddItem($id,$item,$inext);
-            $updates[]=$item;
+            $newIndex = $this->IndexOf($id);
+            $newItem = $this->pages->items[$newIndex];
+            $newItem['group']=$this->id;
+            $newItem['id']=$id;
+            
+            $updates[]=$newItem;
             return $updates;
         }
         // both pointers bad
@@ -179,9 +188,13 @@ class KBPageSequence
         }
         // mutate list
         $this->pages->AddItem($id,$item,-1);
+            $newIndex = $this->IndexOf($id);
+            $newItem = $this->pages->items[$newIndex];
+            $newItem['group']=$this->id;
+            $newItem['id']=$id;
         _p("<h1>DONE ADDING</h1>");
         //var_dump($updates);
-        $updates[]=$item;
+        $updates[]=$newItem;
         return $updates;
     }
     
@@ -229,6 +242,7 @@ class KBPageSequence
         _p("processing move");
         //var_dump([$id,$gid,$prev,$next]);
         $itemsToUpdate = [];
+        $groups = [];
         // find if item currently in a group
         $currentGroup = self::Find($id);
         // find if requested group exists
@@ -247,6 +261,7 @@ class KBPageSequence
             }
             // remove from current group
             $itemsToUpdate = array_merge($itemsToUpdate,$currentGroup->RemovePage($id));
+            //$groups[]=$id;
         }
         // item currently not in a group
         if(!$newGroup)
@@ -273,6 +288,8 @@ class KBPageSequence
         //var_dump($newGroup);
         //var_dump($afteradd);
         $newGroup->pages->SaveToDB();
+            $groups[]=$newGroup->id;
+            return $groups;
         $itemsToUpdate = array_merge($itemsToUpdate,$afteradd);
         return $itemsToUpdate;
     }

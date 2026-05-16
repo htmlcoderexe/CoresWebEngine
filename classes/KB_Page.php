@@ -65,19 +65,6 @@ class KB_Page
         $this->latest_revision = $latest;
         $this->Save();
     }
-    public static function CreatePage($title,$projId=-1)
-    {
-        if($projId==-1)
-        {
-            $projId=KB::CurrentProjectID();
-        }
-        DBHelper::$DBLink->beginTransaction();
-        DBHelper::Insert('kb_pages',Array(null,$title,time(),$projId,time(),1,0,'','',''));
-        //Utility::Debug(mysql_error());
-        $id=DBHelper::GetLastId();
-        DBHelper::$DBLink->commit();
-        return $id;
-    }
     
     public function ProcessPage()
     {
@@ -292,13 +279,52 @@ class KB_Page
     
     public function ActionChapterNav($chapternav)
     {
+        $updatednav = $chapternav;
         $updates = KBPageSequence::ProcessMove($this->id,$chapternav['data']['index'],$chapternav['data']['prev'],$chapternav['data']['next']);
+        $group = KBPageSequence::Load($updates[0]);
+        if($group)
+        {
+            foreach($group->pages->items as $page)
+            {
+                if($page['entityId']==$this->id)
+                {
+                    
+                    $updatednav = self::MakeChapterNav($page['prev'],$group->id,$page['next']);
+                    $this->ejsdoc->SetChapterNav($updatednav);
+                    continue;
+                }
+                $p = KB_Page::Load($page['entityId']);
+                $p->UpdateRefsNew($group->id, $page['prev'], $page['next']);
+            }
+            
+            $groupPage = KB_Page::Load($chapternav['data']['index']);
+            if($groupPage)
+            {
+                Logger::log("updated group page");
+                $groupPage->ProcessDoc();
+                $groupPage->Save();
+            }
+        }
+        return $updatednav;
+        
+        
         $updatednav = $chapternav;
         if(count($updates)>1)
         {
             $gid=-1;
             foreach($updates as $update)
             {
+                if($update['group']!=$gid)
+                {
+                    $groupPage = KB_Page::Load($update['group']);
+                    if($groupPage)
+                    {
+                        Logger::log("updated group page");
+                        $groupPage->ProcessDoc();
+                        $groupPage->Save();
+                    }
+                    $gid=$update['group'];
+                }
                 if($update['id']==$this->id)
                 {
                     $updatednav = self::MakeChapterNav($update['prev'],$update['group'],$update['next']);
@@ -312,17 +338,6 @@ class KB_Page
                     continue;
                 }
                 $page->UpdateRefsNew($update['group'],$update['prev'],$update['next']);
-                if($update['group']!=$gid)
-                {
-                    $groupPage = KB_Page::Load($update['group']);
-                    if($groupPage)
-                    {
-                        Logger::log("updated group page");
-                        $groupPage->ProcessDoc();
-                        $groupPage->Save();
-                    }
-                    $gid=$update['group'];
-                }
             }    
         }
         return $updatednav;
