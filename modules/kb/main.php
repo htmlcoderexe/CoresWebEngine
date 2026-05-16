@@ -127,6 +127,16 @@ function ModuleAction_kb_test($params)
     {
         return;
     }
+    
+    KBGroupTest::TestFind();
+    KBGroupTest::TestLoad();
+    KBGroupTest::TestSave1();
+    KBGroupTest::TestAdd();
+    KBGroupTest::TestRemove();
+    KBGroupTest::TestMove();
+    
+    die;
+    return;
         DBHelper::RunStmt("TRUNCATE TABLE `intranet_basic`.`kbgroups`", []);
         
         $g11 = KBPageSequence::Create(11);

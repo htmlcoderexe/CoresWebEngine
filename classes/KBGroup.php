@@ -1,5 +1,333 @@
 <?php
 
+interface KBGroupBacker
+{
+    /**
+     * Fetches a group's items
+     * @param type $id
+     */
+    public function GetItems($id);
+    /**
+     * Saves a group's items
+     * @param type $id
+     * @param item[] $items
+     */
+    public function SetItems($id, $items);
+    /**
+     * Locates a group by item ID
+     * @param type $id
+     */
+    public function Find($id);
+}
+
+class KBGroupTestBacker implements KBGroupBacker
+{
+    public $groups;
+    public function __construct($groups = [])
+    {
+        $this->groups = $groups;
+    }
+    public function GetItems($id)
+    {
+        if(array_key_exists($id,$this->groups))
+        {
+            return $this->groups[$id];
+        }
+        return [];
+    }
+    public function Find($id)
+    {
+        $ids=array_keys($this->groups);
+        foreach($ids as $groupId)
+        {
+            foreach($this->groups[$groupId] as $item)
+            {
+                if($item['id'] == $id)
+                {
+                    return $groupId;
+                }
+            }
+        }
+        return 0;
+    }
+    public function SetItems($id,$items)
+    {
+        $this->groups[$id] = $items;
+    }
+}
+
+class KBGroupTest
+{
+    public static function expect($expect, $value)
+    {
+        $a= json_encode($expect);
+        $b= json_encode($value);
+        $pass = $a===$b;
+        
+        echo("<h1> EXPECTED</h1><hr />");
+        var_dump($expect);
+        echo("<h1 style=\"color:".($pass?'green':'red')."\"> GOT</h1><hr />");
+        var_dump($value);
+        echo("<hr />");
+        return $pass;
+    }
+    public const testdata1 = [
+            14=>[
+                ['id'=>6,'prev'=>0,'next'=>7],
+                ['id'=>7,'prev'=>6,'next'=>29],
+                ['id'=>29,'prev'=>7,'next'=>0],
+            ],
+            10=>[
+                ['id'=>41,'prev'=>0,'next'=>12],
+                ['id'=>12,'prev'=>41,'next'=>5],
+                ['id'=>5,'prev'=>12,'next'=>2],
+                ['id'=>2,'prev'=>5,'next'=>0],
+            ],
+        ];
+    public const testitems1 = [
+            ['id'=>104, 'prev'=> 0, 'next'=> 199],
+            ['id'=>199, 'prev'=> 104, 'next'=> 111],
+            ['id'=>111, 'prev'=> 199, 'next'=> 100],
+            ['id'=>100, 'prev'=> 111, 'next'=> 0],
+    ];
+    public static function TestFind()
+    {
+        
+        $backer = new KBGroupTestBacker(self::testdata1);
+        $testGroup2 = KBGroup::Find(backer: $backer, id: 7);
+        var_dump($testGroup2);
+    }
+    public static function TestLoad()
+    {
+        $backer = new KBGroupTestBacker(self::testdata1);
+        $testGroup1 = KBGroup::Load(backer:  $backer, id: 14);
+        var_dump($testGroup1);
+    }
+    
+    public static function TestSave1()
+    {
+        $backer = new KBGroupTestBacker(self::testdata1);
+        $testGroup3 = new KBGroup(backer: $backer, items: self::testitems1, id: 200);
+        $testGroup3->Save();
+        var_dump($backer);
+    }
+    
+    public static function TestAdd()
+    {
+        $backer = new KBGroupTestBacker(self::testdata1);
+        $testGroup14 = KBGroup::Load(backer:  $backer, id: 14);
+        $item300 = $testGroup14->Add(id: 300);
+        self::expect(['id'=>300,'prev'=>29,'next'=>0], $item300);
+        $item302 = $testGroup14->Add(id: 302, pos: 0);
+        self::expect(['id'=>302,'prev'=>0,'next'=>6],$item302);
+    }
+    public static function TestRemove()
+    {
+        $backer = new KBGroupTestBacker(self::testdata1);
+        $testGroup14 = KBGroup::Load(backer:  $backer, id: 14);
+        $testGroup14->Remove(id: 6);
+        $testGroup14->Remove(id: 29);
+        self::expect([['id'=>7,'prev'=>0,'next'=>0]],$testGroup14->items);
+    }
+    public static function TestMove()
+    {
+        $backer = new KBGroupTestBacker(self::testdata1);
+        $testGroup14 = KBGroup::Load(backer:  $backer, id: 14);
+        $testGroup14->Move(2,0);
+        self::expect([
+                ['id'=>29,'prev'=>0,'next'=>6],
+                ['id'=>6,'prev'=>29,'next'=>7],
+                ['id'=>7,'prev'=>6,'next'=>0],
+            ],$testGroup14->items);
+        $testGroup10 = KBGroup::Load(backer: $backer, id: 10);
+    }
+}
+
+class KBGroupDBBacker
+{
+    public function Find($id)
+    {
+        // db stuff
+    }
+}
+
+class KBGroup
+{
+    public $items;
+    public $id;
+    public KBGroupBacker $backer;
+    public function __construct(KBGroupBacker $backer, $id,$items)
+    {
+        $this->id=$id;
+        $this->items = $items;
+        $this->backer = $backer;
+    }
+    public static function Load(KBGroupBacker $backer, $id)
+    {
+        $items = $backer->GetItems($id);
+        if(count($items)>0)
+        {
+            return new KBGroup($backer, $id, $items);
+        }
+    }
+    public function Save()
+    {
+        $this->backer->SetItems(id: $this->id, items: $this->items);
+        }
+    public static function Find(KBGroupBacker $backer, $id)
+    {
+        $gid = $backer->Find($id);
+        if($gid!=0)
+        {
+            return self::Load($backer, $gid);
+        }
+    }
+    
+    public static function Create($backer, $id )
+    {
+        $items = [];
+        return new KBGroup($backer, $id, $items);
+    }
+    public static function ProcessMove($backer, $cp,$cg,$cn,$np,$ng,$nn)
+    {
+        // null move
+        if($np+$ng+$nn == 0)
+        {
+            if($cg == 0)
+            {
+                // do nothing
+            }
+            else
+            {
+                // remove from $cg
+                // update $cg
+                // item is 0,0,0
+            }
+        }
+        // resolve target group
+        $prevGroup = self::Find($backer,$np);
+        $indexGroup = self::Find($backer,$ng);
+        $nextGroup = self::Find($backer,$nn);
+        $targetGroup = $prevGroup;
+        if($targetGroup)
+        {
+            $targetGroup = $nextGroup;
+        }
+        if($targetGroup)
+        {
+            $targetGroup = $indexGroup ?? self::Create($backer,$ng );
+        }
+        // update target group ID
+        $ng = $targetGroup->id;
+        // check if group changes
+        if($ng != $cg)
+        {
+            if($cg!=0)
+            {
+                // remove from cg
+                // update cg!
+            }
+            // add to ng
+            // this must return item's new positions
+            // update ng
+        }
+        else
+        {
+            // move within cg/ng
+            // this must return item's new positions
+            // update ng/cg
+        }
+        
+    }
+    public function Walk($itemId=-1)
+    {
+        $item = null;
+        for($i=0;$i<count($this->items);$i++)
+        {
+            $prev = 0;
+            $next = 0;
+            $id = $this->items[$i]['id'];
+            if($i>0)
+            {
+                $prev = $this->items[$i-1]['id'];
+            }
+            if($i<count($this->items)-1)
+            {
+                $next = $this->items[$i+1]['id'];
+            }
+            $updatedItem = ['id'=>$id,'prev'=>$prev,'next'=>$next];
+            $this->items[$i]=$updatedItem;
+            if($id == $itemId)
+            {
+                $item = $updatedItem;
+            }
+        }
+        return $item;
+    }
+    
+    public function Move($from, $to)
+    {
+        if($from>=count($this->items) || $from <0 || $to>count($this->items) || $to<-1)
+        {
+            return null;
+        }
+        if($from == $to)
+        {
+            // do nothing but complete contract
+            return $this->items[$from];
+        }
+        if($to > $from)
+        {
+            $to-=1;
+        }
+        $itemId = $this->items[$from]['id'];
+        $this->Remove($itemId);
+        $item = $this->Add($itemId, $to);
+        return $item;
+    }
+    
+    public function Add($id,$pos = -1)
+    {
+        if($pos >=count($this->items))
+        {
+            $pos = -1;
+        }
+        $item = ['id'=>$id,'prev'=>0, 'next'=>0];
+        if($pos == -1)
+        {
+            $item['prev']=$this->items[count($this->items)-1]['id'];
+            $this->items[count($this->items)-1]['next'] = $id;
+            $this->items[]=$item;
+            return $item;
+        }
+        array_splice($this->items,$pos,0,[$item]);
+        $item = $this->Walk($id);
+        return $item;
+    }
+    public function IndexOf($itemId)
+    {
+        for($i=0;$i<count($this->items);$i++)
+        {
+            if($this->items[$i]['id']==$itemId)
+            {
+                return $i;
+            }
+        }
+        return -1;
+    }
+    public function Remove($id)
+    {
+        $index = $this->IndexOf($id);
+        if($index==-1)
+        {
+            return false;
+        }
+        array_splice($this->items,$index,1);
+        $this->Walk();
+        return true;
+    }
+}
+
 class KBPageSequence
 {
     public $pages;
