@@ -325,6 +325,63 @@ a.smalllink
     line-height: 1.5;
 }
 
+.kbpage nav div
+{
+    display: inline-block;
+    width: 30%;
+}
+.kbpage nav a
+{
+    white-space:nowrap;
+    width: 100%;
+        overflow: hidden;
+}
+.kbpage nav .prevlink
+{
+    text-align:left;
+}
+.kbpage nav .indexlink
+{
+    text-align:center;
+}
+.kbpage nav .nextlink
+{
+    text-align:right;
+}
+.kbpage nav div::before, .kbpage nav div::after
+{
+    display: inline;
+    width: 5%
+}
+.kbpage nav .prevlink::before
+{
+    content: '◀';
+    padding-right: 6px;
+}
+.kbpage nav .indexlink::before, .kbpage nav .indexlink::after
+{
+    content: '◆';
+    padding-right: 6px;
+    padding-left: 6px;
+}
+.kbpage nav .nextlink::after
+{
+    content: '▶';
+    padding-left: 6px;
+}
+@media  (max-width: 450px)
+{
+    .kbpage nav div 
+    {
+        width: 100%;
+        overflow: hidden;
+    }
+    .kbpage nav .prevlink,.kbpage nav .nextlink
+    {
+        text-align:center;
+    }
+    
+}
 
 /* end kb */
 
