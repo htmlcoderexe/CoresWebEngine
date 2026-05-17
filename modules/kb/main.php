@@ -134,6 +134,7 @@ function ModuleAction_kb_test($params)
     KBGroupTest::TestAdd();
     KBGroupTest::TestRemove();
     KBGroupTest::TestMove();
+    KBGroupTest::TestMoveWithDB();
     
     die;
     return;
