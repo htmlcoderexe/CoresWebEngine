@@ -128,6 +128,11 @@ function ModuleAction_kb_test($params)
         return;
     }
     
+    $testGroup = new KBGroupTest();
+    $testGroup->Run();
+    $testGroup->PrintResults();
+    
+    /*
     KBGroupTest::TestFind();
     KBGroupTest::TestLoad();
     KBGroupTest::TestSave1();
@@ -135,7 +140,7 @@ function ModuleAction_kb_test($params)
     KBGroupTest::TestRemove();
     KBGroupTest::TestMove();
     KBGroupTest::TestMoveWithDB();
-    
+    //*/
     die;
     return;
         DBHelper::RunStmt("TRUNCATE TABLE `intranet_basic`.`kbgroups`", []);

@@ -20,184 +20,18 @@ interface KBGroupBacker
     public function Find($id);
 }
 
-class KBGroupTestBacker implements KBGroupBacker
-{
-    public $groups;
-    public function __construct($groups = [])
-    {
-        $this->groups = $groups;
-    }
-    public function GetItems($id)
-    {
-        if(array_key_exists($id,$this->groups))
-        {
-            return $this->groups[$id];
-        }
-        return [];
-    }
-    public function Find($id)
-    {
-        $ids=array_keys($this->groups);
-        foreach($ids as $groupId)
-        {
-            foreach($this->groups[$groupId] as $item)
-            {
-                if($item['id'] == $id)
-                {
-                    return $groupId;
-                }
-            }
-        }
-        return 0;
-    }
-    public function SetItems($id,$items)
-    {
-        $this->groups[$id] = $items;
-    }
-}
-
-class KBGroupTest
-{
-    public static function expect($expect, $value)
-    {
-        $a= json_encode($expect);
-        $b= json_encode($value);
-        $pass = $a===$b;
-        
-        echo("<h1> EXPECTED</h1><hr />");
-        var_dump($expect);
-        echo("<h1 style=\"color:".($pass?'green':'red')."\"> GOT</h1><hr />");
-        var_dump($value);
-        echo("<hr />");
-        return $pass;
-    }
-    public const testdata1 = [
-            1400=>[
-                ['id'=>600,'prev'=>0,'next'=>700],
-                ['id'=>700,'prev'=>600,'next'=>2900],
-                ['id'=>2900,'prev'=>700,'next'=>0],
-            ],
-            1000=>[
-                ['id'=>4100,'prev'=>0,'next'=>1200],
-                ['id'=>1200,'prev'=>4100,'next'=>500],
-                ['id'=>500,'prev'=>1200,'next'=>200],
-                ['id'=>200,'prev'=>500,'next'=>0],
-            ],
-        ];
-    public const testitems1 = [
-            ['id'=>10400, 'prev'=> 0, 'next'=> 19900],
-            ['id'=>19900, 'prev'=> 10400, 'next'=> 11100],
-            ['id'=>11100, 'prev'=> 19900, 'next'=> 10000],
-            ['id'=>10000, 'prev'=> 11100, 'next'=> 0],
-    ];
-    public static function TestFind()
-    {
-        
-        $backer = new KBGroupTestBacker(self::testdata1);
-        $testGroup2 = KBGroup::Find(backer: $backer, id: 700);
-        var_dump($testGroup2);
-    }
-    public static function TestLoad()
-    {
-        $backer = new KBGroupTestBacker(self::testdata1);
-        $testGroup1 = KBGroup::Load(backer:  $backer, id: 1400);
-        var_dump($testGroup1);
-    }
-    
-    public static function TestSave1()
-    {
-        $backer = new KBGroupTestBacker(self::testdata1);
-        $testGroup3 = new KBGroup(backer: $backer, items: self::testitems1, id: 20000);
-        $testGroup3->Save();
-        var_dump($backer);
-    }
-    
-    public static function TestAdd()
-    {
-        $backer = new KBGroupTestBacker(self::testdata1);
-        $testGroup14 = KBGroup::Load(backer:  $backer, id: 1400);
-        $item300 = $testGroup14->Add(id: 30000);
-        self::expect(['id'=>30000,'prev'=>2900,'next'=>0], $item300);
-        $item302 = $testGroup14->Add(id: 30200, pos: 0);
-        self::expect(['id'=>30200,'prev'=>0,'next'=>600],$item302);
-    }
-    public static function TestRemove()
-    {
-        $backer = new KBGroupTestBacker(self::testdata1);
-        $testGroup14 = KBGroup::Load(backer:  $backer, id: 1400);
-        $testGroup14->Remove(id: 600);
-        $testGroup14->Remove(id: 2900);
-        self::expect([['id'=>700,'prev'=>0,'next'=>0]],$testGroup14->items);
-    }
-    public static function TestMove()
-    {
-        echo "<h1>Testing move with Mock</h1><hr />";
-        $backer = new KBGroupTestBacker(self::testdata1);
-        $testGroup14 = KBGroup::Load(backer:  $backer, id: 1400);
-        $testGroup14->Move(2,0);
-        echo "<h2>Move within group.</h2><hr />";
-        self::expect([
-                ['id'=>2900,'prev'=>0,'next'=>600],
-                ['id'=>600,'prev'=>2900,'next'=>700],
-                ['id'=>700,'prev'=>600,'next'=>0],
-            ],$testGroup14->items);
-        $testGroup14->Save();
-        $testGroup10 = KBGroup::Load(backer: $backer, id: 1000);
-        echo "<h2>Move 600 from 1400 to 1000, set after 1200</h2><hr />";
-        $item6=KBGroup::ProcessMove(backer: $backer, itemId: 600,cp:0,cg:1400,cn:0,np:1200,ng:1000,nn:0);
-        ksort($item6);
-        self::expect(['id'=>600,'joined'=>1000,'left'=>1400,'next'=>500,'prev'=>1200],$item6);
-        echo "<h2>Move 4100 from 1000 to 1400, set before 700</h2><hr />";
-        $item41=KBGroup::ProcessMove(backer: $backer, itemId: 4100,cp:0,cg:1000,cn:0,np:0,ng:1400,nn:700);
-        ksort($item41);
-        self::expect(['id'=>4100,'joined'=>1400,'left'=>1000,'next'=>700,'prev'=>2900],$item41);
-        echo "<h2>Move 200000 from nowhere to 205000, which doesn't exist yet</h2><hr />";
-        $item2000=KBGroup::ProcessMove(backer: $backer, itemId: 200000, cp:0,cg:0,cn:0,np:0,ng:205000,nn:0);
-        ksort($item2000);
-        self::expect(['id'=>200000,'joined'=>205000,'left'=>0,'next'=>0,'prev'=>0],$item2000);
-        var_dump($backer);
-    }
-    public static function TestMoveWithDB()
-    {
-        echo "<h1>Testing move with DB</h1><hr />";
-        /// setup
-        $backer = new KBGroupDBBacker();
-        $testGroup14 = new KBGroup(backer: $backer, items: self::testdata1[1400],id: 1400);
-        $testGroup14->Save();
-        $testGroup10 = new KBGroup(backer: $backer, items: self::testdata1[1000],id: 1000);
-        $testGroup10->Save();
-        /// end setup
-        $testGroup14->Move(2,0);
-        echo "<h2>Move within group.</h2><hr />";
-        self::expect([
-                ['id'=>2900,'prev'=>0,'next'=>600],
-                ['id'=>600,'prev'=>2900,'next'=>700],
-                ['id'=>700,'prev'=>600,'next'=>0],
-            ],$testGroup14->items);
-        $testGroup14->Save();
-        echo "<h2>Move 600 from 1400 to 1000, set after 1200</h2><hr />";
-        $item6=KBGroup::ProcessMove(backer: $backer, itemId: 600,cp:0,cg:1400,cn:0,np:1200,ng:1000,nn:0);
-        ksort($item6);
-        self::expect(['id'=>600,'joined'=>1000,'left'=>1400,'next'=>500,'prev'=>1200],$item6);
-        echo "<h2>Move 4100 from 1000 to 1400, set before 700</h2><hr />";
-        $item41=KBGroup::ProcessMove(backer: $backer, itemId: 4100,cp:0,cg:1000,cn:0,np:0,ng:1400,nn:700);
-        ksort($item41);
-        self::expect(['id'=>4100,'joined'=>1400,'left'=>1000,'next'=>700,'prev'=>2900],$item41);
-        echo "<h2>Move 200000 from nowhere to 205000, which doesn't exist yet</h2><hr />";
-        $item2000=KBGroup::ProcessMove(backer: $backer, itemId: 200000, cp:0,cg:0,cn:0,np:0,ng:205000,nn:0);
-        ksort($item2000);
-        self::expect(['id'=>200000,'joined'=>205000,'left'=>0,'next'=>0,'prev'=>0],$item2000);
-        
-    }
-}
 
 class KBGroupDBBacker implements KBGroupBacker
 {
-    const TABLE = 'kbgroups';
+    public $table;
+    public function __construct($tablename)
+    {
+        $this->table = $tablename;
+    }
     public function Find($id)
     {
         $fields = ['collectionId'];
-        $q=DBHelper::Select(self::TABLE, $fields, ['entityId'=>$id]);
+        $q=DBHelper::Select($this->table, $fields, ['entityId'=>$id]);
         $id = DBHelper::RunScalar($q,[$id]);
         if($id===false)
             return 0;
@@ -207,7 +41,7 @@ class KBGroupDBBacker implements KBGroupBacker
     public function GetItems($id)
     {
         $fields = ['ordinal','entityId','prev','next'];
-        $q=DBHelper::Select(self::TABLE, $fields, ['collectionId'=>$id],['ordinal'=>'ASC']);
+        $q=DBHelper::Select($this->table, $fields, ['collectionId'=>$id],['ordinal'=>'ASC']);
         //////var_dump($q);
         //die;
         $items = [];
@@ -228,7 +62,7 @@ class KBGroupDBBacker implements KBGroupBacker
         
         DBHelper::BeginTransaction();
         // erase current entries
-        DBHelper::Delete(self::TABLE,['collectionId'=>$id]);
+        DBHelper::Delete($this->table,['collectionId'=>$id]);
         // write updated entries
         // #TODO: this, but as one write
         foreach($items as $ord=>$item)
@@ -236,7 +70,7 @@ class KBGroupDBBacker implements KBGroupBacker
             // always collectionId, ordinal, entityId [, ...]
             $row = [$id,$ord,$item['id'],$item['prev'],$item['next']];
             ////var_dump($row);
-            DBHelper::Insert(self::TABLE,$row);
+            DBHelper::Insert($this->table,$row);
         }
         DBHelper::Commit();
     }
@@ -268,10 +102,7 @@ class KBGroup
     public static function Find(KBGroupBacker $backer, $id)
     {
         $gid = $backer->Find($id);
-        if($gid!=0)
-        {
-            return self::Load($backer, $gid);
-        }
+        return $gid;
     }
     
     public static function Create($backer, $id )
@@ -301,13 +132,15 @@ class KBGroup
             }
         }
         // resolve target group
-        $prevGroup = self::Find($backer,$np);
-        $indexGroup = self::Find($backer,$ng);
-        $nextGroup = self::Find($backer,$nn);
+        $prevGroupId = self::Find($backer,$np);
+        $indexGroupId = self::Find($backer,$ng);
+        $nextGroupId = self::Find($backer,$nn);
         $anchorIndex = -1;
-        $targetGroup = $prevGroup;
-        if($prevGroup)
+        $targetGroup = null;
+        if($prevGroupId>0)
         {
+            $prevGroup = self::Load($backer, $prevGroupId);
+            $targetGroup = $prevGroup;
             $anchorIndex = $prevGroup->IndexOf($np)+1;
             if(count($prevGroup->items) == $anchorIndex)
             {
@@ -316,7 +149,8 @@ class KBGroup
         }
         if(!$targetGroup|| $anchorIndex == -1)
         {
-            $targetGroup = $nextGroup;            
+            $nextGroup = self::Load($backer, $nextGroupId);
+            $targetGroup = $nextGroup;
             if($nextGroup)
             {
                 $anchorIndex = $nextGroup->IndexOf($nn);
@@ -324,6 +158,7 @@ class KBGroup
         }
         if(!$targetGroup || $anchorIndex == -1)
         {
+            $indexGroup = self::Load($backer, $indexGroupId);
             $targetGroup = $indexGroup;
             if(!$indexGroup)
             {
@@ -443,6 +278,7 @@ class KBGroup
             }
             $item['prev']=$newPrev;
             $this->items[]=$item;
+            $this->Walk();
             return $item;
         }
         array_splice($this->items,$pos,0,[$item]);
@@ -767,3 +603,5 @@ class KBPageSequence
         return $itemsToUpdate;
     }
 }
+
+require_once "KBGroup.test.php";
