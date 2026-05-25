@@ -1,4 +1,5 @@
 <?php
+require_once "KBGroupMoveResult.php";
 
 interface KBGroupBacker
 {
@@ -17,7 +18,7 @@ interface KBGroupBacker
      * Locates a group by item ID
      * @param type $id
      */
-    public function Find($id);
+    public function Find($id) : int;
 }
 
 
@@ -28,14 +29,16 @@ class KBGroupDBBacker implements KBGroupBacker
     {
         $this->table = $tablename;
     }
-    public function Find($id)
+    public function Find($id) : int
     {
         $fields = ['collectionId'];
         $q=DBHelper::Select($this->table, $fields, ['entityId'=>$id]);
-        $id = DBHelper::RunScalar($q,[$id]);
-        if($id===false)
+        $gid = DBHelper::RunScalar($q,[$id]);
+        if($gid === false)
+        {
             return 0;
-        return intval($id);
+        }
+        return intval($gid);
     }
     
     public function GetItems($id)
@@ -99,7 +102,7 @@ class KBGroup
     {
         $this->backer->SetItems(id: $this->id, items: $this->items);
         }
-    public static function Find(KBGroupBacker $backer, $id)
+    public static function Find(KBGroupBacker $backer, $id) : int
     {
         $gid = $backer->Find($id);
         return $gid;
@@ -110,7 +113,7 @@ class KBGroup
         $items = [];
         return new KBGroup($backer, $id, $items);
     }
-    public static function ProcessMove($backer,$itemId, $cp,$cg,$cn,$np,$ng,$nn)
+    public static function ProcessMove($backer,$itemId, $cp,$cg,$cn,$np,$ng,$nn) : KBGroupMoveResult
     {
         // null move
         if($np+$ng+$nn == 0)
@@ -118,17 +121,17 @@ class KBGroup
             if($cg == 0)
             {
                 // do nothing
-                return ['id'=>$itemId,'prev'=>0,'next'=>0,'left'=>0,'joined'=>0];
+                return new KBGroupMoveResult(noChange: true);
             }
             else
             {
                 // remove from $cg
                 $currentGroup = self::Load(backer:$backer,id:$cg);
-                $currentGroup->Remove(id: $itemId);
+                $items = $currentGroup->Remove(id: $itemId);
                 // update cg!
                 $currentGroup->Save();
                 // item is 0,0,0
-                return ['id'=>$itemId,'prev'=>0,'next'=>0,'left'=>$cg,'joined'=>0];
+                return new KBGroupMoveResult(itemId: $itemId,left:$cg, affectedItems:$items);
             }
         }
         // resolve target group
@@ -175,15 +178,18 @@ class KBGroup
         if($ng != $cg)
         {
             $update = ['id'=>$itemId,'left'=>0,'joined'=>0];
+            $update = new KBGroupMoveResult(itemId: $itemId);
+            $items = [];
             if($cg!=0)
             {
                 // remove from cg
                 $currentGroup = self::Load(backer:$backer,id:$cg);
                 if($cg)
                 {
-                    $currentGroup->Remove(id: $itemId);
-                    // update cg!
-                    $update['left']=$currentGroup->id;
+                    $rmitems = $currentGroup->Remove(id: $itemId);
+                    $items =array_merge($items, $rmitems);
+// update cg!
+                    $update->leftGroup=$currentGroup->id;
                     $currentGroup->Save();
                 
                 }
@@ -191,10 +197,13 @@ class KBGroup
             // add to ng
             // this must return item's new positions
             // update ng
-            $item = $targetGroup->Add(id: $itemId, pos: $anchorIndex);
-            $update['joined']=$targetGroup->id;
-            $update['prev']=$item['prev'];
-            $update['next']=$item['next'];
+            $additems = $targetGroup->Add(id: $itemId, pos: $anchorIndex);
+            $items = array_merge($items,$additems);
+            $update->joinedGroup=$targetGroup->id;
+            $update->affectedItems = $items;
+            $item = $targetGroup->items[$targetGroup->IndexOf($itemId)];
+            $update->previousItem=$item['prev'];
+            $update->nextItem=$item['next'];
             
             $targetGroup->Save();
             return $update;
@@ -202,21 +211,29 @@ class KBGroup
         else
         {
             $update = ['id'=>$itemId,'left'=>$targetGroup->id,'joined'=>$targetGroup->id];
+            $update = new KBGroupMoveResult(itemId: $itemId, leftGroup: $targetGroup->id, joinedGroup: $targetGroup->id);
             // move within cg/ng
             // this must return item's new positions
             // update ng/cg
             $currIndex = $targetGroup->IndexOf($itemId);
-            $item = $targetGroup->Move($currIndex, $anchorIndex);
-            $update['prev']=$item['prev'];
-            $update['next']=$item['next'];
+            if($currIndex ===  $anchorIndex)
+            {
+                $update = new KBGroupMoveResult(noChange:true);
+                return $update;
+            }
+            $items = $targetGroup->Move($currIndex, $anchorIndex);
+            $item = $targetGroup->items[$targetGroup->IndexOf($itemId)];
+            $update->previousItem=$item['prev'];
+            $update->nextItem=$item['next'];
+            $update->affectedItems=$items;
             $targetGroup->Save();
             return $update;
         }
         
     }
-    public function Walk($itemId=-1)
+    public function Walk()
     {
-        $item = null;
+        $changedItems = [];
         for($i=0;$i<count($this->items);$i++)
         {
             $prev = 0;
@@ -230,14 +247,15 @@ class KBGroup
             {
                 $next = $this->items[$i+1]['id'];
             }
-            $updatedItem = ['id'=>$id,'prev'=>$prev,'next'=>$next];
-            $this->items[$i]=$updatedItem;
-            if($id == $itemId)
+            $n = ['id'=>$id,'prev'=>$prev,'next'=>$next];
+            $o = $this->items[$i];
+            if($n['prev']!=$o['prev'] || $n['next']!=$o['next'])
             {
-                $item = $updatedItem;
+                $changedItems[]=$n;
             }
+            $this->items[$i]=$n;
         }
-        return $item;
+        return $changedItems;
     }
     
     public function Move($from, $to)
@@ -256,9 +274,24 @@ class KBGroup
             $to-=1;
         }
         $itemId = $this->items[$from]['id'];
-        $this->Remove($itemId);
-        $item = $this->Add($itemId, $to);
-        return $item;
+        $itemlist1 = $this->Remove($itemId);
+        $itemlist2 = $this->Add($itemId, $to);
+        $items = $itemlist2;
+        $updatedIds = [];
+        foreach($itemlist2 as $item2)
+        {
+            $updatedIds[]=$item2['id'];
+        }
+        foreach($itemlist1 as $item1)
+        {
+            if(in_array(haystack: $updatedIds,needle: $item1['id']))
+            {
+                continue;
+            }
+            $items[]=$item1;
+            $updatedIds[]=$item1['id'];
+        }
+        return $items;
     }
     
     public function Add($id,$pos = -1)
@@ -278,12 +311,10 @@ class KBGroup
             }
             $item['prev']=$newPrev;
             $this->items[]=$item;
-            $this->Walk();
-            return $item;
+            return $this->Walk();
         }
         array_splice($this->items,$pos,0,[$item]);
-        $item = $this->Walk($id);
-        return $item;
+        return $this->Walk($id);
     }
     public function IndexOf($itemId)
     {
@@ -301,11 +332,10 @@ class KBGroup
         $index = $this->IndexOf($id);
         if($index==-1)
         {
-            return false;
+            return [];
         }
         array_splice($this->items,$index,1);
-        $this->Walk();
-        return true;
+        return $this->Walk();
     }
 }
 

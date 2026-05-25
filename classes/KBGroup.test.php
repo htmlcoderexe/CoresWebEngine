@@ -17,7 +17,7 @@ class KBGroupTestBacker implements KBGroupBacker
         }
         return [];
     }
-    public function Find($id)
+    public function Find($id) : int
     {
         $ids=array_keys($this->groups);
         foreach($ids as $groupId)
@@ -121,7 +121,7 @@ class KBGroupTest extends MiniTest
             
                 $item9001 = KBGroup::ProcessMove(backer: $this->mockDB,cg: 0, cp:0, cn:0, ng:0, np:0,nn:500,itemId: 9001);
                 $testGroup10 = KBGroup::Load(backer:  $this->mockDB, id: 1000);
-                ksort($item9001);
+                //ksort($item9001);
                 return [$testGroup10->id, $testGroup10->items,$item9001];
             },
             'expect'=>[1000,
@@ -132,7 +132,12 @@ class KBGroupTest extends MiniTest
                     ['id'=>500,'prev'=>9001,'next'=>200],
                     ['id'=>200,'prev'=>500,'next'=>0],
                 ],
-                ['id'=>9001,'joined'=>1000,'left'=>0,'next'=>500,'prev'=>1200]
+                new KBGroupMoveResult(itemId: 9001, joinedGroup: 1000, nextItem: 500, previousItem: 1200, affectedItems: [
+                    ['id'=>1200,'prev'=>4100,'next'=>9001],
+                    ['id'=>9001,'prev'=>1200,'next'=>500],
+                    ['id'=>500,'prev'=>9001,'next'=>200]
+                    
+                ])
             ],
             'title'=>"Adding a new item after an known item in unknown group",
             'group'=>"Add"
@@ -244,7 +249,7 @@ class KBGroupTest extends MiniTest
             'group'=>"Move",
             'body'=>function(){
                 $item6=KBGroup::ProcessMove(backer: $this->mockDB, itemId: 600,cp:0,cg:1400,cn:0,np:1200,ng:1000,nn:0);
-                ksort($item6);
+                //ksort($item6);
                 $testGroup10 = KBGroup::Load(backer: $this->mockDB, id: 1000);
                 $testGroup14 = KBGroup::Load(backer: $this->mockDB, id: 1400);
                 return [$item6,$testGroup14->items];
@@ -262,7 +267,7 @@ class KBGroupTest extends MiniTest
             'group'=>"Move",
             'body'=>function(){
                 $item1=KBGroup::ProcessMove(backer: $this->mockDB, itemId: 4100,cp:0,cg:1000,cn:0,np:0,ng:1400,nn:700);
-                ksort($item1);
+                //ksort($item1);
                 $testGroup10 = KBGroup::Load(backer: $this->mockDB, id: 1000);
                 $testGroup14 = KBGroup::Load(backer: $this->mockDB, id: 1400);
                 return $item1;
@@ -270,11 +275,23 @@ class KBGroupTest extends MiniTest
             'expect'=>['id'=>4100,'joined'=>1400,'left'=>1000,'next'=>700,'prev'=>2900]
         ];
         $this->tests[]=[
+            'title'=>"Move 4100 from 1400 to 1400, set before 700, again",
+            'group'=>"Move",
+            'body'=>function(){
+                $item1=KBGroup::ProcessMove(backer: $this->mockDB, itemId: 4100,cp:0,cg:1400,cn:0,np:2900,ng:1400,nn:700);
+                //ksort($item1);
+                $testGroup10 = KBGroup::Load(backer: $this->mockDB, id: 1000);
+                $testGroup14 = KBGroup::Load(backer: $this->mockDB, id: 1400);
+                return $item1;
+            },
+            'expect'=>['id'=>0,'joined'=>0,'left'=>0,'next'=>0,'prev'=>0]
+        ];
+        $this->tests[]=[
             'title'=>"Move 200000 from nowhere to 205000, which doesn't exist yet",
             'group'=>"Move",
             'body'=>function(){
                 $item1=KBGroup::ProcessMove(backer: $this->mockDB, itemId: 200000, cp:0,cg:0,cn:0,np:0,ng:205000,nn:0);
-                ksort($item1);
+                //ksort($item1);
                 return $item1;
             },
             'expect'=>['id'=>200000,'joined'=>205000,'left'=>0,'next'=>0,'prev'=>0]
@@ -304,7 +321,7 @@ class KBGroupTest extends MiniTest
             'group'=>"Move With DB",
             'body'=>function(){
                 $item6=KBGroup::ProcessMove(backer: $this->realDB, itemId: 600,cp:0,cg:1400,cn:0,np:1200,ng:1000,nn:0);
-                ksort($item6);
+                //ksort($item6);
                 $testGroup10 = KBGroup::Load(backer: $this->realDB, id: 1000);
                 $testGroup14 = KBGroup::Load(backer: $this->realDB, id: 1400);
                 return [$item6,$testGroup14->items];
@@ -322,7 +339,7 @@ class KBGroupTest extends MiniTest
             'group'=>"Move With DB",
             'body'=>function(){
                 $item1=KBGroup::ProcessMove(backer: $this->realDB, itemId: 4100,cp:0,cg:1000,cn:0,np:0,ng:1400,nn:700);
-                ksort($item1);
+                //ksort($item1);
                 $testGroup10 = KBGroup::Load(backer: $this->realDB, id: 1000);
                 $testGroup14 = KBGroup::Load(backer: $this->realDB, id: 1400);
                 return $item1;
@@ -334,7 +351,7 @@ class KBGroupTest extends MiniTest
             'group'=>"Move With DB",
             'body'=>function(){
                 $item1=KBGroup::ProcessMove(backer: $this->realDB, itemId: 200000, cp:0,cg:0,cn:0,np:0,ng:205000,nn:0);
-                ksort($item1);
+                //ksort($item1);
                 return $item1;
             },
             'expect'=>['id'=>200000,'joined'=>205000,'left'=>0,'next'=>0,'prev'=>0]
