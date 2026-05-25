@@ -42,9 +42,20 @@ class MiniTest
     function RunTest(callable $test, $expect, $title,$group)
     {
         $value = $test();
-        $a= json_encode($expect);
-        $b= json_encode($value);
-        $pass = $a===$b;
+        if(is_object($expect))
+        {
+            $pass = $expect == $value;
+        }
+        elseif(is_array($expect))
+        {
+            $a= json_encode($expect);
+            $b= json_encode($value);
+            $pass = $a===$b;
+        }
+        else
+        {
+            $pass = $expect === $value;
+        }
         if(!array_key_exists($group, $this->results))
         {
             $this->results[$group] = [];
