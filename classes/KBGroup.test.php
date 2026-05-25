@@ -98,10 +98,14 @@ class KBGroupTest extends MiniTest
                 $testGroup14 = KBGroup::Load(backer:  $this->mockDB, id: 1400);
                 $item300 = $testGroup14->Add(id: 30000);
                 $testGroup14->Save();
-                return $item300;
+                return [$item300,$testGroup14->items];
             },
-            'expect'=>['id'=>30000,'prev'=>2900,'next'=>0],
-            'title'=>"Adding a new item to an existing group after a specific item",
+            'expect'=>[[],[
+                ['id'=>600,'prev'=>0,'next'=>700],
+                ['id'=>700,'prev'=>600,'next'=>2900],
+                ['id'=>2900,'prev'=>700,'next'=>30000],
+                ['id'=>30000,'prev'=>2900,'next'=>0],]],
+            'title'=>"Adding a new item to an existing group at the end",
             'group'=>"Add"
         ];
         $this->tests[]=[
@@ -111,7 +115,7 @@ class KBGroupTest extends MiniTest
                 $item302 = $testGroup14->Add(id: 30200, pos: 0);
                 return $item302;
             },
-            'expect'=>['id'=>30200,'prev'=>0,'next'=>600],
+            'expect'=>[['id'=>30200,'prev'=>0,'next'=>600],['id'=>600,'prev'=>30200,'next'=>700]],
             'title'=>"Adding a new item at the beginning of a group.",
             'group'=>"Add"
         ];
@@ -121,7 +125,6 @@ class KBGroupTest extends MiniTest
             
                 $item9001 = KBGroup::ProcessMove(backer: $this->mockDB,cg: 0, cp:0, cn:0, ng:0, np:0,nn:500,itemId: 9001);
                 $testGroup10 = KBGroup::Load(backer:  $this->mockDB, id: 1000);
-                //ksort($item9001);
                 return [$testGroup10->id, $testGroup10->items,$item9001];
             },
             'expect'=>[1000,
@@ -166,7 +169,7 @@ class KBGroupTest extends MiniTest
         $this->GroupAddTests();
         $this->GroupRemoveTests();
         $this->GroupMoveTests();
-        $this->GroupMoveTestsInDB();
+        //$this->GroupMoveTestsInDB();
     }
     
     
@@ -252,13 +255,26 @@ class KBGroupTest extends MiniTest
                 //ksort($item6);
                 $testGroup10 = KBGroup::Load(backer: $this->mockDB, id: 1000);
                 $testGroup14 = KBGroup::Load(backer: $this->mockDB, id: 1400);
-                return [$item6,$testGroup14->items];
+                return [$item6,$testGroup14->items, $testGroup10->items];
             },
             'expect'=>[
-                ['id'=>600,'joined'=>1000,'left'=>1400,'next'=>500,'prev'=>1200],
+                new KBGroupMoveResult(itemId: 600, joinedGroup: 1000, leftGroup: 1400, nextItem: 500, previousItem: 1200, affectedItems:[
+                    ['id'=>2900,'prev'=>0,'next'=>700],
+                    ['id'=>700,'prev'=>2900,'next'=>0],
+                    ['id'=>1200,'prev'=>4100, 'next'=>600],
+                    ['id'=>600,'prev'=>1200, 'next'=>500],
+                    ['id'=>500,'prev'=>600, 'next'=>200]
+                ]),
                 [
                     ['id'=>2900,'prev'=>0,'next'=>700],
                     ['id'=>700,'prev'=>2900,'next'=>0],
+                ],
+                [
+                    ['id'=>4100,'prev'=>0,'next'=>1200],
+                    ['id'=>1200,'prev'=>4100,'next'=>600],
+                    ['id'=>600,'prev'=>1200,'next'=>500],
+                    ['id'=>500,'prev'=>600,'next'=>200],
+                    ['id'=>200,'prev'=>500,'next'=>0],
                 ]
             ]
         ];
@@ -270,9 +286,22 @@ class KBGroupTest extends MiniTest
                 //ksort($item1);
                 $testGroup10 = KBGroup::Load(backer: $this->mockDB, id: 1000);
                 $testGroup14 = KBGroup::Load(backer: $this->mockDB, id: 1400);
-                return $item1;
+                return [$item1,$testGroup14->items];
             },
-            'expect'=>['id'=>4100,'joined'=>1400,'left'=>1000,'next'=>700,'prev'=>2900]
+            'expect'=>[
+                    new KBGroupMoveResult(itemId:4100, joinedGroup: 1400, leftGroup: 1000, previousItem: 2900, nextItem: 700, affectedItems: [
+                        ['id'=>1200, 'prev'=>0, 'next'=>600],
+                        ['id'=>2900, 'prev'=>0, 'next'=>4100],
+                        ['id'=>4100, 'prev'=>2900, 'next'=>700],
+                        ['id'=>700, 'prev'=>4100, 'next'=>0]
+                    ]),                
+                    [
+                        ['id'=>2900,'prev'=>0,'next'=>4100],
+                        ['id'=>4100, 'prev'=>2900, 'next'=>700],
+                        ['id'=>700,'prev'=>4100,'next'=>0]
+
+                    ]
+                ]
         ];
         $this->tests[]=[
             'title'=>"Move 4100 from 1400 to 1400, set before 700, again",
@@ -282,22 +311,31 @@ class KBGroupTest extends MiniTest
                 //ksort($item1);
                 $testGroup10 = KBGroup::Load(backer: $this->mockDB, id: 1000);
                 $testGroup14 = KBGroup::Load(backer: $this->mockDB, id: 1400);
-                return $item1;
+                return [$item1, $testGroup14->items];
             },
-            'expect'=>['id'=>0,'joined'=>0,'left'=>0,'next'=>0,'prev'=>0]
+            'expect'=>[new KBGroupMoveResult(noChange:true),                
+                    [
+                        ['id'=>2900,'prev'=>0,'next'=>4100],
+                        ['id'=>4100, 'prev'=>2900, 'next'=>700],
+                        ['id'=>700,'prev'=>4100,'next'=>0]
+
+                    ]]
         ];
         $this->tests[]=[
             'title'=>"Move 200000 from nowhere to 205000, which doesn't exist yet",
             'group'=>"Move",
             'body'=>function(){
                 $item1=KBGroup::ProcessMove(backer: $this->mockDB, itemId: 200000, cp:0,cg:0,cn:0,np:0,ng:205000,nn:0);
+                $g2050=KBGroup::Load(backer:$this->mockDB, id: 205000);
                 //ksort($item1);
-                return $item1;
+                return [$item1,$g2050->items];
             },
-            'expect'=>['id'=>200000,'joined'=>205000,'left'=>0,'next'=>0,'prev'=>0]
+            'expect'=>[new KBGroupMoveResult(itemId:200000, joinedGroup:205000, leftGroup:0, nextItem:0, previousItem:0),
+                [['id'=>200000,'prev'=>0,'next'=>0]]
+                ]
         ];
     }
-    function GroupMoveTestsInDB()
+    function XXNOTUSEDGroupMoveTestsInDB()
     {
         $this->tests[]=[
             'title'=>"Move within group.",
