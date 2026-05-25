@@ -32,8 +32,8 @@ class KB
 			$buffer.= $project['name']."<br />";
 		}
 		$ss=new StringSet(1,1,1);
-		$page=new KB_Page(1);
-		return $page->GetRaw();
+		$page=new KBPage(1);
+		return $page->text;
 	//	return $buffer;
 		//return "<pre>start job: <1B>3<0F1B>p<00C8FA>\r\nend job<1B>e<101B>i</pre>";
 	}
