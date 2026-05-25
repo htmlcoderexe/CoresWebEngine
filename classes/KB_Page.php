@@ -1,8 +1,13 @@
 <?php
-class KB_Page
+require_once "KBPageDataProvider.php";
+
+class KBPage
 {
-    public $raw;
-    private $processed;
+    
+    public KBPageDataProvider $DataProvider;
+    public $text;
+    public $html;
+    public $ejsdoc;
     
     public $latest_revision;
     public $title;
@@ -13,57 +18,65 @@ class KB_Page
     public $modified;
     public $creator;
     
-    public $ejsdoc;
     
-    public function __construct($id,$title,$content_ejsdoc,$content_plaintext,$content_html,$project_id = 0)
+    public function __construct($provider, $id, $title, $ejsdoc, $text, $html, $project_id = 0)
     {
-
+        $this->DataProvider = $provider;
         $this->title=$title;
-        $this->raw=$content_plaintext;
-        $this->ejsdoc=$content_ejsdoc;
+        $this->text=$text;
+        $this->ejsdoc=$ejsdoc;
         $this->id=$id;
-        $this->processed=$content_html;
+        $this->html=$html;
         $this->project_id=$project_id;
     }
-    public static function Load($id)
+    public static function Load(KBPageDataProvider $provider, int $id)
     {
-        $fields = ["id,title,created,project_id,modified,creator_id,latest,html,text,ejsdoc"];
-        $q = DBHelper::Select("kb_pages",$fields,["id"=>$id]);
-        $page = DBHelper::RunRow($q,[$id]);
-        if(!$page)
+        $data = $provider->LoadPage($id);
+        if($data===null)
         {
             return null;
         }
-        $raw=$page['text'];
-        $html=$page['html'];
-        $doc = EditorJSDocument::FromJSON($page['ejsdoc']);
-        if(!$doc)
-        {
-            $doc = new EditorJSDocument();
-        }
-        $result = new KB_Page($id,$page['title'],$doc,$raw,$html,$page['project_id']);
-        $result->created =$page['created'];
-        
+        $result = new KBPage(
+                provider: $provider, 
+                id: $id, 
+                title: $data->title,
+                text: $data->text,
+                ejsdoc: $data->ejsdoc,
+                html: $data->html,
+                project_id: $data->project_id
+        );
+        $result->created = $data->created;
+        $result->latest = $data->latest;
         return $result;
+    }
+    
+    public function GetKBPageInfo() : KBPageInfo
+    {
+        return new KBPageInfo(
+                title: $this->title,
+                    project_id: $this->project_id,
+                    ejsdoc: json_encode($this->ejsdoc),
+                    text: $this->text,
+                    html: $this->html,
+                    latest: $this->latest_revision,
+                    id: $this->id);
     }
     public function Save()
     {
-        DBHelper::Update("kb_pages",
-                ['title'=>$this->title,
-                    'project_id'=>$this->project_id,
-                    'ejsdoc'=>json_encode($this->ejsdoc),
-                    'text'=>$this->raw,
-                    'html'=>$this->processed,
-                    'latest'=>$this->latest_revision],
-                ['id'=>$this->id]);
+        $page = $this->GetKBPageInfo();
+        $this->DataProvider->SavePage($page);
     }
     public function SaveNewRevision()
     {
-        $d=[null,$this->id,$this->title,json_encode($this->ejsdoc),$this->raw,$this->processed,time(),0];
-        DBHelper::Insert('kb_page_revisions',$d);
-        $latest = DBHelper::GetLastId();
-        $this->latest_revision = $latest;
-        $this->Save();
+        $page = $this->GetKBPageInfo();
+        $newLatest = $this->DataProvider->SaveRevision($page);
+        $this->latest_revision=$newLatest->id;
+    }
+    public static function GetLastRevision(KBPageDataProvider $provider, int $pageId) : KBPageRevision
+    {
+        $revId = $provider->GetLatestRevisionID($pageId);
+        $rev = $provider->LoadRevision($revId);
+        return $rev;
     }
     
     public function ProcessPage()
@@ -75,10 +88,10 @@ class KB_Page
         {
             $this->ActionChapterNav($chapternav);
         }
-        $this->ProcessDoc();
+        $this->RenderHTML();
     }
     
-    public function ProcessDoc()
+    public function RenderHTML()
     {
         //no logical changes, only processes ejsdoc into html and plaintext
         $doc = self::ProcessIndexBlock($this->ejsdoc,$this->id);
@@ -88,71 +101,25 @@ class KB_Page
             $doc = self::ProcessChapterNav($this->ejsdoc);
         }
         
-        $this->raw = $this->ejsdoc->GetPlainText();
-        $this->processed = $doc->GetHTML();
-    }
-    
-    public function GetRaw()
-    {
-        return $this->raw;
+        $this->text = $this->ejsdoc->GetPlainText();
+        $this->html = $doc->GetHTML();
     }
     
     
-    public function SetBody($body)
-    {
-        $this->raw=$body;
-        $this->ProcessHTML();
-    }
     
     public function SetDoc($doc)
     {
         $this->ejsdoc = $doc;
         
     }
-    public function UpdateRefsNew($group,$prev,$next)
+    public function UpdateChapterNav($group,$prev,$next)
     {
         $chapternav = self::MakeChapterNav($prev, $group, $next);
         $this->ejsdoc->SetChapterNav($chapternav);
-        $this->ProcessDoc();
+        $this->RenderHTML();
         $this->Save();
     }
-    public function GetHTML()
-    {
-        return $this->processed;
-    }
-    public static function GetLastRevision($id)
-    {
-        //$stmt = DBHelper::$DBLink->prepare("SELECT id,content_raw,content_html FROM kb_page_revisions WHERE page_id=? ORDER BY timestamp DESC");
-        //$stmt->bindParam(1, $id);
-        //$rev=DBHelper::GetOneRow($stmt);
-        $rev=DBHelper::RunRow("SELECT id,content_json,content_plaintext,content_html FROM kb_page_revisions WHERE page_id=? ORDER BY timestamp DESC",[$id]);
-        return $rev;
-    }
-    public static function generateIndex($id)
-    {
-        $output="";
-        //_p("INDEX GENERATED");die;
-        $cat=KBPageSequence::Load($id);
-        $li ="\n\t<li><a href=\"/kb/view/%s\">%s</a></li>";
-        $list_acc="";
-        if($cat)
-        {
-            
-            for($i=0;$i<count($cat->pages);$i++)
-            {
-                $page = KB_Page::Load($cat->pages->items[$i]['entityId']);
-                if($page)
-                {
-                    $list_acc.=sprintf($li,$page->id,$page->title);
-                }
-            }
-            if($list_acc!="")
-            {
-                $output="\n<ul class=\"articleindex\">".$list_acc.'</ul>';
-            }
-        }
-        return $output;
-    }
+    
     
     public static function MakeChapterNav($prev, $index, $next,$full = false)
     {
@@ -173,9 +140,9 @@ class KB_Page
             'type'=>'chapternav',
             'data'=>[]
         ];
-        $ppage = KB_PAGE::Load($prev);
-        $npage = KB_PAGE::Load($next);
-        $ipage = KB_PAGE::Load($index);
+        $ppage = KBPage::Load($prev);
+        $npage = KBPage::Load($next);
+        $ipage = KBPage::Load($index);
         if($ppage)
         {
             $processednav['data']['prev'] = $prev;
@@ -196,7 +163,7 @@ class KB_Page
     
     public static function GenerateIndexBlock($id)
     {
-        $cat=KBPageSequence::Load($id);
+        $cat=KBGroup::Load($id);
         $li ="<a href=\"/kb/view/%s\">%s</a>";
         if(!$cat)
         {
@@ -210,9 +177,9 @@ class KB_Page
             ]
         ];
         $items = false;
-        for($i=0;$i<count($cat->pages);$i++)
+        for($i=0;$i<count($cat->items);$i++)
         {
-            $page = KB_Page::Load($cat->pages->items[$i]['entityId']);
+            $page = KBPage::Load($cat->items[$i]['id']);
             if($page)
             {
                 $block['data']['items'][]=['content'=>sprintf($li,$page->id,$page->title)];
@@ -280,6 +247,37 @@ class KB_Page
     public function ActionChapterNav($chapternav)
     {
         $updatednav = $chapternav;
+        $db = new KBGroupDBBacker(tablename: "kb_groups");
+        $cg = KBGroup::Find(backer: $db, id: $this->id);
+        $cn = 0;
+        $cp = 0;
+        $np = $chapternav['data']['prev'];
+        $ng = $chapternav['data']['index'];
+        $nn =$chapternav['data']['next'];
+        if($cg>0)
+        {
+            $currentGroup = KBGroup::Load(backer: $db, id: $cg);
+            $iOf = $currentGroup->IndexOf($this->id);
+            $itemdata= $currentGroup->items[$iOf];
+            $cp = $itemdata['prev'];
+            $cn = $itemdata['next'];
+        }
+        
+        $newPos = KBGroup::ProcessMove(backer: $db,
+                cg: $cg,
+                cn: $cn,
+                cp: $cp,
+                ng: $ng,
+                nn: $nn,
+                np: $np,
+                itemId: $this->id);
+        
+        if($newPos['left'] ==0 && $newPos['joined'] ==0)
+        {
+            return $chapternav;
+        }
+        
+        
         $updates = KBPageSequence::ProcessMove($this->id,$chapternav['data']['index'],$chapternav['data']['prev'],$chapternav['data']['next']);
         $group = KBPageSequence::Load($updates[0]);
         if($group)
@@ -293,15 +291,15 @@ class KB_Page
                     $this->ejsdoc->SetChapterNav($updatednav);
                     continue;
                 }
-                $p = KB_Page::Load($page['entityId']);
-                $p->UpdateRefsNew($group->id, $page['prev'], $page['next']);
+                $p = KBPage::Load($page['entityId']);
+                $p->UpdateChapterNav($group->id, $page['prev'], $page['next']);
             }
             
-            $groupPage = KB_Page::Load($chapternav['data']['index']);
+            $groupPage = KBPage::Load($chapternav['data']['index']);
             if($groupPage)
             {
                 Logger::log("updated group page");
-                $groupPage->ProcessDoc();
+                $groupPage->RenderHTML();
                 $groupPage->Save();
             }
         }
@@ -316,11 +314,11 @@ class KB_Page
             {
                 if($update['group']!=$gid)
                 {
-                    $groupPage = KB_Page::Load($update['group']);
+                    $groupPage = KBPage::Load($update['group']);
                     if($groupPage)
                     {
                         Logger::log("updated group page");
-                        $groupPage->ProcessDoc();
+                        $groupPage->RenderHTML();
                         $groupPage->Save();
                     }
                     $gid=$update['group'];
@@ -332,12 +330,12 @@ class KB_Page
                     continue;
                 }
 
-                $page = KB_Page::Load($update['id']);
+                $page = KBPage::Load($update['id']);
                 if(!$page)
                 {
                     continue;
                 }
-                $page->UpdateRefsNew($update['group'],$update['prev'],$update['next']);
+                $page->UpdateChapterNav($update['group'],$update['prev'],$update['next']);
             }    
         }
         return $updatednav;
@@ -348,125 +346,38 @@ class KB_Page
     //////// legacy stuff remove once not needed
     
     
-    public static function GetLinkMarkupMatches($input)
-    {
-        
-        $matchesbuffer=[];
-        preg_match_all("/\[\[[\w]{1,}[|][^\]]{0,}\]\]/",$input,$matchesbuffer);
-
-        $matches=[];
-        foreach($matchesbuffer[0] as $match)
-        {
-            $line=explode("|",substr($match,2,-2));
-            $line[]=$match;
-            $matches[]=$line;
-        }
-        return $matches;
-    }
     
-    
-    static function doGroupLinks($input, $matches)
-    {
-        $output = $input;
-        $nextId=null;
-        $prevId=null;
-        $groupId=null;
-        $tags = ['prev'=>null,'next'=>null,'group'=>null];
-        for($i=0;$i<count($matches);$i++)
-        {
-            list($pageId,$linkText,$fullmatch)=$matches[$i];
-            if($linkText[0]=="#")
-            {
-                $cmd = substr($linkText,1);
-                switch($cmd)
-                {
-                    case "next":
-                    {
-                        $tags['next'] = $pageId;
-                        $tags['nextmatch']=$fullmatch;
-                        break;
-                    }
-                    case "prev":
-                    {
-                        $tags['prev'] = $pageId;
-                        $tags['prevmatch']=$fullmatch;
-                        break;
-                    }
-                    case "index":
-                    {
-                        $tags['group'] = $pageId;
-                        $tags['groupmatch']=$fullmatch;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                
-            }
-        }
-        return $tags;
-    }
-    
-    public static function process_links($input,$matches)
-    {
-        for($i=0;$i<count($matches);$i++)
-        {
-            list($pageId,$linkText,$fullmatch)=$matches[$i];
-            $tpl = "<a href=\"/kb/view/%s\">%s</a>";
-            $input=str_replace($fullmatch,sprintf($tpl,$pageId,$linkText),$input);
-        }
-        return $input;
-    }
-    public static function updateGroupLinks($matches,$values,$input)
-    {
-        $output=$input;
-        //var_dump([$matches],$values,$input);
-        if($matches['prevmatch']??null)
-        {
-            $output = str_replace($matches['prevmatch'],"[[".$values['prev']."|#prev]]",$output);
-            
-        }
-        elseif($values['prev']??null)
-        {
-            $output="[[".$values['prev']."|#prev]]".$output;
-        }
-        if($matches['groupmatch']??null)
-        {
-            $output = str_replace($matches['groupmatch'],"[[".$values['group']."|#index]]",$output);
-        }
-        elseif($values['group']??null)
-        {
-            $output="[[".$values['group']."|#index]]".$output;
-        }
-        if($matches['nextmatch']??null)
-        {
-            $output = str_replace($matches['nextmatch'],"[[".$values['next']."|#next]]",$output);
-        }
-        elseif($values['next']??null)
-        {
-            $output="[[".$values['next']."|#next]]".$output;
-        }
-        return $output;
-    }    
-    public function GetAffectedPages()
-    {
-        $id=$this->id;
-        $stmt = DBHelper::$DBLink->prepare("SELECT id,page_updated,page_affected FROM kb_page_dependencies WHERE page_updated=?");
-        $stmt->bindParam(1,$id);
-        $q = DBHelper::Select("kb_page_dependencies",['id','page_updated','page_affected'], ['page_updated'=>$id]);
-        $pages=DBHelper::RunTable($q,[$id]);
-        return $pages;
-    }
-    public function CheckUpdate()
-    {
-
-    }
     public static function GetSpecificRevision($id)
     {
         //note, this does not check if any revision belongs to the page yet.
         $q=DBHelper::Select("kb_page_revisions",['id','content_json','content_raw','content_html'],['id'=>$id],['timestamp'=>'DESC']);
         $rev=DBHelper::RunRow($q,[$id]);
         return $rev['content_html'];
+    }
+    
+    public static function generateIndex($id)
+    {
+        $output="";
+        $db = new KBGroupDBBacker(tablename: 'kb_groups');
+        $cat=KBGroup::Load(backer: $db, id: $id);
+        $li ="\n\t<li><a href=\"/kb/view/%s\">%s</a></li>";
+        $list_acc="";
+        if($cat)
+        {
+            
+            for($i=0;$i<count($cat->items);$i++)
+            {
+                $page = KBPage::Load($cat->items[$i]['id']);
+                if($page)
+                {
+                    $list_acc.=sprintf($li,$page->id,$page->title);
+                }
+            }
+            if($list_acc!="")
+            {
+                $output="\n<ul class=\"articleindex\">".$list_acc.'</ul>';
+            }
+        }
+        return $output;
     }
 }
