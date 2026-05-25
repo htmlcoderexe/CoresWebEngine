@@ -42,7 +42,7 @@ class OrderedDBCollection implements Countable
         $this->items=$items;
         $this->extraFields = $extraFields;
     }
-    public function count()
+    public function count() : int
     {
         return count($this->items);
     }
