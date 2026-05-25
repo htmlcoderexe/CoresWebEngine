@@ -33,11 +33,11 @@ function ModuleAction_kb_index($params)
 	{
 		EngineCore::AddPageContent((new TemplateProcessor("pagebar,id=3"))->process(true));
 	}
-        $revision=KB_Page::GetLastRevision(3);
+        $revision=KBPage::GetLastRevision(3);
         $content = "<span style=\"font-size:200px\">:(</span><br />Oopsie woopsie, the index page's gone";
-        if($revision !== false)
+        if($revision !== null)
         {
-            $content = $revision['content_html'];
+            $content = $revision->html;
         }
         $t=new TemplateProcessor("kbpage");
 	$t->tokens['text']=$content;
@@ -68,7 +68,7 @@ function ModuleAction_kb_tag($params)
 function ModuleAction_kb_view($params)
 {
 	$id=$params[0];
-	$page = KB_Page::Load($id);
+	$page = KBPage::Load($id);
         if(!$page)
         {
             return;
@@ -79,7 +79,7 @@ function ModuleAction_kb_view($params)
 		EngineCore::AddPageContent((new TemplateProcessor("pagebar,id=$id"))->process(true));
 	}
 	// $pagedata=KB_Page::GetLastRevision($id)['content_html'];
-        $pagedata = $page->GetHTML();
+        $pagedata = $page->html;
 	$t=new TemplateProcessor("kbpage");
 	$t->tokens['text']=$pagedata;
         $t->tokens['title']=$page->title;
@@ -100,12 +100,11 @@ function ModuleAction_kb_edit($params)
             EngineCore::SetPageContent("I'm sorry, I'm afraid I can't let you do that.");
             return;
 	}
-	$page = KB_Page::Load($id);
+	$page = KBPage::Load($id);
         if(!$page)
         {
             return;
         }
-	$pagetext=$page->GetRaw();
 	$t=new TemplateProcessor("pageeditor");
 	$t->tokens['ejsdoc']=json_encode($page->ejsdoc);
 	$t->tokens['pageid']=$id;
@@ -194,7 +193,7 @@ function ModuleAction_kb_save($params)
             return;
 	}
         $id=intval($_POST['pageid']);
-        $page = KB_Page::Load($id);
+        $page = KBPage::Load($id);
         if(!$page)
         {
             return;

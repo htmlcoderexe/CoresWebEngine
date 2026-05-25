@@ -244,13 +244,13 @@ function get_ejs_from_crappy_html_maybe($crappy_html)
 function ModuleAction_kb_migrate_test($params)
 {
     $id = intval($params[0]);
-    $p=KB_Page::Load($id);
+    $p=KBPage::Load($id);
     if(!$p)
     {
         echo "no";
         die;
     }
-    $crappy_html = $p->GetHTML();
+    $crappy_html = $p->html;
     $ejs = get_ejs_from_crappy_html_maybe($crappy_html);
     var_dump($ejs);
     die;
@@ -393,17 +393,17 @@ function ModuleAction_kb_migrate_newrev($params)
     {
         if($entry['collectionId']!=$current)
         {
-            $p = KB_Page::Load($entry['collectionId']);
-            $p->ProcessDoc();
+            $p = KBPage::Load($entry['collectionId']);
+            $p->RenderHTML();
             $p->SaveNewRevision();
             $current = $entry['collectionId'];
         }
-        $p = KB_Page::Load($entry['entityId']);
+        $p = KBPage::Load($entry['entityId']);
         if($p)
         {
             echo "<br >doing ".$p->id;
             //var_dump($entry);
-            $p->UpdateRefsNew($entry['collectionId'],$entry['prev'],$entry['next']);
+            $p->UpdateChapterNav($entry['collectionId'],$entry['prev'],$entry['next']);
             $p->SaveNewRevision();
 //var_dump($p->ejsdoc);
         }

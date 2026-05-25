@@ -3,11 +3,11 @@
 function ModuleAction_main_default()
 {
 	$id=(int) EngineCore::GetSetting('mainpage');
-        $revision=KB_Page::GetLastRevision($id);
+        $revision=KBPage::GetLastRevision($id);
         $content = "<span style=\"font-size:200px\">:(</span><br />Oopsie woopsie, the index page's gone";
-        if($revision !== false)
+        if($revision !== null)
         {
-            $content = $revision['content_html'];
+            $content = $revision->html;
         }
         $t=new TemplateProcessor("kbpage");
 	$t->tokens['text']=$content;
