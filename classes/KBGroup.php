@@ -331,14 +331,14 @@ class KBGroup
             if(count($this->items)!=0)
             {
                 $newPrev = $this->items[count($this->items)-1]['id'];
-                $this->items[count($this->items)-1]['next'] = $id;
+                //$this->items[count($this->items)-1]['next'] = $id;
             }
             $item['prev']=$newPrev;
             $this->items[]=$item;
             return $this->Walk();
         }
         array_splice($this->items,$pos,0,[$item]);
-        return $this->Walk($id);
+        return $this->Walk();
     }
     public function IndexOf($itemId)
     {
