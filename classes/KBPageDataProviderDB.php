@@ -4,18 +4,14 @@
  * Description of KBPageDataProviderDB
  *
  */
-class KBPageDataProviderDB implements KBPageDataProvider
+class KBPageDataProviderDB implements IKBPageDataProvider
 {
-    public $pageTable;
-    public $revisionTable;
     
-    public function __construct($pageTable, $revisionTable)
-    {
-        $this->pageTable = $pageTable;
-        $this->revisionTable = $revisionTable;
-    }
+    public function __construct(
+            public string $pageTable, 
+            public string $revisionTable){}
     
-    public function LoadPage(int $id) : KBPageInfo
+    public function LoadPage(int $id) : KBPageInfo|null
     {
         $fields = ["id,title,created,project_id,modified,creator_id,latest,html,text,ejsdoc"];
         $q = DBHelper::Select($this->pageTable,$fields,["id"=>$id]);
@@ -38,7 +34,7 @@ class KBPageDataProviderDB implements KBPageDataProvider
                 ejsdoc: $doc,
                 
                 project_id: $page['project_id'],
-                created: page['created']
+                created: $page['created']
         );
         return $result;
     }
@@ -58,16 +54,17 @@ class KBPageDataProviderDB implements KBPageDataProvider
     public function SaveRevision(\KBPageInfo $page) : KBPageRevision
     {
         $time =time();
-        $d=[null,$page->id,$page->title,json_encode($page->ejsdoc),$page->text,$page->html,$time,0];
+        $json = json_encode($page->ejsdoc);
+        $d=[null,$page->id,$page->title,$json,$page->text,$page->html,$time,0];
         DBHelper::Insert($this->revisionTable,$d);
         $latest = DBHelper::GetLastId();
         return new KBPageRevision(
                 id: $latest,
                 title: $page->title,
-                json: $page->json,
+                json: $json,
                 text: $page->text,
                 html: $page->html,
-                timestamp: $times,
+                timestamp: $time,
                 userId: 0,
                 pageId: $page->id);
     }

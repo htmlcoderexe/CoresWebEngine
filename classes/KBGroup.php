@@ -1,7 +1,7 @@
 <?php
 require_once "KBGroupMoveResult.php";
 
-interface KBGroupBacker
+interface IKBGroupBacker
 {
     /**
      * Fetches a group's items
@@ -22,7 +22,7 @@ interface KBGroupBacker
 }
 
 
-class KBGroupDBBacker implements KBGroupBacker
+class KBGroupDBBacker implements IKBGroupBacker
 {
     public $table;
     public function __construct($tablename)
@@ -83,14 +83,14 @@ class KBGroup
 {
     public $items;
     public $id;
-    public KBGroupBacker $backer;
-    public function __construct(KBGroupBacker $backer, $id,$items)
+    public IKBGroupBacker $backer;
+    public function __construct(IKBGroupBacker $backer, $id,$items)
     {
         $this->id=$id;
         $this->items = $items;
         $this->backer = $backer;
     }
-    public static function Load(KBGroupBacker $backer, $id)
+    public static function Load(IKBGroupBacker $backer, $id)
     {
         $items = $backer->GetItems($id);
         if(count($items)>0)
@@ -102,7 +102,7 @@ class KBGroup
     {
         $this->backer->SetItems(id: $this->id, items: $this->items);
         }
-    public static function Find(KBGroupBacker $backer, $id) : int
+    public static function Find(IKBGroupBacker $backer, $id) : int
     {
         $gid = $backer->Find($id);
         return $gid;
@@ -113,7 +113,7 @@ class KBGroup
         $items = [];
         return new KBGroup($backer, $id, $items);
     }
-    public static function ProcessMove($backer,$itemId, $cp,$cg,$cn,$np,$ng,$nn) : KBGroupMoveResult
+    public static function ProcessMove(IKBGroupBacker $backer,int $itemId, int $cp=0, int $cg=0, int $cn=0, int $np=0, int $ng=0,int $nn=0) : KBGroupMoveResult
     {
         // null move
         if($np+$ng+$nn == 0)
@@ -131,35 +131,16 @@ class KBGroup
                 // update cg!
                 $currentGroup->Save();
                 // item is 0,0,0
-                return new KBGroupMoveResult(itemId: $itemId,left:$cg, affectedItems:$items);
+                return new KBGroupMoveResult(itemId: $itemId, leftGroup:$cg, affectedItems:$items);
             }
         }
         // resolve target group
         $prevGroupId = self::Find($backer,$np);
-        $indexGroupId = self::Find($backer,$ng);
+        $indexGroupId = $ng;
         $nextGroupId = self::Find($backer,$nn);
         $anchorIndex = -1;
         $targetGroup = null;
-        if($prevGroupId>0)
-        {
-            $prevGroup = self::Load($backer, $prevGroupId);
-            $targetGroup = $prevGroup;
-            $anchorIndex = $prevGroup->IndexOf($np)+1;
-            if(count($prevGroup->items) == $anchorIndex)
-            {
-                $anchorIndex = -2;
-            }
-        }
-        if(!$targetGroup|| $anchorIndex == -1)
-        {
-            $nextGroup = self::Load($backer, $nextGroupId);
-            $targetGroup = $nextGroup;
-            if($nextGroup)
-            {
-                $anchorIndex = $nextGroup->IndexOf($nn);
-            }
-        }
-        if(!$targetGroup || $anchorIndex == -1)
+        if($ng>0)
         {
             $indexGroup = self::Load($backer, $indexGroupId);
             $targetGroup = $indexGroup;
@@ -167,10 +148,53 @@ class KBGroup
             {
                 $targetGroup =self::Create($backer,$ng );
             }
+            $prvindex = $targetGroup->IndexOf($np);
+            // prev item not in group
+            // attaching to next means taking its slot
+            if($prvindex ==-1)
+            {
+                $nxtindex = $targetGroup->IndexOf($nn);
+                // if not found index is -1 which adds at the end anyway as a default
+                    $anchorIndex = $nxtindex;
+                
+            }
+            // prev in group
+            else
+            {
+                $anchorIndex = $prvindex+1;
+                if(count($targetGroup->items)==$anchorIndex)
+                {
+                    $anchorIndex = -1;
+                }
+            }
         }
-        if($anchorIndex == -2)
+        
+        else
         {
-            $anchorIndex = -1;
+        
+            if($prevGroupId>0)
+            {
+                $prevGroup = self::Load($backer, $prevGroupId);
+                $targetGroup = $prevGroup;
+                $anchorIndex = $prevGroup->IndexOf($np)+1;
+                if(count($prevGroup->items) == $anchorIndex)
+                {
+                    $anchorIndex = -2;
+                }
+            }
+            if(!$targetGroup|| $anchorIndex == -1)
+            {
+                $nextGroup = self::Load($backer, $nextGroupId);
+                $targetGroup = $nextGroup;
+                if($nextGroup)
+                {
+                    $anchorIndex = $nextGroup->IndexOf($nn);
+                }
+            }
+            if($anchorIndex == -2)
+            {
+                $anchorIndex = -1;
+            }
         }
         // update target group ID
         $ng = $targetGroup->id;
@@ -199,18 +223,18 @@ class KBGroup
             // update ng
             $additems = $targetGroup->Add(id: $itemId, pos: $anchorIndex);
             $items = array_merge($items,$additems);
+            
+            $targetGroup->Save();
+            
             $update->joinedGroup=$targetGroup->id;
             $update->affectedItems = $items;
             $item = $targetGroup->items[$targetGroup->IndexOf($itemId)];
             $update->previousItem=$item['prev'];
             $update->nextItem=$item['next'];
-            
-            $targetGroup->Save();
             return $update;
         }
         else
         {
-            $update = ['id'=>$itemId,'left'=>$targetGroup->id,'joined'=>$targetGroup->id];
             $update = new KBGroupMoveResult(itemId: $itemId, leftGroup: $targetGroup->id, joinedGroup: $targetGroup->id);
             // move within cg/ng
             // this must return item's new positions
@@ -222,11 +246,11 @@ class KBGroup
                 return $update;
             }
             $items = $targetGroup->Move($currIndex, $anchorIndex);
+            $targetGroup->Save();
             $item = $targetGroup->items[$targetGroup->IndexOf($itemId)];
             $update->previousItem=$item['prev'];
             $update->nextItem=$item['next'];
             $update->affectedItems=$items;
-            $targetGroup->Save();
             return $update;
         }
         

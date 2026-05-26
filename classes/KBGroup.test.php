@@ -2,7 +2,7 @@
 
 require_once "MiniTest.php";
 
-class KBGroupTestBacker implements KBGroupBacker
+class KBGroupTestBacker implements IKBGroupBacker
 {
     public $groups;
     public function __construct($groups = [])
@@ -113,6 +113,7 @@ class KBGroupTest extends MiniTest
                 $testGroup14 = KBGroup::Load(backer:  $this->mockDB, id: 1400);
             
                 $item302 = $testGroup14->Add(id: 30200, pos: 0);
+                $testGroup14->Save();
                 return $item302;
             },
             'expect'=>[['id'=>30200,'prev'=>0,'next'=>600],['id'=>600,'prev'=>30200,'next'=>700]],
@@ -143,6 +144,36 @@ class KBGroupTest extends MiniTest
                 ])
             ],
             'title'=>"Adding a new item after an known item in unknown group",
+            'group'=>"Add"
+        ];
+        $this->tests[]=[
+            'body'=>function(){
+               
+            
+                $testGroup14_before = KBGroup::Load(backer:  $this->mockDB, id: 1400);
+                $item1234 = KBGroup::ProcessMove(backer: $this->mockDB,ng:1400,itemId: 1234);
+                $testGroup14 = KBGroup::Load(backer:  $this->mockDB, id: 1400);
+                return [$testGroup14_before->items,$item1234,$testGroup14->items];
+            },
+            'expect'=>[
+                [
+                    ['id'=>30200,'prev'=>0,'next'=>600],
+                    ['id'=>600,'prev'=>30200,'next'=>700],
+                    ['id'=>700,'prev'=>600,'next'=>2900],
+                    ['id'=>2900,'prev'=>700,'next'=>30000],
+                    ['id'=>30000,'prev'=>2900,'next'=>0]
+                ],
+                new KBGroupMoveResult(itemId: 1234, joinedGroup: 1400, previousItem: 30000),
+                [
+                    ['id'=>30200,'prev'=>0,'next'=>600],
+                    ['id'=>600,'prev'=>30200,'next'=>700],
+                    ['id'=>700,'prev'=>600,'next'=>2900],
+                    ['id'=>2900,'prev'=>700,'next'=>30000],
+                    ['id'=>30000,'prev'=>2900,'next'=>1234],
+                    ['id'=>1234,'prev'=>30000,'next'=>0],
+                ]
+            ],
+            'title'=>"ProcessMove to 1400 without args (specifying it should go to end).",
             'group'=>"Add"
         ];
     }

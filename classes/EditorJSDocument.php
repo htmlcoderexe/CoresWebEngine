@@ -352,4 +352,16 @@ class EditorJSDocument
         array_unshift($this->blocks,$newnav);
         return false;
     }
+    public function RemoveChapterNav()
+    {
+        $c=count($this->blocks);
+        for($i=0;$i<$c;$i++)
+        {
+            if($this->blocks[$i]['type'] == 'chapternav')
+            {
+                array_splice(array: $this->blocks, offset: $i, length: 1);
+                return;
+            }
+        }
+    }
 }

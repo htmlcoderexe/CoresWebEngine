@@ -2,8 +2,10 @@
 
 function ModuleAction_kb_api_head($params)
 {
-    $pageId = $params[0] ?? -1;
-    $page = KBPage::Load($pageId);
+    $id = $params[0] ?? -1;
+    $provider = new KBPageDataProviderDB(pageTable: 'kb_pages', revisionTable: 'kb_page_revisions');
+    $gdb = new KBGroupDBBacker(tablename: 'kb_groups');
+    $page = KBPage::Load(provider: $provider, groupDb: $gdb, id: $id);
     $data = null;
     if($page)
     {

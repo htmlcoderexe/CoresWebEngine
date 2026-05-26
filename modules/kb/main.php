@@ -68,7 +68,9 @@ function ModuleAction_kb_tag($params)
 function ModuleAction_kb_view($params)
 {
 	$id=$params[0];
-	$page = KBPage::Load($id);
+        $provider = new KBPageDataProviderDB(pageTable: 'kb_pages', revisionTable: 'kb_page_revisions');
+        $gdb = new KBGroupDBBacker(tablename: 'kb_groups');
+        $page = KBPage::Load(provider: $provider, groupDb: $gdb, id: $id);
         if(!$page)
         {
             return;
@@ -100,7 +102,9 @@ function ModuleAction_kb_edit($params)
             EngineCore::SetPageContent("I'm sorry, I'm afraid I can't let you do that.");
             return;
 	}
-	$page = KBPage::Load($id);
+        $provider = new KBPageDataProviderDB(pageTable: 'kb_pages', revisionTable: 'kb_page_revisions');
+        $gdb = new KBGroupDBBacker(tablename: 'kb_groups');
+        $page = KBPage::Load(provider: $provider, groupDb: $gdb, id: $id);
         if(!$page)
         {
             return;
@@ -130,6 +134,9 @@ function ModuleAction_kb_test($params)
     $testGroup = new KBGroupTest();
     $testGroup->Run();
     $testGroup->PrintResults();
+    $testKB = new KBPageTest();
+    $testKB->Run();
+    $testKB->PrintResults();
     
     /*
     KBGroupTest::TestFind();
@@ -193,7 +200,9 @@ function ModuleAction_kb_save($params)
             return;
 	}
         $id=intval($_POST['pageid']);
-        $page = KBPage::Load($id);
+        $provider = new KBPageDataProviderDB(pageTable: 'kb_pages', revisionTable: 'kb_page_revisions');
+        $gdb = new KBGroupDBBacker(tablename: 'kb_groups');
+        $page = KBPage::Load(provider: $provider, groupDb: $gdb, id: $id);
         if(!$page)
         {
             return;
@@ -229,6 +238,8 @@ function ModuleAction_kb_save($params)
         $page->ejsdoc = $postObj;
         $page->ProcessPage();
         $page->SaveNewRevision();
+        $page->Save();
+        //var_dump($page);die;
         EngineCore::GTFO("/kb/view/".$id);
 }
 

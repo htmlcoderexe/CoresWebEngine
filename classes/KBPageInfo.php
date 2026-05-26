@@ -23,7 +23,7 @@ class KBPageInfo
     public $creator;
     
     
-    public function __construct($id,$title,$ejsdoc,$text,$html,$created,$latest,$project_id = 0)
+    public function __construct($id,$title,$ejsdoc,$text,$html,$created,$latest=0,$project_id = 0)
     {
         $this->id=$id;
         $this->title=$title;

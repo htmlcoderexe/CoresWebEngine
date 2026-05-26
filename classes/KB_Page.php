@@ -1,35 +1,28 @@
 <?php
-require_once "KBPageDataProvider.php";
+require_once "IKBPageDataProvider.php";
 
 class KBPage
 {
     
-    public KBPageDataProvider $DataProvider;
-    public $text;
-    public $html;
-    public $ejsdoc;
-    
-    public $latest_revision;
-    public $title;
-    public $id;
-    public $project_id;
-    
-    public $created;
-    public $modified;
-    public $creator;
     
     
-    public function __construct($provider, $id, $title, $ejsdoc, $text, $html, $project_id = 0)
-    {
-        $this->DataProvider = $provider;
-        $this->title=$title;
-        $this->text=$text;
-        $this->ejsdoc=$ejsdoc;
-        $this->id=$id;
-        $this->html=$html;
-        $this->project_id=$project_id;
-    }
-    public static function Load(KBPageDataProvider $provider, int $id)
+    
+    
+    public function __construct(
+            public IKBPageDataProvider $PageProvider,
+            public IKBGroupBacker $GroupProvider,
+            public int $id, 
+            public string $title, 
+            public string $text,
+            public string $html,
+            public EditorJSDocument $ejsdoc,
+            public int $project_id = 0,
+            public int $latest_revision = 0,
+            public int $created = 0,
+            public int $modified = 0,
+            public int $creator = 0){}
+    
+    public static function Load(IKBPageDataProvider $provider, IKBGroupBacker $groupDb, int $id)
     {
         $data = $provider->LoadPage($id);
         if($data===null)
@@ -37,16 +30,17 @@ class KBPage
             return null;
         }
         $result = new KBPage(
-                provider: $provider, 
+                PageProvider: $provider,
+                GroupProvider: $groupDb,
                 id: $id, 
                 title: $data->title,
                 text: $data->text,
                 ejsdoc: $data->ejsdoc,
                 html: $data->html,
-                project_id: $data->project_id
+                project_id: $data->project_id,
+                created: $data->created,
+                latest_revision: $data->latest
         );
-        $result->created = $data->created;
-        $result->latest = $data->latest;
         return $result;
     }
     
@@ -55,24 +49,25 @@ class KBPage
         return new KBPageInfo(
                 title: $this->title,
                     project_id: $this->project_id,
-                    ejsdoc: json_encode($this->ejsdoc),
+                    ejsdoc: $this->ejsdoc,
                     text: $this->text,
                     html: $this->html,
                     latest: $this->latest_revision,
-                    id: $this->id);
+                    id: $this->id,
+                    created:$this->created);
     }
     public function Save()
     {
         $page = $this->GetKBPageInfo();
-        $this->DataProvider->SavePage($page);
+        $this->PageProvider->SavePage($page);
     }
     public function SaveNewRevision()
     {
         $page = $this->GetKBPageInfo();
-        $newLatest = $this->DataProvider->SaveRevision($page);
+        $newLatest = $this->PageProvider->SaveRevision($page);
         $this->latest_revision=$newLatest->id;
     }
-    public static function GetLastRevision(KBPageDataProvider $provider, int $pageId) : KBPageRevision
+    public static function GetLastRevision(IKBPageDataProvider $provider, int $pageId) : KBPageRevision
     {
         $revId = $provider->GetLatestRevisionID($pageId);
         $rev = $provider->LoadRevision($revId);
@@ -86,7 +81,15 @@ class KBPage
         // update index links if necessary
         if($chapternav)
         {
-            $this->ActionChapterNav($chapternav);
+            $newchapterNav = $this->ActionChapterNav($chapternav);
+            if($newchapterNav['data']['index']==0)
+            {
+                $this->ejsdoc->RemoveChapterNav();
+            }
+            else
+            {
+                $this->ejsdoc->SetChapterNav($newchapterNav);
+            }
         }
         $this->RenderHTML();
     }
@@ -94,11 +97,11 @@ class KBPage
     public function RenderHTML()
     {
         //no logical changes, only processes ejsdoc into html and plaintext
-        $doc = self::ProcessIndexBlock($this->ejsdoc,$this->id);
+        $doc = self::ProcessIndexBlock(provider: $this->PageProvider, groupDb: $this->GroupProvider, doc: $this->ejsdoc, id: $this->id);
         $chapternav = $this->ejsdoc->GetChapterNav();
         if($chapternav)
         {
-            $doc = self::ProcessChapterNav($this->ejsdoc);
+            $doc = self::ProcessChapterNav(provider: $this->PageProvider, groupDb: $this->GroupProvider, doc: $this->ejsdoc);
         }
         
         $this->text = $this->ejsdoc->GetPlainText();
@@ -114,14 +117,14 @@ class KBPage
     }
     public function UpdateChapterNav($group,$prev,$next)
     {
-        $chapternav = self::MakeChapterNav($prev, $group, $next);
+        $chapternav = self::MakeChapterNav($prev, $group, $next,$this->PageProvider,$this->GroupProvider);
         $this->ejsdoc->SetChapterNav($chapternav);
         $this->RenderHTML();
         $this->Save();
     }
     
     
-    public static function MakeChapterNav($prev, $index, $next,$full = false)
+    public static function MakeChapterNav($prev, $index, $next, IKBPageDataProvider $provider, IKBGroupBacker $groupDb, $full = false)
     {
         if(!$full)
         {
@@ -140,9 +143,9 @@ class KBPage
             'type'=>'chapternav',
             'data'=>[]
         ];
-        $ppage = KBPage::Load($prev);
-        $npage = KBPage::Load($next);
-        $ipage = KBPage::Load($index);
+        $ppage = KBPage::Load(provider: $provider, groupDb: $groupDb, id: $prev);
+        $npage = KBPage::Load(provider: $provider, groupDb: $groupDb, id: $next);
+        $ipage = KBPage::Load(provider: $provider, groupDb: $groupDb, id: $index);
         if($ppage)
         {
             $processednav['data']['prev'] = $prev;
@@ -161,9 +164,9 @@ class KBPage
         return $processednav;
     }
     
-    public static function GenerateIndexBlock($id)
+    public static function GenerateIndexBlock(IKBPageDataProvider $provider, IKBGroupBacker $groupDb, int $id)
     {
-        $cat=KBGroup::Load($id);
+        $cat=KBGroup::Load(id:$id, backer: $groupDb);
         $li ="<a href=\"/kb/view/%s\">%s</a>";
         if(!$cat)
         {
@@ -179,7 +182,7 @@ class KBPage
         $items = false;
         for($i=0;$i<count($cat->items);$i++)
         {
-            $page = KBPage::Load($cat->items[$i]['id']);
+            $page = KBPage::Load(provider: $provider, groupDb: $groupDb, id: $cat->items[$i]['id']);
             if($page)
             {
                 $block['data']['items'][]=['content'=>sprintf($li,$page->id,$page->title)];
@@ -195,9 +198,9 @@ class KBPage
         
     }
     
-    public static function ProcessIndexBlock($doc,$id)
+    public static function ProcessIndexBlock(IKBPageDataProvider $provider, IKBGroupBacker $groupDb,$doc,$id)
     {
-        $indexblock = self::GenerateIndexBlock($id);
+        $indexblock = self::GenerateIndexBlock($provider, $groupDb, $id);
         $newblocks = [];
         $indexblockplaced = false;
         foreach($doc->blocks as $block)
@@ -222,13 +225,13 @@ class KBPage
         return EditorJSDocument::FromBlocks($newblocks);
     }
     
-    public static function ProcessChapterNav($doc)
+    public static function ProcessChapterNav(IKBPageDataProvider $provider, IKBGroupBacker $groupDb,$doc)
     {
         $chapternav = $doc->GetChapterNav();
         $prev = $chapternav['data']['prev'] ?? -1;
         $index = $chapternav['data']['index'] ?? -1;
         $next = $chapternav['data']['next'] ?? -1;
-        $topnav = self::MakeChapterNav($prev,$index,$next,true);
+        $topnav = self::MakeChapterNav($prev,$index,$next,$provider, $groupDb, true);
         $bottomnav = $topnav;
         $bottomnav['data']['bottom']=true;
         $newblocks = [$topnav];
@@ -246,14 +249,13 @@ class KBPage
     
     public function ActionChapterNav($chapternav)
     {
-        $updatednav = $chapternav;
-        $db = new KBGroupDBBacker(tablename: "kb_groups");
+        $db = $this->GroupProvider;
         $cg = KBGroup::Find(backer: $db, id: $this->id);
         $cn = 0;
         $cp = 0;
-        $np = $chapternav['data']['prev'];
-        $ng = $chapternav['data']['index'];
-        $nn =$chapternav['data']['next'];
+        $np = intval($chapternav['data']['prev']);
+        $ng = intval($chapternav['data']['index']);
+        $nn =intval($chapternav['data']['next']);
         if($cg>0)
         {
             $currentGroup = KBGroup::Load(backer: $db, id: $cg);
@@ -272,12 +274,44 @@ class KBPage
                 np: $np,
                 itemId: $this->id);
         
-        if($newPos['left'] ==0 && $newPos['joined'] ==0)
+        if($newPos->noChange)
         {
             return $chapternav;
         }
         
+        $updatednav = self::MakeChapterNav(index: $newPos->joinedGroup, prev: $newPos->previousItem, next: $newPos->nextItem, provider: $this->PageProvider, groupDb: $this->GroupProvider);
+        //return $updatednav;
+        $c = count($newPos->affectedItems);
         
+        for($i=0;$i<$c;$i++)
+        {
+            $item = $newPos->affectedItems[$i];
+            if($item['id']==$this->id)
+            {
+                continue;
+            }
+            
+            $p = KBPage::Load(provider: $this->PageProvider, groupDb: $db, id: $item['id']);
+            $gid = KBGroup::Find(backer: $db, id: $item['id']);
+            $p->UpdateChapterNav(group: $gid, prev: $item['prev'], next: $item['next']);
+        }
+        
+        if($newPos->joinedGroup>0)
+        {
+            //redo index
+            $p = KBPage::Load(provider: $this->PageProvider, groupDb: $db, id: $newPos->joinedGroup);
+            $p->RenderHTML();
+            $p->Save();
+        }
+        if($newPos->leftGroup>0 && $newPos->leftGroup!=$newPos->joinedGroup)
+        {
+            // redo this one too   
+            $p = KBPage::Load(provider: $this->PageProvider, groupDb: $db, id: $newPos->leftGroup);
+            $p->RenderHTML();
+            $p->Save();
+        }
+        return $updatednav;
+        /*/
         $updates = KBPageSequence::ProcessMove($this->id,$chapternav['data']['index'],$chapternav['data']['prev'],$chapternav['data']['next']);
         $group = KBPageSequence::Load($updates[0]);
         if($group)
@@ -339,6 +373,7 @@ class KBPage
             }    
         }
         return $updatednav;
+        //*/
     }
     
     
@@ -354,7 +389,7 @@ class KBPage
         $rev=DBHelper::RunRow($q,[$id]);
         return $rev['content_html'];
     }
-    
+    /*/
     public static function generateIndex($id)
     {
         $output="";
@@ -380,4 +415,8 @@ class KBPage
         }
         return $output;
     }
+    //*/
 }
+
+
+require_once "KBPage.test.php";
