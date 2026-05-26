@@ -27,7 +27,8 @@ function ModuleAction_main_api_getdata($params)
     {
         $context = stream_context_create( [
             'http'=>[
-                'timeout' => 2.0
+                'timeout' => 2.0,
+                'user_agent' => "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0"
             ]
         ]);
         $data = file_get_contents($url, false, $context);
