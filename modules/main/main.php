@@ -33,6 +33,11 @@ function ModuleAction_main_chip($params)
 {
     return Module::SPLIT_ROUTE;
 }
+require "api.php";
+function ModuleAction_main_api($params)
+{
+    return Module::SPLIT_ROUTE;
+}
 
 function ModuleAction_main_crankjobs($params)
 {
