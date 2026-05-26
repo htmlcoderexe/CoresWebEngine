@@ -157,6 +157,9 @@ class ChapterNavEditable {
 <span>Skip first </span><input type="number" id="skipfirst" value="0" />
 <span> and last </span><input value="0" type="number" id="skiplast" />
 <span> blocks.</span>
+<input value="" id="articleSelector" placeholder="Selector for the main article element" />
+<input value="" id="blockSelector" placeholder="Selector for the block elements" />
+<input id="fetchurl" /><button id="fetchurlbutton">get this url</button>
 <br />
 <button id="scrape">go</button>
 
@@ -202,6 +205,8 @@ let ad = document.getElementById("autodetect");
 let depthslider = document.getElementById("scraperdepth");
 let skiplast = document.getElementById("skiplast");
 let skipfirst = document.getElementById("skipfirst");
+let as = document.getElementById("articleSelector");
+let bs = document.getElementById("blockSelector");
 // runs the peeler/formatter
 let gobutton=document.getElementById("scrape");
 // outputs
@@ -209,6 +214,25 @@ let output = document.getElementById("output");
 let depthinfo = document.getElementById("depthinfo");
 let toc = document.getElementById("toc");
 
+    document.getElementById("fetchurlbutton").addEventListener("click",(e)=>{
+    let req = new FormData();
+    req.append("url",encodeURI(document.getElementById("fetchurl").value));
+    fetch("/main/api/getdata",{
+        method:"POST",
+        body:req
+        }).then((response)=>{
+        return response.json();
+        }).then((json)=>{
+        if(json.status =="OK")
+        {
+            console.log(json.data);
+            target.srcdoc = json.data;
+        }
+        });
+    
+    });
+    
+    
 ad.addEventListener("change",(e)=>{
     depthslider.disabled=ad.checked;
 });
@@ -219,6 +243,8 @@ gobutton.addEventListener("click",(e)=>{
     toc.innerHTML="";
     // init peeler with given settings
     let scraper = new HTMLPeeler(inputframe.contentDocument.body);
+    scraper.filters.articleSelector = as.value;
+    scraper.filters.blockSelector = bs.value;
     // autodetect mode or manual
     scraper.depth=ad.checked?-1:depthslider.value;
     // run peeler
