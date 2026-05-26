@@ -155,7 +155,12 @@ class EngineCore
     {
         self::RawModeOn();
         HTTPHeaders::ContentType("application/json");
-        echo json_encode($data);
+        $json = json_encode(value: $data, flags: JSON_INVALID_UTF8_SUBSTITUTE);
+        if($json=="")
+        {
+            $json = '{"status": "Error", "message": "JSON ERROR IS '.json_last_error_msg().'"}';
+        }
+        echo $json;
         exit();
     }
 
