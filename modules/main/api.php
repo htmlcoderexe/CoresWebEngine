@@ -34,13 +34,24 @@ function ModuleAction_main_api_getdata($params)
         $data = file_get_contents($url, false, $context);
         if($data ===false)
         {
+            if (function_exists("http_get_last_response_headers") ) {
+                $headers = http_get_last_response_headers();
+                
+            }
+            else
+            {
+                $headers = $http_response_header;
+            }
+            $http= $headers[0];
+            list($proto, $code, $msg) = explode(string: $http, separator: " ", limit: 3);
             $response['status'] = "Error";
-            $response['error'] = "No data at the end of the tunnel";
+            $response['error'] = "No data at the end of the tunnel: $code $msg";
         }
         else
         {
-            $response['data'] = strlen($data);
+            $data = str_replace(subject: $data, search: "</title>", replace: "</title><base href=\"$url\">");
             $response['data'] = $data;
+            
         }
     }
     if(ob_get_contents())
