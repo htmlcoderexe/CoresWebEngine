@@ -339,14 +339,20 @@ class Picture
     {
         $tmp = tmpfile();
         $tempname = stream_get_meta_data($tmp)['uri'];
-        $output = file_get_contents($URL);
+        $context = stream_context_create( [
+            'http'=>[
+                'timeout' => 2.0,
+                'user_agent' => "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0"
+            ]
+        ]);
+        $output = file_get_contents($URL,false,$context);
         fwrite($tmp,$output);
         // is it a picture?
         $imagetype = self::GetImageType($tempname);
+        fclose($tmp);
         if(!$imagetype)
         {
             // if not, can't do anything
-            fclose($tmp); 
             return null;
         }
         // check for dupes
@@ -355,17 +361,15 @@ class Picture
         if($dupeBlobID)
         {
             // re-use the existing file
-            fclose($tmp); 
             return self::FromFile($dupeBlobID);
         }
         // upload
-        $newFile = File::New($tempname);
+        $newFile = File::New($tempname.".".$imagetype);
         if($newFile)
         {
             // use new file if success
             $targetpath = File::GetFilePath($newFile->blobid);
             file_put_contents($targetpath,$output);
-            fclose($tmp); 
             return self::FromFile($newFile->blobid);
         }
         // fail...
