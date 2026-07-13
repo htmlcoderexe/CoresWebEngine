@@ -3,7 +3,8 @@
 function ModuleAction_main_default()
 {
 	$id=(int) EngineCore::GetSetting('mainpage');
-        $revision=KBPage::GetLastRevision($id);
+        $provider = new KBPageDataProviderDB(pageTable: 'kb_pages', revisionTable: 'kb_page_revisions');
+        $revision=KBPage::GetLastRevision(pageId: $id, provider: $provider);
         $content = "<span style=\"font-size:200px\">:(</span><br />Oopsie woopsie, the index page's gone";
         if($revision !== null)
         {
