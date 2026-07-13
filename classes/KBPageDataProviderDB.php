@@ -84,7 +84,7 @@ class KBPageDataProviderDB implements IKBPageDataProvider
         return $result;
     }
 
-    public function LoadRevision(int $revisionId): KBPageRevision
+    public function LoadRevision(int $revisionId): KBPageRevision|null
     {
         $q = DBHelper::Select($this->revisionTable, ['id','content_json','content_plaintext','content_html','page_id','timestamp','userid', 'title'],['id'=>$revisionId]);
         $results = DBHelper::RunRow($q,[$revisionId]);

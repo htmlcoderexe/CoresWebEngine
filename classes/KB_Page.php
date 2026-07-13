@@ -67,7 +67,7 @@ class KBPage
         $newLatest = $this->PageProvider->SaveRevision($page);
         $this->latest_revision=$newLatest->id;
     }
-    public static function GetLastRevision(IKBPageDataProvider $provider, int $pageId) : KBPageRevision
+    public static function GetLastRevision(IKBPageDataProvider $provider, int $pageId) : KBPageRevision|null
     {
         $revId = $provider->GetLatestRevisionID($pageId);
         $rev = $provider->LoadRevision($revId);

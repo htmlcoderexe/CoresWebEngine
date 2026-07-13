@@ -12,7 +12,7 @@ interface IKBPageDataProvider
      */
     public function LoadPage(int $id) : KBPageInfo|null;
     public function SavePage(KBPageInfo $page);
-    public function LoadRevision(int $revisionId) : KBPageRevision;
+    public function LoadRevision(int $revisionId) : KBPageRevision|null;
     public function SaveRevision(KBPageInfo $page) : KBPageRevision;
     public function GetLatestRevisionID(int $pageId) : int;
 }
