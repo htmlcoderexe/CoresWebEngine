@@ -12,6 +12,7 @@ function ModuleAction_main_default()
         }
         $t=new TemplateProcessor("kbpage");
 	$t->tokens['text']=$content;
+        $t->tokens['title']="Home page";
 	EngineCore::AddPageContent($t->process(true));
 	EngineCore::SetPageTitle("Cores main module");
 }
