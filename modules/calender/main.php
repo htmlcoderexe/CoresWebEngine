@@ -228,7 +228,7 @@ function ModuleAction_calender_edit($params)
     $submitted=EngineCore::POST("create","");
     $eventId=EngineCore::POST("EventID");
     $type=EngineCore::Post("type","");
-    if($submitted && $eventId && (new EVA($eventId))!=null)
+    if($submitted && $eventId && (CalendarEvent::Load($eventId))!=null)
     {
         ModuleFunction_EditEvent($eventId,$title,$date,$time,$duration,$description,$type);
         return;
