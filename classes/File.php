@@ -52,6 +52,7 @@ class File
     public const HASH_ALGO = "sha256";
     public const INGEST_BASE_DIR = "ingest";
     public const INGEST_FAIL_DIR = ".failed";
+    public const INGEST_DUPES_DIR = ".dupes";
     
     public function __construct($id,$blobid,$timestamp,$mimetype,$size,$name,$extension,$hash)
     {
@@ -135,6 +136,11 @@ class File
         $filepath = self::GetIngestedFilePath($dir, $filename);
         rename($filepath, self::GetIngestedFilePath($dir, self::INGEST_FAIL_DIR).DIRECTORY_SEPARATOR.$filename);
     }
+    public static function RejectDupe($dir, $filename)
+    {
+        $filepath = self::GetIngestedFilePath($dir, $filename);
+        rename($filepath, self::GetIngestedFilePath($dir, self::INGEST_DUPES_DIR).DIRECTORY_SEPARATOR.$filename);
+    }
     
     public static function FetchNextFile($dir)
     {
@@ -147,7 +153,7 @@ class File
         $filename ="";
         while(false !== ($entry = readdir($dirhandle)))
         {
-            if(in_array($entry,['.','..',self::INGEST_FAIL_DIR]))
+            if(in_array($entry,['.','..',self::INGEST_FAIL_DIR, self::INGEST_DUPES_DIR]))
             {
                 continue;
             }
@@ -176,7 +182,7 @@ class File
             // if dupe found, reject the file and get next filename
             if(self::FindDupe($hash,$fsize))
             {
-                self::RejectFile($dir, $filename);
+                self::RejectDupe($dir, $filename);
                 continue;
             }
             // if no duplicates, return this filename
