@@ -1,1 +1,1 @@
-<a href="/debug/dlfile/{%blobid|%}">{%filename|%}</a>, {%size|%} <br />
+<a href="/files/stream/{%blobid|%}/{%blobid|%}.{%ext|%}">{%filename|%}.{%ext|%}</a>, {%size|%} <br />
