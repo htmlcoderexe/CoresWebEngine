@@ -1,6 +1,5 @@
 <?php
 require "DocumentFile.php";
-Module::DemandProperty("document.sensitivity", "Sensitivity", "Confidentiality level of a given piece of information");
 
 $doctable = [
     "title"=>"VARCHAR(255)",
@@ -34,17 +33,6 @@ class Document
     public const TYPE_ADMINISTRATIVE = 5;
     public const TYPE_RECEIPT = 6;
     public const TYPE_CERT = 7;
-    
-    function EVA__construct($id)
-    {
-        $e=new EVA($id);
-        $this->title = $e->attributes['title'];
-        $this->fileIDs =$e->attributes['blobid'];
-        $this->sensitivity = $e->attributes['document.sensitivity'];
-        $this->description = $e->attributes['description'];
-        $this->tags = Tag::GetTags($id);
-        $this->id = $id;
-    }
     
     function __construct(
         public int $id,
@@ -112,19 +100,4 @@ class Document
                 owner: $owner, files: $files, thumbnail: $thumbnail);
         return $doc;
     }
-    
-    public static function EVA_Create($title,$fileIDs,$description="",$owner=EVA::OWNER_NOBODY,$sensitivity=self::SENSITIVITY_PUBLIC)
-    {
-        $e = EVA::CreateObject("document", $owner);
-        foreach($fileIDs as $fileID)
-        {
-            $e->AddAttribute("blobid", $fileID);
-        }
-        $e->AddAttribute("document.sensitivity",$sensitivity);
-        $e->AddAttribute("description",$description);
-        $e->AddAttribute("title",$title);
-        $e->Save();
-        return new Document($e->id);
-    }
-    
 }
