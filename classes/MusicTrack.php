@@ -235,7 +235,7 @@ class MusicTrack
                 artist: $tags['artist']??"",
                 album: $tags['album']??"",
                 duration: $duration,
-                blobid: $blobid
+                blobid: $file->blobid
         );
         echo "&lt;$filename&gt; added as {$track->id}.<br />";
         return true;
