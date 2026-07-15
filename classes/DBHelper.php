@@ -96,7 +96,7 @@ class DBHelper
      * @param int $offset If not 0, start the results at this number.
      * @return string A fully formatted SELECT query with placeholders.
      */
-    public static function Select($table,$fields,$where,$orderby=[],$limit=0,$offset=0)
+    public static function Select($table,$fields,$where=[],$orderby=[],$limit=0,$offset=0)
     {
         $q="SELECT ". implode(",",$fields) . " FROM $table ".(count($where)>0?"WHERE ":"").self::Where($where);
         if(count($orderby)>0)
@@ -330,6 +330,14 @@ class DBHelper
     public static function GetLastId()
     {
         return DBHelper::$DBLink->lastInsertId();
+    }
+    
+    
+    public static function GetRowById(string $table, int $id, array $fields)
+    {
+        $select = self::Select($table, $fields, ['id'=>$id]);
+        $result = self::RunRow($select, [$id]);
+        return $result;
     }
     
     //=========END Specific queries================
