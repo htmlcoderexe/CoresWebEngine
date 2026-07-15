@@ -39,16 +39,7 @@ function ModuleAction_music_upload($params)
 
 function ModuleAction_music_all($params)
 {
-    $filelist = EVA::GetAllOfType("musictrack");
-    $tracks =[];
-    foreach($filelist as $id)
-    {
-        $track = MusicTrack::Load($id);
-        if($track)
-        {
-            $tracks[]=$track;
-        }
-    }
+    $tracks = MusicTrack::GetList();
     $tpl=new TemplateProcessor("music/listfiles");
     $tpl->tokens['tracks']= $tracks;
     EngineCore::SetPageContent($tpl->process(true));
@@ -73,17 +64,17 @@ function ModuleAction_music_play($params)
 
 function ModuleAction_music_getlibrary($params)
 {
-    $list = EVA::GetAsTable(["title","artist","blobid","album","media.duration"], "musictrack");
+    $tracks = MusicTrack::GetList();
     $output = [];
-    foreach($list as $id=>$entry)
+    foreach($tracks as $track)
     {
         $song = [];
-        $song['id'] = $id;
-        $song['title'] = $entry['title'];
-        $song['length'] = $entry['media.duration'];
-        $song['artist'] = $entry['artist'];
-        $song['album'] = $entry['album'];
-        $song['file'] = $entry['blobid'];
+        $song['id'] = $track->id;
+        $song['title'] = $track->title;
+        $song['length'] = $track->duration;
+        $song['artist'] = $track->artist;
+        $song['album'] = $track->album;
+        $song['file'] = $track->blobid;
         $output[]=$song;
     }
     EngineCore::RawModeOn();
@@ -112,6 +103,40 @@ function ModuleAction_music_getsong($params)
     echo json_encode($song);
     die;    
 }
+
+
+
+function ModuleAction_music_migrate($params)
+{
+    $user=User::GetCurrentUser();
+    if(!$user->HasPermission("super"))
+    {
+        EngineCore::FromWhenceYouCame();
+        die;
+    }
+    $propertylist = [
+        "title",
+        "artist",
+        "album",
+        "blobid",
+        "media.duration"
+    ];
+    $mp3s = EVA::GetAsTable($propertylist, "musictrack");
+    foreach($mp3s as $id=>$mp3)
+    {
+        $newtrack = MusicTrack::Create(
+                title: $mp3['title'], 
+                artist: $mp3['artist'],
+                album: $mp3['album'], 
+                duration: intval($mp3['media.duration']), 
+                blobid: $mp3['blobid']
+                );
+        var_dump($newtrack);
+        echo "<hr />";
+    }
+    die;
+}
+
 
 function ModuleAction_music_toscreen($params)
 {

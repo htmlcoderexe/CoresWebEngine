@@ -16,35 +16,91 @@ Module::DemandProperty("artist", "Artist", "The author or performer of this medi
 Module::DemandProperty("album", "Album", "A collection released by an artist that this item belongs to.");
 Module::DemandProperty("media.duration", "Duration", "Duration of a media file, in seconds.");
 
+$table = [
+    "title"=>"VARCHAR(255)",
+    "blobid"=>"VARCHAR(100)",
+    "duration"=>"INT",
+    "artist"=>"VARCHAR(255)",
+    "album"=>"VARCHAR(255)",
+    "timestamp"=>"INT",
+    "uid"=>"INT",
+    "gid"=>"INT"
+];
+
+Module::DemandTable(MusicTrack::TABLE, $table);
+
 class MusicTrack
 {
-    public $id;
-    public $title;
-    public $artist;
-    public $album;
-    public $blobid;
-    public $duration;
+    public const TABLE = "music_tracks";
+    public const FIELDS = [
+        'id','title','artist','album','duration','blobid','timestamp'
+    ];
+    
+    public function __construct(
+    public int $id,
+    public string $title,
+    public string $artist,
+    public string $album,
+    public string $blobid,
+    public int $duration){}
     
     
-    public $eva;
-    
-    
-    public static function Load($id)
+    public static function RowToObject($row)
     {
-        if(!EVA::Exists($id,"musictrack"))
+        $track = new MusicTrack(
+                id: $row['id'],
+                title: $row['title'],
+                blobid: $row['blobid'],
+                duration: $row['duration'],
+                artist: $row['artist'],
+                album: $row['album']
+        );
+        return $track;
+    }
+    
+    public static function Load(int $id) : MusicTrack | null
+    {
+        
+        $row = DBHelper::GetRowById(self::TABLE, $id, self::FIELDS);
+        if(!$row)
         {
             return null;
         }
-        $eva = new EVA($id);
-        $result = new MusicTrack();
-        $result->eva = $eva;
-        $result->title = $eva->attributes['title'] ?? '';
-        $result->artist = $eva->attributes['artist'] ?? '';
-        $result->album = $eva->attributes['album'] ?? '';
-        $result->duration = $eva->attributes['media.duration'];
-        $result->blobid = $eva->attributes['blobid'];
-        $result->id = $id;
-        return $result;
+        $track = self::RowToObject($row);
+        return $track;
+    }
+    
+    public static function GetList(array $filters = [])
+    {
+        
+        // currently filters aren't implemented so this just gets every track ever
+        
+        $sel = DBHelper::Select(self::TABLE, self::FIELDS, []);
+        $rows = DBHelper::RunTable($sel, []);
+        
+        // after getting appropriate results, return list of object
+        
+        $list = [];
+        foreach($rows as $row)
+        {
+            $track = self::RowToObject($row);
+            $list[]=$track;
+        }
+        return $list;
+    }
+    
+    public static function Create(string $title, string $blobid, int $duration, string $artist = "", string $album = "", int $owner = EVA::OWNER_NOBODY)
+    {
+        $now = time();
+        $row = [null, $title, $blobid, $duration, $artist, $album, $now, $owner, 0];
+        DBHelper::Insert(self::TABLE, $row);
+        $id = DBHelper::GetLastId();
+        $track = new MusicTrack(
+                id: $id,
+                title: $title, artist: $artist, album: $album,
+                blobid: $blobid, duration: $duration
+        );
+        return $track;
     }
     
     public static function FindDuration($filename, $verbose = false)
@@ -138,11 +194,14 @@ class MusicTrack
             $file = File::Load($blobid);
             $tags['title'] = $file->fullname;
         }
-        $eva = EVA::CreateObject("musictrack", EVA::OWNER_CURRENT,$tags);
-        $eva->AddAttribute("blobid", $blobid);
-        $eva->AddAttribute("media.duration", $duration);
-        $eva->Save();
-        return self::Load($eva->id);
+        $track = self::Create(
+                title: $tags['title'],
+                artist: $tags['artist']??"",
+                album: $tags['album']??"",
+                duration: $duration,
+                blobid: $blobid
+        );
+        return $track;
     }
     
     public static function Ingest($dir)
@@ -171,11 +230,14 @@ class MusicTrack
         {
             $tags['title'] = $filename;
         }
-        $eva = EVA::CreateObject("musictrack", EVA::OWNER_CURRENT,$tags);
-        $eva->AddAttribute("blobid", $file->blobid);
-        $eva->AddAttribute("media.duration", $duration);
-        $eva->Save();
-        echo "&lt;$filename&gt; added as {$eva->id}.<br />";
+        $track = self::Create(
+                title: $tags['title'],
+                artist: $tags['artist']??"",
+                album: $tags['album']??"",
+                duration: $duration,
+                blobid: $blobid
+        );
+        echo "&lt;$filename&gt; added as {$track->id}.<br />";
         return true;
     }
 }
