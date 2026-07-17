@@ -53,9 +53,27 @@ class TicketGroup
         return $group;
     }
     
-    public static function GetAllGroups()
+    public static function GetAllGroups(bool $openonly = false)
     {
-        $groups = DBHelper::GetAllRows(table: self::TABLE, fields: self::FIELDS);
+        //$groups = DBHelper::GetAllRows(table: self::TABLE, fields: self::FIELDS);
+        $where = "";
+        if($openonly)
+        {
+            $where = "WHERE $tt.last_status <> 6 ";
+        }
+        $qc = "SELECT agroup, COUNT(*) FROM " . TicketInfo::TABLE . " GROUP BY agroup";
+        $tg = TicketGroup::TABLE;
+        $tt = TicketInfo::TABLE;
+        $qc = "SELECT $tg.id as gid, $tg.name as name, COUNT($tt.id) as ticketcount, $tg.func_group as func_group, $tg.description as description "
+                . "FROM $tg LEFT JOIN $tt "
+                . "ON $tg.id = $tt.agroup "
+                . $where
+                . "GROUP BY $tg.id";
+        $groups = DBHelper::RunTable($qc, []);
+        for($i=0;$i<count($groups);$i++)
+        {
+            
+        }
         return $groups;
     }
     

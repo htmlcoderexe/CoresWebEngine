@@ -318,13 +318,8 @@ function ModuleAction_ticket_groups($params)
         default:
         {
             $tpl = new TemplateProcessor("ticket/groups_list");
-            $groups = EVA::GetKVA("name","ticket_group");
-            for($i=0;$i<count($groups);$i++)
-            {
-                $gid =$groups[$i]['object_id'];
-                $q = DBHelper::Count("tickets", "category", ["category"=>$gid]);
-                $groups[$i]['count'] = $q;
-            }
+            // $groups = EVA::GetKVA("name","ticket_group");
+            $groups = TicketGroup::GetAllGroups();
             $tpl->tokens["groups"] = $groups;
             EngineCore::SetPageContent($tpl->process(true));
             
