@@ -105,6 +105,33 @@ function ModuleAction_music_getsong($params)
 }
 
 
+function ModuleAction_music_toscreen($params)
+{
+    $id = array_shift($params);
+    $mp3 = MusicTrack::Load($id);
+    if($mp3)
+    {
+        Chip::SendCommand("screen","playsong",$mp3->blobid);
+        EngineCore::FromWhenceYouCame();
+        die();
+    }
+}
+
+function ModuleAction_music_pcommand($params)
+{
+    $command = array_shift($params);
+    $safelist = ['volup','voldown','play','pause'];
+    if(in_array($command,$safelist))
+    {
+        Chip::SendCommand("screen",$command,"");
+    }
+    EngineCore::FromWhenceYouCame();
+    die();
+}
+
+//*
+
+
 
 function ModuleAction_music_migrate($params)
 {
@@ -138,26 +165,5 @@ function ModuleAction_music_migrate($params)
 }
 
 
-function ModuleAction_music_toscreen($params)
-{
-    $id = array_shift($params);
-    $mp3 = MusicTrack::Load($id);
-    if($mp3)
-    {
-        Chip::SendCommand("screen","playsong",$mp3->blobid);
-        EngineCore::FromWhenceYouCame();
-        die();
-    }
-}
 
-function ModuleAction_music_pcommand($params)
-{
-    $command = array_shift($params);
-    $safelist = ['volup','voldown','play','pause'];
-    if(in_array($command,$safelist))
-    {
-        Chip::SendCommand("screen",$command,"");
-    }
-    EngineCore::FromWhenceYouCame();
-    die();
-}
+//*/

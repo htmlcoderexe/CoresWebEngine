@@ -250,6 +250,8 @@ function ModuleAction_pixdb_processbatch($params)
     die;
 }
 
+/*
+
 function ModuleAction_pixdb_migratealbums($param)
 {
     $q="SELECT id, owner FROM eva_objects WHERE type = 'picture_album'";
@@ -349,3 +351,5 @@ function ModuleAction_pixdb_migrate($params)
     DBHelper::Update("eva_mappings",['child_type'=>'picture'],['child_type'=>'picture+']);
     
 }
+
+//*/

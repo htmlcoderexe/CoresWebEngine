@@ -25,6 +25,40 @@ function ModuleAction_docs_new($params)
     }
 }
 
+function ModuleAction_docs_view($params)
+{
+    $docid=intval($params[0]);
+    $doc = Document::Load($docid);
+    if($doc)
+    {
+        $docview=new TemplateProcessor("docs/viewdoc");
+        $link= new TemplateProcessor("docs/filelink");
+        $links="";
+        foreach($doc->files as $fileobj)
+        {
+            $fileid = $fileobj->blobid;
+            $file = File::Load($fileid);
+            $link->tokens['blobid']=$file->blobid;
+            $link->tokens['filename']=$file->fname;
+            $link->tokens['size']=Utility::FormatUnit($file->size);
+            $link->tokens['ext']=$file->filext;
+            $links.=$link->process(true);
+        }
+        $docview->tokens['title']=$doc->title;
+        $docview->tokens['description']=$doc->description;
+        $docview->tokens['files']=$links;
+        EngineCore::SetPageContent($docview->process(true));
+    }
+}
+
+function ModuleAction_docs_upload($params)
+{
+    
+}
+
+
+
+
 function ModuleAction_docs_migrate($params)
 {
     $user=User::GetCurrentUser();
@@ -53,33 +87,5 @@ function ModuleAction_docs_migrate($params)
     die;
 }
 
-function ModuleAction_docs_view($params)
-{
-    $docid=intval($params[0]);
-    $doc = Document::Load($docid);
-    if($doc)
-    {
-        $docview=new TemplateProcessor("docs/viewdoc");
-        $link= new TemplateProcessor("docs/filelink");
-        $links="";
-        foreach($doc->files as $fileobj)
-        {
-            $fileid = $fileobj->blobid;
-            $file = File::Load($fileid);
-            $link->tokens['blobid']=$file->blobid;
-            $link->tokens['filename']=$file->fname;
-            $link->tokens['size']=Utility::FormatUnit($file->filesize);
-            $link->tokens['ext']=$file->filext;
-            $links.=$link->process(true);
-        }
-        $docview->tokens['title']=$doc->title;
-        $docview->tokens['description']=$doc->description;
-        $docview->tokens['files']=$links;
-        EngineCore::SetPageContent($docview->process(true));
-    }
-}
 
-function ModuleAction_docs_upload($params)
-{
-    
-}
+//*/
