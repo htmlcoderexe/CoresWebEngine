@@ -61,13 +61,13 @@ class File
         $this->filext=$extension;
         $this->timestamp=$timestamp;
         $this->type=$mimetype;
-        $this->filesize=$size;
+        $this->size=$size;
         $this->blobid=$blobid;
         $this->fullname=$this->fname.".".$this->filext;
         $this->hash = $hash;
     }
     
-    public static function Load($blobid,$nohash=false)
+    public static function Load($blobid,$nohash=false) : File | null
     {
         $fields=['id','timestamp','mimetype','size','name','extension','hash'];
         $q = DBHelper::Select(Files_FAT, $fields, ['blobid'=>$blobid]);
@@ -79,7 +79,14 @@ class File
         }
         $hash=$result['hash'];
         
-        $f = new File($result['id'],$blobid,$result['timestamp'],$result['mimetype'],$result['size'],$result['name'],$result['extension'],$hash);
+        $f = new File(id:$result['id'],
+                blobid:$blobid,
+                timestamp:$result['timestamp'],
+                mimetype:$result['mimetype'],
+                size:$result['size'],
+                name:$result['name'],
+                extension:$result['extension'],
+                hash:$hash);
         
         if(!$nohash && $hash =="")
         {
@@ -317,7 +324,7 @@ class File
         HTTPHeaders::ContentType($fileinfo->type);
         // cache for a day
         HTTPHeaders::CacheDuration(86400);
-        $size = $fileinfo->filesize;
+        $size = $fileinfo->size;
         // check the actual file's size and log a warning if there's a mismatch
         $realsize= filesize($filename);
         if($size!=$realsize)
