@@ -272,127 +272,6 @@ function ModuleAction_calender_edit($params)
     }
 }
 
-function ModuleFunction_calender_migratetypes($params)
-{
-    $mapping = EVA::GetAsTable(["calendar.tagcolour","calendar.agendacolour","name"],"calendar.event.type");
-    foreach($mapping as $id=>$etype)
-    {
-        $row=[
-            null,
-            $etype['name'],
-            $etype["calendar.tagcolour"],
-            $etype["calendar.agendacolour"],
-            "#000000","#000000",
-            0,0
-        ];
-        DBHelper::Insert("calendar_event_types", $row);
-        $new_id = DBHelper::GetLastId();
-        DBHelper::Update(CALENDAR_EVENTS_TABLE,["category"=>$new_id],["category"=>$id]);
-        DBHelper::Update("calendar_recurring_events",["category"=>$new_id],["category"=>$id]);
-    }
-        DBHelper::Update(CALENDAR_EVENTS_TABLE,["category"=>1],["category"=>0]);
-        DBHelper::Update("calendar_recurring_events",["category"=>1],["category"=>0]);
-}
-
-function ModuleFunction_calender_migrateexceptions($params)
-{
-    if(!EngineCore::$CurrentUser->HasPermission("dba"))
-    {
-        die("no");
-    }
-    $exceptions = EVA::GetAsTable(["calendar.date","calendar.event.parent"],"calendar.exception");
-     foreach($exceptions as $event)
-    {
-        $ymd = $event['calendar.date'];
-        $y=substr($ymd,0,4);
-        $m=substr($ymd,5,2);
-        $d=substr($ymd,8,2);
-        $eventrow=[
-            null, 
-            $event['calendar.event.parent'],
-            $d,$m,$y
-        ];
-        DBHelper::Insert("calendar_exceptions", $eventrow);
-    }
-    
-}
-
-function ModuleAction_calender_migrateevents($params)
-{
-    if(!EngineCore::$CurrentUser->HasPermission("dba"))
-    {
-        die("no");
-    }
-    $all_events = EVA::GetAsTable(["calendar.date","calendar.time","title","description","calendar.event_type","calendar.duration"], "calendar.event");
-    foreach($all_events as $event)
-    {
-        $ymd = $event['calendar.date'];
-        $y=substr($ymd,0,4);
-        $m=substr($ymd,5,2);
-        $d=substr($ymd,8,2);
-        $hm = $event['calendar.time'];
-        $dur = $event['calendar.duration'];
-        $h=substr($hm,0,2);
-        $min=substr($hm,3,2);
-        $duration = (intval(substr($dur,0,2)))*60 + (intval(substr($dur,3,2)));
-        $eventrow=[
-            null, 
-            $event['title'], $event['description'], $event['calendar.event_type'],
-            $d,$m,$y,
-            $h,$min,$duration,
-            0,0,1
-        ];
-        DBHelper::Insert(CALENDAR_EVENTS_TABLE, $eventrow);
-    }
-}
-function ModuleAction_calender_migraterecurrers($params)
-{
-    if(!EngineCore::$CurrentUser->HasPermission("dba"))
-    {
-        die("no");
-    }
-    $recurrers = EVA::GetAsTable(
-            ["calendar.recurring.type",
-                "calendar.recurring.data",
-                "title","description",
-                "calendar.time",
-                "calendar.duration",
-                "calendar.event_type",
-                "calendar.recurring.start_date",
-                "calendar.recurring.end_date"
-                ], 
-            "calendar.recurring");
-    foreach($recurrers as $id=>$event)
-    {
-        $ymd = $event['calendar.recurring.start_date'];
-        $y=substr($ymd,0,4);
-        $m=substr($ymd,5,2);
-        $d=substr($ymd,8,2);
-        $hm = $event['calendar.time'];
-        $dur = $event['calendar.duration'];
-        $h=substr($hm,0,2);
-        $min=substr($hm,3,2);
-        $duration = (intval(substr($dur,0,2)))*60 + (intval(substr($dur,3,2)));
-        $end=0;
-        if($event['calendar.recurring.end_date']!="")
-        {
-            $end = strtotime($event['calendar.recurring.end_date']);
-        }
-        $eventrow=[
-            null, 
-            $event['title'], $event['description'], $event['calendar.event_type'],
-            $d,$m,$y,
-            $h,$min,$duration,
-            $end,
-            $event["calendar.recurring.type"], $event["calendar.recurring.data"],
-            0,0,1
-        ];
-        DBHelper::Insert("calendar_recurring_events", $eventrow);
-        $new_id = DBHelper::GetLastId();
-        DBHelper::Update("calendar_exceptions",["recurrer_id"=>$new_id],["recurrer_id"=>$id]);
-    }
-}
-
 
 function ModuleAction_calender_create($params)
 {
@@ -1055,3 +934,129 @@ function ModuleAction_calender_delete($params)
     EngineCore::GTFO("/calender".$returnTo);
     die;
 }
+
+/*
+ * 
+ * 
+
+function ModuleFunction_calender_migratetypes($params)
+{
+    $mapping = EVA::GetAsTable(["calendar.tagcolour","calendar.agendacolour","name"],"calendar.event.type");
+    foreach($mapping as $id=>$etype)
+    {
+        $row=[
+            null,
+            $etype['name'],
+            $etype["calendar.tagcolour"],
+            $etype["calendar.agendacolour"],
+            "#000000","#000000",
+            0,0
+        ];
+        DBHelper::Insert("calendar_event_types", $row);
+        $new_id = DBHelper::GetLastId();
+        DBHelper::Update(CALENDAR_EVENTS_TABLE,["category"=>$new_id],["category"=>$id]);
+        DBHelper::Update("calendar_recurring_events",["category"=>$new_id],["category"=>$id]);
+    }
+        DBHelper::Update(CALENDAR_EVENTS_TABLE,["category"=>1],["category"=>0]);
+        DBHelper::Update("calendar_recurring_events",["category"=>1],["category"=>0]);
+}
+
+function ModuleFunction_calender_migrateexceptions($params)
+{
+    if(!EngineCore::$CurrentUser->HasPermission("dba"))
+    {
+        die("no");
+    }
+    $exceptions = EVA::GetAsTable(["calendar.date","calendar.event.parent"],"calendar.exception");
+     foreach($exceptions as $event)
+    {
+        $ymd = $event['calendar.date'];
+        $y=substr($ymd,0,4);
+        $m=substr($ymd,5,2);
+        $d=substr($ymd,8,2);
+        $eventrow=[
+            null, 
+            $event['calendar.event.parent'],
+            $d,$m,$y
+        ];
+        DBHelper::Insert("calendar_exceptions", $eventrow);
+    }
+    
+}
+
+function ModuleAction_calender_migrateevents($params)
+{
+    if(!EngineCore::$CurrentUser->HasPermission("dba"))
+    {
+        die("no");
+    }
+    $all_events = EVA::GetAsTable(["calendar.date","calendar.time","title","description","calendar.event_type","calendar.duration"], "calendar.event");
+    foreach($all_events as $event)
+    {
+        $ymd = $event['calendar.date'];
+        $y=substr($ymd,0,4);
+        $m=substr($ymd,5,2);
+        $d=substr($ymd,8,2);
+        $hm = $event['calendar.time'];
+        $dur = $event['calendar.duration'];
+        $h=substr($hm,0,2);
+        $min=substr($hm,3,2);
+        $duration = (intval(substr($dur,0,2)))*60 + (intval(substr($dur,3,2)));
+        $eventrow=[
+            null, 
+            $event['title'], $event['description'], $event['calendar.event_type'],
+            $d,$m,$y,
+            $h,$min,$duration,
+            0,0,1
+        ];
+        DBHelper::Insert(CALENDAR_EVENTS_TABLE, $eventrow);
+    }
+}
+function ModuleAction_calender_migraterecurrers($params)
+{
+    if(!EngineCore::$CurrentUser->HasPermission("dba"))
+    {
+        die("no");
+    }
+    $recurrers = EVA::GetAsTable(
+            ["calendar.recurring.type",
+                "calendar.recurring.data",
+                "title","description",
+                "calendar.time",
+                "calendar.duration",
+                "calendar.event_type",
+                "calendar.recurring.start_date",
+                "calendar.recurring.end_date"
+                ], 
+            "calendar.recurring");
+    foreach($recurrers as $id=>$event)
+    {
+        $ymd = $event['calendar.recurring.start_date'];
+        $y=substr($ymd,0,4);
+        $m=substr($ymd,5,2);
+        $d=substr($ymd,8,2);
+        $hm = $event['calendar.time'];
+        $dur = $event['calendar.duration'];
+        $h=substr($hm,0,2);
+        $min=substr($hm,3,2);
+        $duration = (intval(substr($dur,0,2)))*60 + (intval(substr($dur,3,2)));
+        $end=0;
+        if($event['calendar.recurring.end_date']!="")
+        {
+            $end = strtotime($event['calendar.recurring.end_date']);
+        }
+        $eventrow=[
+            null, 
+            $event['title'], $event['description'], $event['calendar.event_type'],
+            $d,$m,$y,
+            $h,$min,$duration,
+            $end,
+            $event["calendar.recurring.type"], $event["calendar.recurring.data"],
+            0,0,1
+        ];
+        DBHelper::Insert("calendar_recurring_events", $eventrow);
+        $new_id = DBHelper::GetLastId();
+        DBHelper::Update("calendar_exceptions",["recurrer_id"=>$new_id],["recurrer_id"=>$id]);
+    }
+}
+ */
