@@ -136,7 +136,7 @@ class Ticket
         $update = TicketUpdate::Create(ticket_id: $this->info->id, user: $user, type: TicketUpdate::TYPE_STATUSCHANGE, newstate: $state);
         $this->updates[]= $update;
         $this->info->last_status = $state;
-        if($state == self::STATUS_CLOSED)
+        if($state == TicketInfo::STATUS_CLOSED)
         {
             $this->info->completed_time = time();
         }
@@ -147,7 +147,7 @@ class Ticket
      */
     public function Close()
     {
-        $this->ChangeState(self::STATUS_CLOSED);
+        $this->ChangeState(TicketInfo::STATUS_CLOSED);
     }
     /**
      * Get the ticket's canonical number ("INC080085");

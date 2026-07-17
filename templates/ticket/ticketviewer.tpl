@@ -48,7 +48,7 @@
 <h2>Assigned to: {%ticket_group_name%}</h2>
 <form action="/ticket/modify/{%number%}" method="POST"><br />
     <select name="ticket_group">
-        {#foreach|{%groups%}|<option value="{:id:}" {#ifeq|{:id:}|{%ticket_group_id%}|selected="selected"#}>{:name:}</option>#}
+        {#foreach|{%groups%}|<option value="{:gid:}" {#ifeq|{:gid:}|{%ticket_group_id%}|selected="selected"#}>{:name:}</option>#}
     </select>
     <button>Assign</button>
 </form>

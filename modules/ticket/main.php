@@ -68,8 +68,8 @@ function ModuleAction_ticket_view($params)
     $groupmap = [];
     for($i=0;$i<count($groups);$i++)
     {
-        $groupmap[$groups[$i]['id']]=$groups[$i]['name'];
-        if(intval($groups[$i]['id']) == $ticket->info->group)
+        $groupmap[$groups[$i]['gid']]=$groups[$i]['name'];
+        if(intval($groups[$i]['gid']) == $ticket->info->group)
         {
             $assgroup = $groups[$i]['name'];
         }
@@ -189,7 +189,7 @@ function ModuleAction_ticket_list($params)
 function ModuleAction_ticket_modify($params)
 {
     $tid=$params[0]??"XXX000000";
-    $ticket=new Ticket($tid);
+    $ticket=Ticket::Load($tid);
     
     if(!$ticket)
     {
@@ -201,7 +201,7 @@ function ModuleAction_ticket_modify($params)
     
     if($stateupdate)
     {
-        $ticket->ChangeState($stateupdate);
+        $ticket->ChangeState(intval($stateupdate));
         EngineCore::GTFO("/ticket/view/".$tid);
         die();
     }
@@ -212,15 +212,27 @@ function ModuleAction_ticket_modify($params)
         $text=EngineCore::POST("update_text","");
         $user=User::GetCurrentUser()->userid;
         $type=EngineCore::POST("update_type","info");
-        
-        $ticket->AppendUpdate($text,$user,$type,$_FILES['update_attachment']??[]);
+        $files_in = $_FILES['update_attachment']??[];
+        $files = [];
+        if(isset($files_in['name']))
+        {
+            for($i=0;$i<count($files_in['name']);$i++)
+            {
+                $file = File::Upload($files_in, $i);
+                if($file)
+                {
+                    $files[]=$file->blobid;
+                }
+            }
+        }
+        $ticket->AppendCommentUpdate(text:$text,user:$user,files:$files);
         EngineCore::GTFO("/ticket/view/".$tid);
         die();
     }
     $group = EngineCore::POST("ticket_group","");
     if($group)
     {
-        $ticket->Assign($group);
+        $ticket->AssignGroup(gid: intval($group));
         EngineCore::GTFO("/ticket/view/".$tid);
         die();
     }
@@ -257,7 +269,7 @@ function ModuleAction_ticket_groups($params)
         case "edit":
         {
             $gid = (int) array_shift($params);
-            $group = new TicketGroup($gid);
+            $group = TicketGroup::Load($gid);
             if(!isset($group->name))
             {
                 EngineCore::GTFO("/ticket/groups/all");
@@ -305,7 +317,7 @@ function ModuleAction_ticket_groups($params)
                 EngineCore::GTFO("/ticket/groups/edit/".$new_group->id);
                 return;
             }
-            $group = new TicketGroup($id);
+            $group = TicketGroup::Load($id);
             $group->name = $name;
             $group->description = $desc;
             $group->func_group = $gid;
@@ -318,7 +330,6 @@ function ModuleAction_ticket_groups($params)
         default:
         {
             $tpl = new TemplateProcessor("ticket/groups_list");
-            // $groups = EVA::GetKVA("name","ticket_group");
             $groups = TicketGroup::GetAllGroups();
             $tpl->tokens["groups"] = $groups;
             EngineCore::SetPageContent($tpl->process(true));
