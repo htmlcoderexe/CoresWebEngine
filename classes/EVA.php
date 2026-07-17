@@ -639,7 +639,22 @@ class EVA
                 {
                     $output[$entry['object_id']] = array_fill_keys($origlist,'');
                 }
-                $output[$entry['object_id']][$entry['name']] = $entry['value'];
+                if(isset($output[$entry['object_id']][$entry['name']]) && $output[$entry['object_id']][$entry['name']]!="")
+                {
+                    if(is_array($output[$entry['object_id']][$entry['name']]))
+                    {
+                        $output[$entry['object_id']][$entry['name']][]=$entry['value'];
+                    }
+                    else
+                    {
+                        $tmp = $output[$entry['object_id']][$entry['name']];
+                        $output[$entry['object_id']][$entry['name']]=[$tmp, $entry['value']];
+                    }
+                }
+                else
+                {
+                    $output[$entry['object_id']][$entry['name']] = $entry['value'];
+                }
             }
             // EngineCore::Write2Debug($query);
             EngineCore::Lap2Debug("done getting table of $type");
