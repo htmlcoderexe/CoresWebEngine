@@ -1,85 +1,29 @@
 <?php
 
-$structure_tickets=[
-    "type"=>"int",
-    "submitter"=>"int",
-    "subject"=>"int",
-    "EvaID"=>"int",
-    "title"=>"varchar(255)",
-    "description"=>"varchar(3000)",
-    "time"=>"int",
-    "category"=>"int",
-    "completedtime"=>"int",
-    "owner"=>"int"
-];
-$structure_states=[
-    "ticketid"=>"int",
-    "newstate"=>"int",
-    "time"=>"int"
-];
-
-//Module::DemandTable("tickets", $structure_tickets);
-//Module::DemandTable("ticket_state_changes",$structure_states);
-//Module::DemandProperty("attachment","Attachment","BLOB id of attached file");
-//Module::DemandProperty("ticket.update.type","Ticket update type","Type of an update attached to a ticket");
 /**
- * Description of Ticket
+ * Represents a Ticket
  *
- * @author admin
  */
 class Ticket
 {
-    public $Id;
-    public $Type;
-    public $EvaId;
-    
-    public $Submitter;
-    public $Owner;
-    public $Target;
-    
-    
-    public $Title;
-    public $Description;
-    public $Category;
-    
-    public $Created;
-    public $Done;
-    public $CurrentState;
-    
-    //public $Updates=[];
-    
-    
+    /**
+     * Creates an instance of Ticket
+     * @param string $id Readable ticket ID such as INC000001
+     * @param TicketInfo $info Object containing ticket's information 
+     * @param array $updates Array of TicketUpdate containing updates to the ticket
+     */
     public function __construct(
             public string $id,
             public TicketInfo $info,
             public array $updates
     ){}
     
+    
     /**
      * Loads a ticket given its canonical number
-     * @param string $ticketID ticket number in canonical format
+     * @param string $id ticket number in canonical format
      * @return type Ticket the ticket if it was found, else null
      */
-    public function EVA__construct($ticketID)
-    {
-        list($type,$id)=self::ParseTicketNumber($ticketID);
-        $filters=["id"=>$id];
-        $q=DBHelper::Select("tickets", ["id","type","subject","EvaID","title","submitter","description","category"], $filters);
-        $ticketresult=DBHelper::RunRow($q,array_values($filters));
-        if(!$ticketresult)
-        {
-            return;
-        }
-        $this->Id=$id;
-        $this->EvaId=$ticketresult['EvaID'];;
-        $this->Type=$type;
-        $this->Title=$ticketresult['title'];
-        $this->Description=$ticketresult['description'];
-        $this->Submitter=$ticketresult['submitter'];
-        $this->Category=$ticketresult['category'];
-        $this->GetState();
-    }
-    
     public static function Load(string $id) : Ticket | null
     {
         list($type,$ticket_id)=self::ParseTicketNumber($id);
@@ -106,33 +50,13 @@ class Ticket
     }
     
     /**
-     * Refresh the ticket's state from DB and return it as well
-     * @return string, I think
-     */
-    public function GetState()
-    {
-        $q=DBHelper::Select("ticket_state_changes", ["newstate"], ["ticketid"=>$this->Id],["time"=>"DESC"],1);
-        $this->CurrentState=DBHelper::RunScalar($q, [$this->Id]);
-        return $this->CurrentState;
-    }
-    
-    /**
      * Set the ticket's state
      * @param int(technically) $state the new state code
      * seriously can we get it on with the enums
      */
     public function ChangeState(int $state, int $user = -1)
     {
-        /*
-        DBHelper::Insert("ticket_state_changes",[null, $this->Id,$state,time()]);
-        $this->CurrentState=$state;
-        if($state==self::STATUS_CLOSED)
-        {   
-            $this->Done=time();
-            DBHelper::Update("tickets",["completedtime"=>time()],["id"=>$this->Id]);
-        }
-         * 
-         */
+
         $update = TicketUpdate::Create(ticket_id: $this->info->id, user: $user, type: TicketUpdate::TYPE_STATUSCHANGE, newstate: $state);
         $this->updates[]= $update;
         $this->info->last_status = $state;
@@ -149,46 +73,36 @@ class Ticket
     {
         $this->ChangeState(TicketInfo::STATUS_CLOSED);
     }
+    
     /**
      * Get the ticket's canonical number ("INC080085");
      * @return string
      */
     public function GetNumber()
     {
-        return self::MakeTicketNumber($this->info->type,$this->info->id);
+        return self::MakeTicketNumber($this->info->type,$this->info->id);    
     }
     
-    public function GetUpdates()
+    /**
+     * Appends a comment with optional attached files
+     * @param string $text Comment text
+     * @param int $user User adding the comment, defaults to current user
+     * @param array $files Optional array of File blob IDs to attach
+     */
+    public function AppendCommentUpdate(string $text,int $user = -1, array $files=[])
     {
-        $this->Updates=[];
-        $updatecount=0;
-        $updateIds=EVA::GetByProperty("parent_object", $this->EvaId, "ticket.update");
-        foreach($updateIds as $update)
-        {
-            $e=new TicketUpdate($update);
-            if($e->ticket)
-            {
-                $this->Updates[]=$e;
-                $updatecount++;
-            }
-        }
-        return $updatecount;
-    }
-    
-    public function AppendCommentUpdate(string $text,int $user = -1,$files=[])
-    {
-        //$update=TicketUpdate::Create($this->EvaId, $text, $user, $type, $files);
         $update = TicketUpdate::Create(ticket_id: $this->info->id, user: $user, type: TicketUpdate::TYPE_COMMENT, newtext: $text, files: $files);
         $this->Updates[]=$update;
     }
     
+    /**
+     * Assigns the ticket to a group
+     * @param int $gid Group ID
+     * @param int $user Assigning user, defaults to current user
+     * @param int $newuser Optional new owner
+     */
     public function AssignGroup(int $gid, int $user = -1, int $newuser = -1)
     {
-        /**
-        $this->Category=$gid;
-         DBHelper::Update("tickets",["category"=>$gid],["id"=>$this->Id]);
-         * 
-         */
         $update = TicketUpdate::Create(ticket_id: $this->info->id, user: $user, type: TicketUpdate::TYPE_GROUPCHANGE, newgroup: $gid, newuser: $newuser);
         $this->updates[]=$update;
         $this->info->group = $gid;
@@ -206,31 +120,12 @@ class Ticket
     |                   |
      \-----------------*/
     
-    
-    
-    
     /**
-     * 
-     * @param type $title
-     * @param type $description
-     * @param type $type
-     * @param type $category
-     * @param type $target
-     * @return type
+     * Converts a ticket number into a type and ID
+     * @param string $number Ticket number in the INC000001 format
+     * @return array [string type, int id]
      */
-    public static function EVA_Create($title,$description,$type,$category=0,$target=-1)
-    {
-        $cu=User::GetCurrentUser();
-        $e=EVA::CreateObject("ticket",EVA::OWNER_CURRENT);
-        $insert=[null,$type,$cu->userid,$target==-1?$cu->userid:$target,$e->id,$title,$description,time(),$category,0,$cu->userid];
-        DBHelper::Insert("tickets",$insert);
-        $tid=DBHelper::GetLastId();
-        $stateinsert=[null,$tid,self::STATUS_OPEN,time()];
-        DBHelper::Insert("ticket_state_changes",$stateinsert);
-        return self::MakeTicketNumber($type,$tid);
-    }
-    
-    public static function ParseTicketNumber($number)
+    public static function ParseTicketNumber(string $number) : array
     {
         $code=substr($number,0,3);
         $id=intval(substr($number,3));
@@ -241,7 +136,14 @@ class Ticket
         }
         return [$type,$id];
     }
-    public static function MakeTicketNumber($type,$id)
+    
+    /**
+     * Creates a readable ticket number in the INC000001 format out of a numeric type and ID
+     * @param int $type Ticket type, must be in the TicketInfo::TICKET_CODES array
+     * @param int $id Ticket ID
+     * @return string The ticket number
+     */
+    public static function MakeTicketNumber(int $type, int $id) : string
     {
         $code="XXX";
         if(isset(TicketInfo::TICKET_CODES[$type]))
@@ -251,9 +153,14 @@ class Ticket
         $number=sprintf("%0".TicketInfo::TICKET_NUMBER_LENGTH."d",$id);
         return $code.$number;
     }
-    public static function ReadableStatusName($status)
+    
+    /**
+     * Converts a numeric status to a string
+     * @param int $status Status number
+     * @return string Readable ticket status from TicketInfo::TICKET_STATUSES
+     */
+    public static function ReadableStatusName(int $status) : string
     {
         return TicketInfo::TICKET_STATUSES[$status % count(TicketInfo::TICKET_STATUSES)];
     }
 }
-

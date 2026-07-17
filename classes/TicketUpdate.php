@@ -1,15 +1,25 @@
 <?php
 
-
-//Module::DemandProperty("attachment","Attachment","BLOB id of attached file");
-//Module::DemandProperty("ticket.update.type","Ticket update type","Type of an update attached to a ticket");
 /**
- * Description of TicketUpdate
+ * Represents a ticket update
  *
- * @author admin
  */
 class TicketUpdate
 {
+    /**
+     * Creates an insance of TicketUpdate
+     * @param int $id Update ID
+     * @param int $ticket_id Ticket ID
+     * @param int $user User creating the update
+     * @param int $time Time of the update
+     * @param int $type Update type
+     * @param int $newgroup Group changed by update, if applicable
+     * @param string $newtext Comment text
+     * @param string $newtitle Title changed by update, if applicable
+     * @param int $newstate Ticket state changed by update, if applicable
+     * @param int $newuser User the ticket is reassigned to, if applicable
+     * @param array $files Attachments as an array of File blobids, if applicable
+     */
     public function __construct(
         public int $id,
         public int $ticket_id,
@@ -54,23 +64,13 @@ class TicketUpdate
     public const TYPE_COMMENT = 4;
     public const TYPE_FULL = 5;
     
-    public function EVA__construct($EvaID)
-    {
-        $e=new EVA($EvaID);
-        if(!$e)
-        {
-            return;
-        }
-        $this->ticket=$e->attributes['parent_object'];
-        $this->text=$e->attributes['description'];
-        $this->user=$e->attributes['user_id'];
-        $this->type=$e->attributes['ticket.update.type'];
-        $this->files=$e->attributes['attachment']??[];
-        $this->time=$e->attributes['timestamp'];
-        
-    }
-    
-    public static function FromRow(array $row, array $attachments)
+    /**
+     * Creates an instance of TicketUpdate from a database row and a list of attachments
+     * @param array $row An associative array, for example, a database row, with the relevant fields
+     * @param array $attachments A string[] of blobids
+     * @return TicketUpdate|null
+     */
+    public static function FromRow(array $row, array $attachments) : TicketUpdate | null
     {
         $update = new TicketUpdate(
                 id: $row['id'],
@@ -88,7 +88,12 @@ class TicketUpdate
         return $update;
     }
     
-    public static function Load(int $id)
+    /**
+     * Loads a TicketUpdate by ID
+     * @param int $id Update ID
+     * @return TicketUpdate|null
+     */
+    public static function Load(int $id) : TicketUpdate | null
     {
         $row = DBHelper::GetRowById(table: self::TABLE, id: $id, fields: self::FIELDS);
         if(!$row)
@@ -100,9 +105,13 @@ class TicketUpdate
         return $update;
     }
     
-    public static function GetUpdates(int $id)
+    /**
+     * Fetches updates for a given ticket, sorted from earliest to latest
+     * @param int $id Ticket ID
+     * @return array An array of TicketUpdate
+     */
+    public static function GetUpdates(int $id) : array
     {
-        //$rows = DBHelper::GetRowsByField(table: self::TABLE, field: 'ticket_id', value: $id, fields: self::FIELDS);
         
         $rowq = DBHelper::Select(table: self::TABLE, fields: self::FIELDS, where: ['ticket_id'=>$id], orderby: ['time'=>'ASC']);
         $rows = DBHelper::RunTable($rowq, [$id]);
@@ -126,9 +135,24 @@ class TicketUpdate
         return $updates;
     }
     
+    /**
+     * Creates a new update
+     * @param int $ticket_id Ticket ID
+     * @param int $user User creating the update
+     * @param int $type Update type
+     * @param int $newgroup Group changed by update, if applicable
+     * @param string $newtext Comment text
+     * @param string $newtitle Title changed by update, if applicable
+     * @param int $newstate Ticket state changed by update, if applicable
+     * @param int $newuser User the ticket is reassigned to, if applicable
+     * @param array $files Attachments as an array of File blobids, if applicable
+     * @param int $time Time of the update
+     * @return \TicketUpdate
+     */
     public static function Create(
         int $ticket_id, 
-        int $user = -1, int $type = self::TYPE_INFO,
+        int $user = -1, 
+        int $type = self::TYPE_INFO,
         int $newgroup = -1,
         string $newtext = "",
         string $newtitle = "",
@@ -168,36 +192,4 @@ class TicketUpdate
         return $update;
     }
     
-    /**
-     * Creates and posts a ticket update.
-     * @param int $parent Ticket's root object ID
-     * @param string $text Update's text
-     * @param int $user UID associated with the update
-     * @param string $type Update type
-     * @param array $files a slice of PHP's $_FILES array
-     * @return TicketUpdate the resulting ticket update
-     */
-    public static function EVA_Create($parent,$text,$user,$type="info",$files=[])
-    {
-        $e= EVA::CreateObject("ticket.update",EVA::OWNER_NOBODY,["description"=>$text,"user_id"=>$user,"ticket.update.type"=>$type,"parent_object"=>$parent,"timestamp"=>time()]);
-        // check if the array is actually usable
-        if(isset($files['name']))
-        {
-            for($i = 0; $i < count($files['name']); $i++)
-            {
-                $file = File::Upload($files, $i);
-                if($file)
-                {
-                    $e->AddAttribute("attachment", $file->blobid);
-                }
-                else
-                {
-                    EngineCore::WriteUserError("Uploading \"" . $files['name'][$i] . "\" failed.", "upload");
-                    Logger::Log("Was unable to upload \"" . $files['name'][$i] . "\".", 0, "upload error");
-                }
-            }
-        }
-        $e->Save();
-        return new TicketUpdate($e->id);
-    }
 }

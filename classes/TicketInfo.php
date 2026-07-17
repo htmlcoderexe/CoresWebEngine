@@ -1,13 +1,26 @@
 <?php
 
 /**
- * Description of TicketInfo
+ * Represents basic ticket information
  *
- * @author admin
  */
 class TicketInfo
 {
-    
+    /**
+     * Creates a new instance of TicketInfo
+     * @param int $id Ticket ID
+     * @param int $type Ticket Type
+     * @param string $title Ticket Title
+     * @param string $description Ticket text/description
+     * @param int $submitter User originally creating the ticket
+     * @param int $subject User concerned in the ticket
+     * @param int $owner Currently assigned user
+     * @param int $time Time of ticket's creation
+     * @param int $completed_time Time when ticket was closed (0 if it is still open)
+     * @param int $last_status Most recent ticket status
+     * @param int $last_update Time of the most recent ticket update
+     * @param int $group Group ID where the ticket is assigned
+     */
     public function __construct(
             public int $id,
             public int $type,
@@ -66,7 +79,12 @@ class TicketInfo
     
     public const TICKET_NUMBER_LENGTH=6;
     
-    public static function FromRow($row) : TicketInfo | null
+    /**
+     * Creates an instance of TicketInfo from associative array (for example, database row)
+     * @param array $row Array containing the data
+     * @return TicketInfo|null
+     */
+    public static function FromRow(array $row) : TicketInfo | null
     {
         $info = new TicketInfo(
                 id: $row['id'],
@@ -85,7 +103,12 @@ class TicketInfo
         return $info;
     }
     
-    public static function Load($id) : TicketInfo | null
+    /**
+     * Loads a specific TicketInfo by ID
+     * @param int $id Ticket ID
+     * @return TicketInfo|null
+     */
+    public static function Load(int $id) : TicketInfo | null
     {
         $row = DBHelper::GetRowById(table: self::TABLE, id: $id, fields: self::FIELDS);
         if(!$row)
@@ -96,6 +119,18 @@ class TicketInfo
         return $info;
     }
     
+    /**
+     * Creates a new TicketInfo
+     * @param string $title Ticket title
+     * @param string $description Ticket text/description
+     * @param int $submitter User originally creating the ticket
+     * @param int $owner Currently assigned user
+     * @param int $type Ticket type
+     * @param int $subject User concerned in the ticket
+     * @param int $group Group where the ticket is assigned
+     * @param int $time Ticket creation time - defaults to current time
+     * @return \TicketInfo
+     */
     public static function Create(string $title, string $description, int $submitter, int $owner, int $type = self::TYPE_INC, int $subject = -1, int $group = 0, int $time = -1)
     {
         if($subject == -1)
@@ -113,11 +148,15 @@ class TicketInfo
         return $info;
     }
     
+    /**
+     * Saves modifications to ticket data
+     * @param bool $no_auto_time If true, does not refresh the ticket's last modification time
+     */
     public function Update(bool $no_auto_time = false)
     {
         if(!$no_auto_time)
         {
-            $this->time = time();
+            $this->last_update = time();
         }
         $update = [
         "type"=>$this->type,"title"=>$this->title,"description"=>$this->description,
@@ -129,8 +168,12 @@ class TicketInfo
         DBHelper::Update(table: self::TABLE, where: ['id'=>$this->id], assignments: $update);
     }
     
-    
-    public static function GetTickets(int $gid = -1)
+    /**
+     * Fetches all tickets
+     * @param int $gid Group ID, if set, only returns tickets in that group
+     * @return array Array of TicketInfo
+     */
+    public static function GetTickets(int $gid = -1) : array
     {
         $where = [];
         $p = [];

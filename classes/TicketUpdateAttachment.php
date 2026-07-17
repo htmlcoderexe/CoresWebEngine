@@ -2,12 +2,9 @@
 
 
 /**
- * Description of TicketUpdateAttachment
+ * Represents a single file attached to an update
  *
- * @author admin
  */
-
-//Module::DemandTable(TicketUpdateAttachment::TABLE, TicketUpdateAttachment::SCHEMA);
 
 class TicketUpdateAttachment
 {
@@ -28,6 +25,15 @@ class TicketUpdateAttachment
         'size'
     ];
     
+    /**
+     * Creates an instance of TicketUpdateAttachment
+     * @param int $id Attachment ID
+     * @param int $update_id Update ID
+     * @param int $ticket_id Ticket ID - cached value to speed up loading
+     * @param string $blobid Attachment blobid
+     * @param string $format File extension of the attachment
+     * @param int $size File size of the attachment
+     */
     public function __construct(
             public int $id,
             public int $update_id,
@@ -36,8 +42,13 @@ class TicketUpdateAttachment
             public string $format,
             public int $size
     ){}
-
-    public static function FromRow($row) : TicketUpdateAttachment
+    
+    /**
+     * Creates an instance of TicketUpdateAttachment from a database row
+     * @param array $row An associative array containing the data
+     * @return TicketUpdateAttachment
+     */
+    public static function FromRow(array $row) : TicketUpdateAttachment
     {
         $attachment = new TicketUpdateAttachment(
                 id: $row['id'],
@@ -50,6 +61,11 @@ class TicketUpdateAttachment
         return $attachment;
     }
     
+    /**
+     * Loads an attachment by ID
+     * @param int $id Attahcment ID
+     * @return TicketUpdateAttachment|null
+     */
     public static function Load(int $id) : TicketUpdateAttachment | null
     {
         $row = DBHelper::GetRowById(self::TABLE, $id, self::FIELDS);
@@ -60,6 +76,13 @@ class TicketUpdateAttachment
         return TicketUpdateAttachment::FromRow($row);
     }
     
+    /**
+     * Creates a new attachment object
+     * @param int $ticket_id Ticket ID
+     * @param int $update_id Update ID
+     * @param string $blobid File blobid
+     * @return TicketUpdateAttachment|null
+     */
     public static function Create(int $ticket_id, int $update_id, string $blobid) : TicketUpdateAttachment | null
     {
         $file = File::Load($blobid);
@@ -81,6 +104,11 @@ class TicketUpdateAttachment
         return $attachment;
     }
     
+    /**
+     * Gets all attachments for a TicketUpdate
+     * @param int $id Update ID
+     * @return array An array of TicketUpdateAttachment
+     */
     public static function GetAttachmentsForUpdate(int $id) : array
     {
         $result = DBHelper::GetRowsByField(table: self::TABLE, fields: self::FIELDS, field: 'update_id', value: $id);
@@ -101,6 +129,11 @@ class TicketUpdateAttachment
         return $files;
     }
     
+    /**
+     * Gets all attachments of all updates of a Ticket
+     * @param int $id Ticket ID
+     * @return array An array of TicketUpdateAttachment
+     */
     public static function GetAttachmentsForTicket(int $id) : array
     {
         $result = DBHelper::GetRowsByField(table: self::TABLE, fields: self::FIELDS, field: 'ticket_id', value: $id);
