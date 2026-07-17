@@ -28,6 +28,7 @@ function ModuleAction_files_stream($params)
     
 }
 
+/*
 function ModuleAction_files_migrate($params)
 {
     EngineCore::$DEBUG=true;
@@ -65,3 +66,5 @@ function ModuleAction_files_migrate($params)
     }
     
 }
+ * */
+ 

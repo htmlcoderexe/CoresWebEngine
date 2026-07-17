@@ -3,7 +3,7 @@
     <label for="title">Short description</label><br />
     <input name="title" id ="title" type ="text" value="{%title|%}"/><br />
     <select name="ticket_group">
-        {#foreach|{%groups%}|<option value="{:object_id:}" {#ifeq|{:object_id:}|{%group_id%}|selected="selected"#}>{:value:}</option>#}
+        {#foreach|{%groups%}|<option value="{:id:}" {#ifeq|{:id:}|{%group_id%}|selected="selected"#}>{:name:}</option>#}
     </select><br />
     <label for="description">Long description</label><br />
     <textarea name="description" id ="description">{%description|%}</textarea>

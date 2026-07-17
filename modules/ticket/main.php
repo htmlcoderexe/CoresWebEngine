@@ -1,7 +1,9 @@
 <?php
 require_once CLASS_DIR."TicketUpdate.php";
+require_once CLASS_DIR."TicketUpdateAttachment.php";
 require_once CLASS_DIR."TicketGroup.php";
 require_once CLASS_DIR."Ticket.php";
+require_once CLASS_DIR."TicketInfo.php";
 /* 
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Scripting/EmptyPHP.php to edit this template
@@ -22,7 +24,7 @@ function ModuleAction_ticket_submit($params)
         {
             $gid = intval(array_shift($params));
         }
-        $groups = EVA::GetKVA("name","ticket_group");
+        $groups = TicketGroup::GetAllGroups();
         $tpl->tokens['group_id'] = $gid;
         $tpl->tokens['groups'] = $groups;
         
@@ -30,9 +32,11 @@ function ModuleAction_ticket_submit($params)
     }
     else
     {
+        $cu = EngineCore::$CurrentUser->userid;
         $title=EngineCore::POST("title");
         $description=EngineCore::POST("description");
-        $tid=Ticket::Create($title,$description,0,0);
+        $ticket = Ticket::Create(title: $title, description: $description, submitter: $cu,type: TicketInfo::TYPE_INC);
+        $tid=$ticket->id;
         EngineCore::GTFO("/ticket/view/".$tid);
     }
     
@@ -48,33 +52,45 @@ function ModuleFunction_ticket_goback($error)
 function ModuleAction_ticket_view($params)
 {
     $ticketNumber=$params[0];
-    $ticket = new Ticket($ticketNumber);
+    $ticket = Ticket::Load($ticketNumber);
     
     $tpl=new TemplateProcessor("ticket/ticketviewer");
     $tpl->tokens['number']=$ticket->GetNumber();
-    $tpl->tokens['title']=$ticket->Title;
-    $tpl->tokens['description']=$ticket->Description;
-    $tpl->tokens['submitter']=$ticket->Submitter;
-    $tpl->tokens['status']=Ticket::ReadableStatusName($ticket->CurrentState);
-    $tpl->tokens['statuscode']=$ticket->CurrentState;
-    $tpl->tokens['ticket_group_id'] = $ticket->Category;
-    $groups = EVA::GetKVA("name","ticket_group");
+    $tpl->tokens['title']=$ticket->info->title;
+    $tpl->tokens['description']=$ticket->info->description;
+    $tpl->tokens['submitter']=$ticket->info->submitter;
+    $tpl->tokens['status']=Ticket::ReadableStatusName($ticket->info->last_status);
+    $tpl->tokens['statuscode']=$ticket->info->last_status;
+    $tpl->tokens['ticket_group_id'] = $ticket->info->group;
+    $groups = TicketGroup::GetAllGroups();
     EngineCore::Lap2Debug("before the forloop");
     $assgroup = "!!NOWHERE!!";
+    $groupmap = [];
     for($i=0;$i<count($groups);$i++)
     {
-        if($groups[$i]['object_id'] == $ticket->Category)
+        $groupmap[$groups[$i]['id']]=$groups[$i]['name'];
+        if(intval($groups[$i]['id']) == $ticket->info->group)
         {
-            $assgroup = $groups[$i]['value'];
+            $assgroup = $groups[$i]['name'];
         }
     }
     $tpl->tokens['ticket_group_name'] = $assgroup;
     $tpl->tokens['groups'] = $groups;
     
             EngineCore::Lap2Debug("before getting updates");
-    if($ticket->GetUpdates()>0)
+    $formatted_updates = [];
+    foreach($ticket->updates as $update)
     {
-        $updates=array_reverse($ticket->Updates);
+        $flat = (array) $update;
+        $flat['groupname'] = $groupmap[$update->newgroup] ?? "UNKNOWN";
+        $flat['statusname'] = TicketInfo::TICKET_STATUSES[$update->newstate]?? "N/A";
+        $formatted_updates[]=$flat;
+    }
+    $tpl->tokens['updates']=$formatted_updates;
+    /*  
+    if(false && $ticket->updates)
+    {
+        $updates=array_reverse($ticket->updates);
         $updates_flat=[];
         foreach($updates as $update)
         {
@@ -96,6 +112,7 @@ function ModuleAction_ticket_view($params)
         }
         $tpl->tokens['updates']=$updates_flat;
     }
+    //*/
     EngineCore::AddPageContent($tpl->process(true));
     
     
@@ -133,7 +150,7 @@ function ModuleFunction_ticket_GetWithStatus($group = -1)
 
 function ModuleAction_ticket_list($params)
 {
-    $gid = 0;
+    $gid = -1;
     $tpl=new TemplateProcessor("ticket/ticketslist");
     if(count($params)>0)
     {
@@ -142,20 +159,29 @@ function ModuleAction_ticket_list($params)
         $tpl->tokens['gid'] = $gid;
         EngineCore::Dump2Debug($params);
     }
-    $tickets= ModuleFunction_ticket_GetWithStatus($gid);
-    for($i=0;$i<count($tickets);$i++)
+    $tickets= TicketInfo::GetTickets($gid);
+    $ticket_view = [];
+    foreach($tickets as $ticket)
     {
-        $tickets[$i]['status']=Ticket::ReadableStatusName($tickets[$i]['status']);
+        $flat = (array)$ticket;
+        $flat['status'] = Ticket::ReadableStatusName($ticket->last_status);
+        $flat['ticketNumber'] = Ticket::MakeTicketNumber($ticket->type, $ticket->id);
+        $ticket_view[]=$flat;
     }
-    array_walk($tickets,function(&$v,$k){
-        $v['ticketNumber']=Ticket::MakeTicketNumber($v['type'],$v['id']);
-    });
-    $tpl->tokens['tickets']=$tickets;
+    $tpl->tokens['tickets']=$ticket_view;
     $tpl->tokens['ticketcount'] = count($tickets);
-    if($gid != 0)
+    if($gid != -1)
     {
-        $group = new TicketGroup($gid);
-        $tpl->tokens['groupname'] = $group->name;    
+        $group = TicketGroup::Load($gid);
+        if($group)
+        {
+            $tpl->tokens['groupname'] = $group->name;  
+        }
+        else
+        {
+            $tpl->tokens['groupname'] = "INVALID_GROUP";    
+        }
+       
     }
     EngineCore::AddPageContent($tpl->process(true));
 }
@@ -307,3 +333,169 @@ function ModuleAction_ticket_groups($params)
     }
 }
 
+
+function ModuleAction_ticket_migrate($params)
+{
+    $user=User::GetCurrentUser();
+    if(!$user->HasPermission("super"))
+    {
+        EngineCore::FromWhenceYouCame();
+        die;
+    }
+    
+    // get groups
+    $group_fields = ['name','description','user_group'];
+    $old_groups = EVA::GetAsTable($group_fields, 'ticket_group');
+    var_dump($old_groups);
+    //die;
+    $group_mapping = [];
+    DBHelper::MakeTable(name: TicketGroup::TABLE, fields: TicketGroup::SCHEMA, useID: true);
+    // migrate groups and create a reference from old ID to new group
+    foreach($old_groups as $old_group_id=>$old_group_data)
+    {
+        $group = TicketGroup::Create(name: $old_group_data['name'], description: $old_group_data['description'], func_group: $old_group_data['user_group']);
+        $group_mapping[$old_group_id]=$group;
+    }
+    var_dump($group_mapping);
+    // get the basic tickets from table
+    $old_fields = ['id','type',	'submitter', 'subject',	'EvaID', 'title', 'description', 'time', 'category', 'completedtime', 'owner'];
+    $tickets = DBHelper::GetRowsByField(table: "tickets", field:"1", value:"1", fields:$old_fields);
+    var_dump($tickets);
+    $eva_ticket_fields = [];
+    
+    // get ticket state changes from table
+    $old_fields2 = ['id','ticketid','newstate','time'];
+    $statechanges = DBHelper::GetRowsByField(table: "ticket_state_changes", field:"1", value:"1", fields:$old_fields2);
+    
+    $statechanges_by_ticket = [];
+    foreach($statechanges as $statechange)
+    {
+        if(!isset($statechanges_by_ticket[$statechange['ticketid']]))
+        {
+            $statechanges_by_ticket[$statechange['ticketid']]=[];
+        }
+        $statechanges_by_ticket[$statechange['ticketid']][]=$statechange;
+    }
+    var_dump($statechanges_by_ticket);
+    // get ticket updates from EVA
+    
+    $old_update_fields = ["description","user_id","ticket.update.type","parent_object","timestamp","attachment"];
+    $old_updates = EVA::GetAsTable($old_update_fields,'ticket.update');
+    var_dump($old_updates);
+    // slot updates into corresponding ticket EVA IDs
+    $updates_by_evaid = [];
+    foreach($old_updates as $update_id=>$update)
+    {
+        $eid = $update['parent_object'];
+        if(!isset($updates_by_evaid[$eid]))
+        {
+            $updates_by_evaid[$eid]=[];
+        }
+        if(isset($update['attachment']))
+        {
+            if(!is_array($update['attachment']))
+            {
+                $update['attachment'] = [$update['attachment']];
+            }
+        }
+        else
+        {
+            $update['attachment'] = [];
+        }
+        $updates_by_evaid[$eid][]=$update;
+    }
+    var_dump($updates_by_evaid);
+    $timestampsort = function($a,$b)
+    {
+        return intval($a['timestamp']) <=> intval($b['timestamp']); 
+    };
+    $timesort = function($a,$b)
+    {
+        return intval($a['time']) <=> intval($b['time']); 
+    };
+    echo "so far so good";
+    //die;
+    
+    DBHelper::MoveTable("tickets", "tickets_old");
+    DBHelper::MakeTable(name: TicketInfo::TABLE, fields: TicketInfo::SCHEMA, useID: true);
+    DBHelper::MakeTable(name: TicketUpdate::TABLE, fields: TicketUpdate::SCHEMA, useID: true);
+    DBHelper::MakeTable(name: TicketUpdateAttachment::TABLE, fields: TicketUpdateAttachment::SCHEMA, useID: true);
+    
+    foreach($tickets as $old_ticket)
+    {
+        $lastupdate = 0;
+        $ticket = Ticket::Create(
+                title: $old_ticket['title'],
+                description: $old_ticket['description'],
+                type: intval($old_ticket['type']),
+                user: intval($old_ticket['owner']),
+                submitter: intval($old_ticket['submitter']),
+                subject: intval($old_ticket['subject']),
+                attachments: [],
+                time: $old_ticket['time']
+                );
+        $ticket_updates = $updates_by_evaid[$old_ticket['EvaID']] ?? [];
+        usort($ticket_updates, $timestampsort);
+        // all the updates stored in EVA are of the comment/attachment variety
+        foreach($ticket_updates as $ticket_update)
+        {
+            $time = intval($ticket_update['timestamp']);
+            $lastupdate = max($lastupdate, $time);
+            $update = TicketUpdate::Create(
+                    ticket_id: $ticket->info->id, 
+                    user: intval($ticket_update['user_id']),
+                    type: TicketUpdate::TYPE_COMMENT, 
+                    newtext: $ticket_update['description'],
+                    files: $ticket_update['attachment'],
+                    time: $time);
+            var_dump($ticket_update['attachment']);
+        }
+        $changes = $statechanges_by_ticket[$old_ticket['id']] ?? [];
+        usort($changes, $timesort);
+        foreach($changes as $change)
+        {
+            $time = intval($change['time']);
+            $lastupdate = max($lastupdate, $time);
+            $status = $change['newstate'];
+            $update = TicketUpdate::Create(
+                    ticket_id: $ticket->info->id,
+                    user: $ticket->info->owner,
+                    type: TicketUpdate::TYPE_STATUSCHANGE,
+                    newstate: $status,
+                    time: $time
+            );
+            $ticket->info->last_status = $status;
+            if($status == TicketInfo::STATUS_CLOSED)
+            {
+                $ticket->info->completed_time = $time;
+            }
+        }
+        $update = TicketUpdate::Create(
+                    ticket_id: $ticket->info->id,
+                    user: $ticket->info->owner,
+                    type: TicketUpdate::TYPE_GROUPCHANGE,
+                    newgroup: intval($group_mapping[$old_ticket['category']]->id),
+                    time: $ticket->info->time
+            );
+        $ticket->info->group =intval($group_mapping[$old_ticket['category']]->id);
+        $ticket->info->Update(true);
+        var_dump($ticket);
+    }
+    echo "<h2>Done!</h2><a href='migraterevert'>Revert</a>";
+}
+function ModuleAction_ticket_migraterevert($params)
+{
+    $user=User::GetCurrentUser();
+    if(!$user->HasPermission("super"))
+    {
+        EngineCore::FromWhenceYouCame();
+        die;
+    }
+        DBHelper::DeleteTable(table: TicketUpdate::TABLE);
+        DBHelper::DeleteTable(table: TicketUpdateAttachment::TABLE);
+        DBHelper::DeleteTable(table: TicketGroup::TABLE);
+        DBHelper::DeleteTable(table: TicketInfo::TABLE);
+        DBHelper::MoveTable("tickets_old", "tickets");
+    echo "<h2>Done!</h2><a href='migrate'>Try again</a>";
+        
+}

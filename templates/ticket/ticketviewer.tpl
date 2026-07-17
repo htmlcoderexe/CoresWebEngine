@@ -48,7 +48,7 @@
 <h2>Assigned to: {%ticket_group_name%}</h2>
 <form action="/ticket/modify/{%number%}" method="POST"><br />
     <select name="ticket_group">
-        {#foreach|{%groups%}|<option value="{:object_id:}" {#ifeq|{:object_id:}|{%ticket_group_id%}|selected="selected"#}>{:value:}</option>#}
+        {#foreach|{%groups%}|<option value="{:id:}" {#ifeq|{:id:}|{%ticket_group_id%}|selected="selected"#}>{:name:}</option>#}
     </select>
     <button>Assign</button>
 </form>
@@ -63,13 +63,21 @@
 </form>#}
 {#ifset|updates|
     {#foreach|{%updates%}|
-        <div class="ticket-update"><h4>{#userinfo|username|{:user:}#} - {#date|H:i, Y-M-d|{:time:}#}</h4>{:text:}<br />
-        {#ifset|:filedata|
-            {#foreach|{:filedata:}|
-            <a class="ticket-filelink" href="/files/stream/{:blobid:}">{:fullname:}</a> {#hread|{:filesize:}#}<br/>
+        {#ifeq|{:type:}|4|
+            <div class="ticket-update"><h4>{#userinfo|username|{:user:}#} - {#date|H:i, Y-M-d|{:time:}#}</h4>{:newtext:}<br />
+        {#foreach|{:files:}|
+            <a class="ticket-filelink" href="/files/stream/{:blobid:}">{:blobid:}.{:format:}</a> {#hread|{:size:}#}<br/>
             #}
-        |#}
-
         </div>
+    | {#ifeq|{:type:}|3|
+            <div class="ticket-update"><h4>{#userinfo|username|{:user:}#} - {#date|H:i, Y-M-d|{:time:}#}</h4>Changed group to {:groupname:}<br />
+        
+        </div>
+    |  {#ifeq|{:type:}|2|
+            <div class="ticket-update"><h4>{#userinfo|username|{:user:}#} - {#date|H:i, Y-M-d|{:time:}#}</h4>Changed state to <strong>{:statusname:}</strong><br />
+        
+        </div>
+    |  #}#}#}
+
     #}
 #}
