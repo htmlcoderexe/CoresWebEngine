@@ -339,6 +339,18 @@ class DBHelper
         $result = self::RunRow($select, [$id]);
         return $result;
     }
+    public static function GetRowsByField(string $table, string $field, $value, array $fields)
+    {
+        $select = self::Select($table, $fields, [$field=>$value]);
+        $result = self::RunTable($select, [$value]);
+        return $result;
+    }
+    public static function GetAllRows(string $table, array $fields)
+    {
+        $select = self::Select($table, $fields, []);
+        $result = self::RunTable($select, []);
+        return $result;
+    }
     
     //=========END Specific queries================
     
@@ -459,6 +471,27 @@ class DBHelper
         }
         $query.=")";
         self::RunStmt($query, []);
+    }
+    
+    public static function CopyTable($source, $destination)
+    {
+        $qback="DROP TABLE IF EXISTS $destination; "
+                . "CREATE TABLE $destination LIKE $source; " 
+                ."INSERT INTO $destination SELECT * FROM $source; ";
+        self::RunVoid($qback,[]);
+    }
+    public static function MoveTable($source, $destination)
+    {
+        $qback="DROP TABLE IF EXISTS $destination; "
+                . "CREATE TABLE $destination LIKE $source; " 
+                ."INSERT INTO $destination SELECT * FROM $source; "
+                . "DROP TABLE $source;";
+        self::RunVoid($qback,[]);
+    }
+    public static function DeleteTable($table)
+    {
+        $qback="DROP TABLE IF EXISTS $table";
+        self::RunVoid($qback,[]);
     }
     
     //=========END System functions================
