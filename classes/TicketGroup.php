@@ -103,4 +103,19 @@ class TicketGroup
         $groups = DBHelper::RunTable($qc, []);
         return $groups;
     }
+    
+    /**
+     * Retrieves a group by name if it exists
+     * @param string $name Group name
+     * @return TicketGroup|null
+     */
+    public static function FindByName(string $name) : TicketGroup | null
+    {
+        $rows = DBHelper::GetRowsByField(table: self::TABLE, field:'name', value: $name, fields: self::FIELDS);
+        if($rows)
+        {
+            return TicketGroup::FromRow($rows[0]);
+        }
+        return null;
+    }
 }

@@ -303,8 +303,9 @@ function ModuleAction_ticket_groups($params)
                 {
                     ModuleFunction_ticket_goback("Description shouldn't be empty.");
                 }
-                $exists = EVA::GetByProperty("name", $name, "ticket_group");
-                if(count($exists) > 0)
+                
+                $exists = TicketGroup::FindByName($name);
+                if($exists)
                 {
                     ModuleFunction_ticket_goback("Group <strong>$name</strong> already exists.");
                 }
