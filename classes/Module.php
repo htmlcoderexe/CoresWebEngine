@@ -51,6 +51,8 @@ class Module
     
     function PerformAction($actionstring,$params)
     {
+        
+
         if($this->immafaultyshit)
         {
             return;
@@ -66,7 +68,7 @@ class Module
         else
         {
             $result = call_user_func($funcname,$params);
-            
+     
             if($result == self::SPLIT_ROUTE)
             {
                 $next_level = array_shift($params);

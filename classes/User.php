@@ -72,40 +72,7 @@ class User
         return ($this->userid == 0 || $this->username == "Guest");
     }
 
-    public function GetAllProperties()
-    {
-        $prop = DBHelper::RunTable("
-		SELECT property_display_name,user_property_value
-		FROM user_property_map
-		INNER JOIN user_properties
-		ON user_property_map.user_property_id = user_properties.id
-		WHERE user_id=?
-		",[$this->userid]);
-        echo EngineCore::VarDumpString($prop);
-    }
 
-    public function GetBasicInfo()
-    {
-        if($this->basicinfo)
-        {
-            return $this->basicinfo;
-        }
-        $querystring = "SELECT  `display_name`, `title`, `mail_address`, `location_id`, `partition_id`, `dob`, sex "
-                . "FROM `userinfo` WHERE `user_id`=?";
-        $info = DBHelper::RunRow($querystring, [$this->userid]);
-        $this->basicinfo = $info;
-        if(!$this->basicinfo)
-        {
-            $this->basicinfo = Array();
-        }
-        return $this->basicinfo;
-    }
-
-    public function GetAge()
-    {
-        $bi = $this->GetBasicInfo();
-        return ((int) date("Y") - (int) $bi['dob']);
-    }
 
     //end getters
     //auth
@@ -380,7 +347,8 @@ class User
             return null;
         }
         DBHelper::Insert('users', [null, $username, password_hash($password, PASSWORD_DEFAULT), time(), 1, 0]);
-        DBHelper::Insert('userinfo', [null, $nickname, 1, $email, 1, 1, 0, 0]);
+        $uid = DBHelper::GetLastId();
+        UserExtendedProps::Create(uid:$uid, nickname: $nickname, email: $email);
         $user = new User($username);
         return $user;
     }

@@ -449,9 +449,9 @@ class TemplateProcessor
             
             ini_set("xdebug.var_display_max_depth",-1);
             $output="";
-            $this->chars=preg_split('//u', $this->cb, -1, PREG_SPLIT_NO_EMPTY);
+            $this->chars=$this->cb;//preg_split('//u', $this->cb, -1, PREG_SPLIT_NO_EMPTY);
             $this->pointer=0;
-            $this->len = count($this->chars);
+            $this->len = strlen($this->chars);//count($this->chars);
             
             
             $nodes = $this->get_nodelist();
@@ -924,7 +924,18 @@ class TemplateProcessor
         {
             if(EngineCore::$DEBUG)
             {
-                return "\r\n<!-- " . $this->tplprefix . $this->fname . $this->tplpostfix . "-->\r\n" . $this->do_new_parser() . "\r\n<!-- end of " . $this->tplprefix . $this->fname . $this->tplpostfix . "-->\r\n";
+                
+            $currenttime =0;
+            $time = microtime();
+            $time = explode(' ', $time);
+            $time = $time[1] + $time[0];
+            $currenttime = $time;
+                $result = "\r\n<!-- " . $this->tplprefix . $this->fname . $this->tplpostfix . "-->\r\n" . $this->do_new_parser() . "\r\n<!-- end of " . $this->tplprefix . $this->fname . $this->tplpostfix . "-->\r\n";
+                $time = microtime();
+        $time = explode(' ', $time);
+        $time = $time[1] + $time[0];
+	$result.= "<!-- template processed in ".$time-$currenttime." -->";
+                return $result;
             }
             return $this->do_new_parser();
         }

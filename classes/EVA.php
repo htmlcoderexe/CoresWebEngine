@@ -186,12 +186,23 @@ class EVA
          */
         public static function LoadPropFromDB($objid,$propname)
         {
+            
+        $currenttime =0;
+        $time = microtime();
+        $time = explode(' ', $time);
+        $time = $time[1] + $time[0];
+        $currenttime = $time;
             $query="SELECT map.value
 		FROM eva_property_values map
 		WHERE object_id=?
 		AND map.property_id=
-		(SELECT id FROM eva_properties WHERE eva_properties.name=?)";
-            return DBHelper::RunList($query, [$objid,$propname], 0);
+		(SELECT id FROM eva_properties WHERE eva_properties.name=?)"; 
+            $result = DBHelper::RunList($query, [$objid,$propname], 0);
+            $time = microtime();
+        $time = explode(' ', $time);
+        $time = $time[1] + $time[0];
+	EngineCore::Write2Debug("Loaded prop $propname for $objid in ".$time-$currenttime, true);
+            return $result;
         }
         /**
          * Writes a value to an attribute by its name

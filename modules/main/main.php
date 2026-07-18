@@ -2,7 +2,7 @@
 
 function ModuleAction_main_default()
 {
-	$id=(int) EngineCore::GetSetting('mainpage');
+        $id=(int) EngineCore::GetSetting('mainpage');
         $provider = new KBPageDataProviderDB(pageTable: 'kb_pages', revisionTable: 'kb_page_revisions');
         $revision=KBPage::GetLastRevision(pageId: $id, provider: $provider);
         $content = "<span style=\"font-size:200px\">:(</span><br />Oopsie woopsie, the index page's gone";
@@ -88,4 +88,36 @@ function ModuleAction_main_crankjobs($params)
     $time_final = hrtime(true);
     $diff = ($time_final-$time_start)/1000000;
     echo "Completed in $diff milliseconds.</pre>";
+}
+
+function ModuleAction_main_migrateuserinfo($params)
+{
+    DBHelper::MakeTable(name: UserExtendedProps::TABLE, fields: UserExtendedProps::SCHEMA, useID: false);
+    $userinfos = DBHelper::GetAllRows(table:"userinfo", fields:['user_id','display_name','mail_address']);
+    foreach($userinfos as $info)
+    {
+        $nickname = $info['display_name'];
+        $uid = intval($info['user_id']);
+        $email = $info['mail_address'];
+        $firstname = '';
+        $lastname = '';
+        $description = '';
+        $avatar = '';
+        $all_fields = EVA::GetByProperty('user_id', value:$uid, type:'user');
+        if($all_fields)
+        {
+            $evaid = $all_fields[0];
+            $evainfo = EVA::Load($evaid);
+            if(isset($evainfo->attributes['nickname']))
+            {
+                $nickname = $evainfo->attributes['nickname'];
+            }
+            $firstname = $evainfo->attributes['firstname'] ?? '';
+            $lastname = $evainfo->attributes['lastname'] ?? '';
+            $description = $evainfo->attributes['description'] ?? '';
+        }
+        UserExtendedProps::Create(uid: $uid, nickname: $nickname, firstname: $firstname, lastname: $lastname, description: $description, avatar: $avatar, email: $email);
+    }
+    echo "done";
+    die;
 }
