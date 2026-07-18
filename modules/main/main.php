@@ -48,10 +48,10 @@ function ModuleAction_main_crankjobs($params)
     echo "<pre>";
     JobScheduler::CrankJobs();
     flush();
-    
-    $picingests = EVA::GetByProperty("active", "1", "picture.ingest");
-    $ingestorobjects = [];
+    $ingestorobjects = PictureIngest::GetIngests(true);
     $stillrunning = [];
+    /*/
+    $picingests = EVA::GetByProperty("active", "1", "picture.ingest");
     foreach($picingests as $ingestid)
     {
         $ingest = PictureIngest::Load($ingestid);
@@ -60,7 +60,7 @@ function ModuleAction_main_crankjobs($params)
             $ingestorobjects[]=$ingest;
         }
     }
-    
+    //*/
     $time_max = $time_start + 60000000000;
     $mp3idling = false;
     while(hrtime(true)<$time_max)

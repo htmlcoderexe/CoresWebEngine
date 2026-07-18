@@ -200,7 +200,7 @@ function ModuleAction_pixdb_processbatch($params)
     {
         foreach($ids as $id)
         {
-            EVA::RemoveRelation($iid,$id);
+            PictureIngestEntry::Delete(ingest_id: $iid, picture_id: $id);
         }
     }
     $tadd=EngineCore::POST("tagstoadd");

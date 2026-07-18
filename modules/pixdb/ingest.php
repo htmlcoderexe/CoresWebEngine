@@ -15,7 +15,8 @@ function ModuleAction_pixdb_ingest_view($params)
     {
         EngineCore::SetPageContent("fuck");
     }
-    $picIDs_all = EVA::GetChildren($id,"picture");
+    //$picIDs_all = EVA::GetChildren($id,"picture");
+    $picIDs_all = PictureIngest::GetPictures(id: $id);
     $picIDs = array_slice($picIDs_all,$page*$pagesize,$pagesize);
     $pics = Picture::GetGallery($picIDs);
     $tpl = new TemplateProcessor("pixdb/managerview");
@@ -34,7 +35,7 @@ function ModuleAction_pixdb_ingest_view($params)
     $tpl->tokens['pictures'] = $pics;
     $tpl->tokens['managermode']=true;
     $tpl->tokens['albums']=$albums;
-    $tpl->tokens['extra_text'] = "Viewing ".count($picIDs_all)." ingest results for <strong>{$ingest->foldername}</strong>.";
+    $tpl->tokens['extra_text'] = "Viewing ".count($picIDs_all)." ingest results for <strong>{$ingest->folder}</strong>.";
     EngineCore::SetPageContent($tpl->process(true));
     
 }
@@ -62,7 +63,7 @@ function ModuleAction_pixdb_ingest_create($params)
         mkdir(FILESTORE_PATH. DIRECTORY_SEPARATOR . File::INGEST_BASE_DIR . DIRECTORY_SEPARATOR . PictureIngest::PICTURE_INGEST_DIR . DIRECTORY_SEPARATOR . $foldername);
         mkdir(FILESTORE_PATH. DIRECTORY_SEPARATOR . File::INGEST_BASE_DIR . DIRECTORY_SEPARATOR . PictureIngest::PICTURE_INGEST_DIR . DIRECTORY_SEPARATOR . $foldername . DIRECTORY_SEPARATOR . ".failed");
         mkdir(FILESTORE_PATH. DIRECTORY_SEPARATOR . File::INGEST_BASE_DIR . DIRECTORY_SEPARATOR . PictureIngest::PICTURE_INGEST_DIR . DIRECTORY_SEPARATOR . $foldername . DIRECTORY_SEPARATOR . ".dupes");
-        $ingest = PictureIngest::Create($foldername,$visibility,true);
+        $ingest = PictureIngest::Create(folder:$foldername,visibility:$visibility,active:true);
     }
     else
     {
@@ -72,7 +73,7 @@ function ModuleAction_pixdb_ingest_create($params)
             EngineCore::GTFO("/pixdb/ingest/list");
             die;
         }
-        $ingest->visibility_level = $visibility;
+        $ingest->visibility = $visibility;
         $ingest->active = $active;
         $ingest->Save();
     }
@@ -89,9 +90,9 @@ function ModuleAction_pixdb_ingest_manage($params)
         die;
     }
     $data = [
-        "visibility"=>$ingest->visibility_level,
+        "visibility"=>$ingest->visibility,
         "active"=>$ingest->active,
-        "foldername"=>$ingest->foldername,
+        "foldername"=>$ingest->folder,
         "id"=>$ingest->id
     ];
     $tpl = new TemplateProcessor("pixdb/ingestcreate");
@@ -106,8 +107,10 @@ function ModuleAction_pixdb_ingest_default($params)
     ModuleAction_pixdb_ingest_list($params);
 }
 
+
 function ModuleAction_pixdb_ingest_list($params)
 {
+    /*
     $IDs = EVA::GetAsTable(["ingest.folder","active"],"picture.ingest");
     $list = [];
     foreach($IDs as $id=>$entry)
@@ -118,6 +121,8 @@ function ModuleAction_pixdb_ingest_list($params)
             'folder'=>$entry['ingest.folder']
             ];
     }
+    //*/
+    $list = PictureIngest::GetIngests();
     $tpl = new TemplateProcessor("pixdb/ingestlist");
     $tpl->tokens['ingests'] = $list;
     EngineCore::SetPageContent($tpl->process(true));
@@ -138,4 +143,38 @@ function ModuleAction_pixdb_ingest_test($params)
         var_dump(exif_read_data($tmpfile, null, true, false));
         die;
     }
+}
+
+
+
+function ModuleAction_pixdb_ingest_migrate($params)
+{
+    $user=User::GetCurrentUser();
+    if(!$user->HasPermission("super"))
+    {
+        EngineCore::FromWhenceYouCame();
+        die;
+    }
+    DBHelper::DeleteTable(table: PictureIngest::TABLE);
+    DBHelper::DeleteTable(table: PictureIngestEntry::TABLE);
+    DBHelper::MakeTable(name: PictureIngest::TABLE, fields: PictureIngest::SCHEMA, useID: true);
+    DBHelper::MakeTable(name: PictureIngestEntry::TABLE, fields: PictureIngestEntry::SCHEMA, useID:false);
+    $IDs = EVA::GetAsTable(["ingest.folder","active","visibility"],"picture.ingest");
+    $piccount = 0;
+    foreach($IDs as $id=>$entry)
+    {
+    flush();
+        echo "<h2>Migrating ingest #$id</h2>";
+        $ingest = PictureIngest::Create(folder: $entry['ingest.folder'], visibility: intval($entry['visibility']), active: $entry['active']=='1');
+        $pics = EVA::GetChildren($id,"picture");
+        $piccount+=count($pics);
+        foreach($pics as $pic)
+        {
+            PictureIngestEntry::Create(ingest_id: $ingest->id, picture_id:intval($pic));
+        }
+        echo "Migrated #$id to {$ingest->id}, moving ".count($pics)." images.";
+    flush();
+    }
+    echo "<h2>Done!</h2> Migrated <strong>".count($IDs)."</strong> ingests containing <strong>$piccount</images>";
+    die;
 }
