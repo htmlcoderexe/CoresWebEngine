@@ -1,38 +1,4 @@
 <?php
-const CALENDAR_EVENTS_TABLE ="calendar_events";
-$calendar_event_schema = [
-    // body
-    "title"=>"varchar(255)",
-    "description"=>"varchar(2000)",
-    "category"=>"int",
-    // time
-    "day"=>"int",
-    "month"=>"int",
-    "year"=>"int",
-    "hour"=>"int",
-    "minute"=>"int",
-    "duration"=>"int", // in minutes
-    // AAA stuff
-    "user"=>"int",
-    "user_group"=>"int",
-    "active"=>"int"
-    ];
-$calendar_event_types = [
-    "name"=>"varchar(255)",
-    "marker_colour"=>"varchar(255)",
-    "agenda_colour"=>"varchar(255)",
-    "number_colour"=>"varchar(255)",
-    "bg_colour"=>"varchar(255)",
-    "priority"=>"int",
-    "ghost"=>"int"
-    ];
-Module::DemandTable("calendar_event_types",$calendar_event_types);
-Module::DemandTable(CALENDAR_EVENTS_TABLE, $calendar_event_schema);
-Module::DemandProperty("calendar.duration", "Duration", "The duration of an event.");
-Module::DemandProperty("calendar.event_type","Event type","Type of a calendar event.");
-Module::DemandProperty("calendar.tagcolour","Calendar colour","How the event is marked in the month view.");
-Module::DemandProperty("calendar.agendacolour","Schedule colour","How the event is marked in the week view.");
-Module::DemandProperty("name", "Name", "Name of something.");
 class CalendarEvent
 {
     public $id;
@@ -55,6 +21,56 @@ class CalendarEvent
     public $isValid=true;
     public $allDay;
 
+    public const TABLE = 'calendar_events';
+    public const SCHEMA = [
+        // body
+        "title"=>"varchar(255)",
+        "description"=>"varchar(2000)",
+        "category"=>"int",
+        // time
+        "day"=>"int",
+        "month"=>"int",
+        "year"=>"int",
+        "hour"=>"int",
+        "minute"=>"int",
+        "duration"=>"int", // in minutes
+        // AAA stuff
+        "user"=>"int",
+        "user_group"=>"int",
+        "active"=>"int"
+    ];
+    public const FIELDS =["id",
+        "title",
+        "description",
+        "category",
+        "day",
+        "month",
+        "year",
+        "hour",
+        "minute",
+        "duration",
+        "user",
+        "user_group",
+        "active"
+    ];
+    public const TABLE_TYPES = "calendar_event_types";
+    public const SCHEMA_TYPES = [
+        "name"=>"varchar(255)",
+        "marker_colour"=>"varchar(255)",
+        "agenda_colour"=>"varchar(255)",
+        "number_colour"=>"varchar(255)",
+        "bg_colour"=>"varchar(255)",
+        "priority"=>"int",
+        "ghost"=>"int"
+    ];
+    public const FIELDS_TYPES = ["id",
+        "name",
+        "marker_colour",
+        "number_colour",
+        "agenda_colour",
+        "bg_colour",
+        "priority",
+        "ghost"];
     function __construct($id,$title,$description,$category,$year,$month,$day,$hour,$minute,$duration,$active=true)
     {
         $this->id=$id;
@@ -76,14 +92,8 @@ class CalendarEvent
     
     static function Load($id)
     {
-        $fields=[
-            "id",
-            "title", "description","category",
-            "day","month","year",
-            "hour","minute", "duration",
-            "active"
-            ];
-        $q_event=DBHelper::Select("calendar_events",$fields,['id'=>$id]);
+        
+        $q_event=DBHelper::Select(self::TABLE,self::FIELDS,['id'=>$id]);
         $row = DBHelper::RunRow($q_event, [$id]);
         if(!$row)
         {
@@ -106,12 +116,12 @@ class CalendarEvent
         "duration"=>$this->duration,
         "active"=>$this->active
         ];
-        DBHelper::Update("calendar_events", $update, ['id'=>$this->id]);
+        DBHelper::Update(CalendarEvent::TABLE, $update, ['id'=>$this->id]);
     }
     
     public function Deactivate()
     {
-        DBHelper::Update("calendar_events",['active'=>0],['id'=>$this->id]);
+        DBHelper::Update(CalendarEvent::TABLE,['active'=>0],['id'=>$this->id]);
     }
     
     public function ProcessForDisplay()
@@ -129,7 +139,7 @@ class CalendarEvent
             $day,$month,$year,$hour,$minute,$duration,
             $uid,0,1
         ];
-        DBHelper::Insert("calendar_events",$row);
+        DBHelper::Insert(CalendarEvent::TABLE,$row);
         $id=DBHelper::GetLastId();
         return new CalendarEvent($id,$title,$description,$category,$year,$month,$day,$hour,$minute,$duration);
     }
@@ -192,7 +202,7 @@ class CalendarEvent
     
     public static function GetEventTypes($flat=false)
     {
-        $q_mapping = DBHelper::Select("calendar_event_types",["id","name","number_colour","marker_colour","agenda_colour","bg_colour","priority","ghost"],[]);
+        $q_mapping = DBHelper::Select(self::TABLE_TYPES,self::FIELDS_TYPES,[]);
         $mapping_result = DBHelper::RunTable($q_mapping,[]);
         $mapping=[];
         if($flat)

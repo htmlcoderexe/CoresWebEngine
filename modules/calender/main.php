@@ -44,7 +44,7 @@ function ModuleFunction_EditEvent($eID,$title,$date,$time,$duration,$description
     {
         $duration="01:00";
     }
-    $exists = DBHelper::Count(CALENDAR_EVENTS_TABLE, "id", ["id"=>$eID]);
+    $exists = DBHelper::Count(CalendarEvent::TABLE, "id", ["id"=>$eID]);
     if($exists!=1)
     {
         EngineCore::GTFO("/calender/edit/error");
@@ -99,11 +99,11 @@ function ModuleFunction_calender_CreateUpdate($tagname, $tagcolour,$schedulecolo
 {
     if($id==-1)
     {
-        DBHelper::Insert("calendar_event_types",[null,$tagname,$tagcolour,$schedulecolour,$numcolour,$bgcolour,0,0]);
+        DBHelper::Insert(CalendarEvent::TABLE_TYPES,[null,$tagname,$tagcolour,$schedulecolour,$numcolour,$bgcolour,0,0]);
     }
     else
     {
-        DBHelper::Update("calendar_event_types",['name'=>$tagname,'number_colour'=>$numcolour,'marker_colour'=>$tagcolour,'agenda_colour'=>$schedulecolour,'bg_colour'=>$bgcolour],['id'=>$id]);
+        DBHelper::Update(CalendarEvent::TABLE_TYPES,['name'=>$tagname,'number_colour'=>$numcolour,'marker_colour'=>$tagcolour,'agenda_colour'=>$schedulecolour,'bg_colour'=>$bgcolour],['id'=>$id]);
     }
     EngineCore::GTFO("/calender/type/manager/");
     die();
@@ -119,7 +119,7 @@ function ModuleAction_calender_type($params)
         {
             $id=$params[1]??-1;
             $tpl=new TemplateProcessor("calender/edittype");
-            $q_type = DBHelper::Select("calendar_event_types",["id","name","number_colour","marker_colour","agenda_colour","bg_colour","priority","ghost"],['id'=>$id]);
+            $q_type = DBHelper::Select(CalendarEvent::TABLE_TYPES,["id","name","number_colour","marker_colour","agenda_colour","bg_colour","priority","ghost"],['id'=>$id]);
             $type = DBHelper::RunRow($q_type,[$id]);
             //var_dump($item);//die;
             if($type)
@@ -398,7 +398,7 @@ function ModuleFunction_calender_ShowMonth($month,$doupcoming=false)
     $next_month_events =CalendarScheduler::CheckMonth($y2,$m2);
     
     // get event type tags and highlights
-    $q_mapping = DBHelper::Select("calendar_event_types",["id","number_colour","marker_colour","agenda_colour","bg_colour","priority","ghost"],[]);
+    $q_mapping = DBHelper::Select(CalendarEvent::TABLE_TYPES,["id","number_colour","marker_colour","agenda_colour","bg_colour","priority","ghost"],[]);
     $mapping_result = DBHelper::RunTable($q_mapping,[]);
     $mapping=[];
     foreach($mapping_result as $result)
@@ -952,12 +952,12 @@ function ModuleFunction_calender_migratetypes($params)
             "#000000","#000000",
             0,0
         ];
-        DBHelper::Insert("calendar_event_types", $row);
+        DBHelper::Insert(CalendarEvent::TABLE_TYPES, $row);
         $new_id = DBHelper::GetLastId();
-        DBHelper::Update(CALENDAR_EVENTS_TABLE,["category"=>$new_id],["category"=>$id]);
+        DBHelper::Update(CalendarEvent::TABLE,["category"=>$new_id],["category"=>$id]);
         DBHelper::Update("calendar_recurring_events",["category"=>$new_id],["category"=>$id]);
     }
-        DBHelper::Update(CALENDAR_EVENTS_TABLE,["category"=>1],["category"=>0]);
+        DBHelper::Update(CalendarEvent::TABLE,["category"=>1],["category"=>0]);
         DBHelper::Update("calendar_recurring_events",["category"=>1],["category"=>0]);
 }
 
@@ -1009,7 +1009,7 @@ function ModuleAction_calender_migrateevents($params)
             $h,$min,$duration,
             0,0,1
         ];
-        DBHelper::Insert(CALENDAR_EVENTS_TABLE, $eventrow);
+        DBHelper::Insert(CalendarEvent::TABLE, $eventrow);
     }
 }
 function ModuleAction_calender_migraterecurrers($params)

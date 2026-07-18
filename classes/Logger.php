@@ -1,16 +1,17 @@
 <?php
-// TODO update this for PDO
-define("EVENT_LOG_TABLE","eventlog");
 class Logger
 {
     public const TYPE_ERROR = 1;
     public const TYPE_INFO = 2;
     public const TYPE_WARNING = 4;
     public const TYPE_CRITICAL = 8;
+    
+    public const EVENT_LOG_TABLE = 'eventlog';
+    
     public static function log($message,$type=0,$heading="")//,$time=0,$table=EVENT_LOG_TABLE)
     {
         $time = time();
-        DBHelper::Insert(EVENT_LOG_TABLE,[null,$type,$message,$heading,$time]);
+        DBHelper::Insert(self::EVENT_LOG_TABLE,[null,$type,$message,$heading,$time]);
     }
 
 	public static function format($log)

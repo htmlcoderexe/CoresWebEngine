@@ -1,16 +1,5 @@
 <?php
-require "DocumentFile.php";
 
-$doctable = [
-    "title"=>"VARCHAR(255)",
-    "type"=>"INT",
-    "description"=>"TEXT",
-    "visibility"=>"INT",
-    "thumbnail"=>"VARCHAR(100)",
-    "uid"=>"INT",
-    "gid"=>"INT"
-];
-Module::DemandTable(Document::TABLE,$doctable);
 /**
  * Description of Document
  *
@@ -19,6 +8,24 @@ Module::DemandTable(Document::TABLE,$doctable);
 class Document
 {
     public const TABLE = 'documents';
+    public const SCHEMA = [
+        "title"=>"VARCHAR(255)",
+        "type"=>"INT",
+        "description"=>"TEXT",
+        "visibility"=>"INT",
+        "thumbnail"=>"VARCHAR(100)",
+        "uid"=>"INT",
+        "gid"=>"INT"
+    ];
+    public const FIELDS = ['id',
+        "title",
+        "type",
+        "description",
+        "visibility",
+        "thumbnail",
+        "uid",
+        "gid"
+    ];
     
     public const SENSITIVITY_PUBLIC = 0;
     public const SENSITIVITY_GROUP = 1;

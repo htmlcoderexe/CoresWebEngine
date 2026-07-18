@@ -1,26 +1,4 @@
 <?php
-define("FILESTORE_PATH","filestore");
-
-        Module::DemandProperty("filename","Filename","Name of a file");
-        Module::DemandProperty("hash", "Hash", "Hash value associated with the object's data.");
-        Module::DemandProperty("mimetype","MIME Type","Indicates the media type of associated content.");
-        Module::DemandProperty("file.extension","File Extension","The last part of a file name used by some operating systems to quickly determine the type of the file without examining its contents.");
-        Module::DemandProperty("filesize","File size");
-        Module::DemandProperty("blobid","BLOB ID","Identifies the name given to the BLOB file");
-        Module::DemandProperty("timestamp","Timestamp","A Unix timestamp to uniquiely identify a point in time.");
-        
-$FAT = [
-    "blobid"=>"VARCHAR(100)",
-    "timestamp"=>"INT",
-    "mimetype"=>"VARCHAR(100)",
-    "size"=>"INT",
-    "name"=>"VARCHAR(255)",
-    "extension"=>"VARCHAR(50)",
-    "hash"=>"VARCHAR(100)"
-];
-define('Files_FAT','FAT');
-Module::DemandTable("FAT",$FAT);
-        
 class File
 {
     public $id;
@@ -36,6 +14,28 @@ class File
     public $hash;
     
     public static $last_error;
+    
+    public const TABLE = "FAT";
+    public const SCHEMA = [
+        "blobid"=>"VARCHAR(100)",
+        "timestamp"=>"INT",
+        "mimetype"=>"VARCHAR(100)",
+        "size"=>"INT",
+        "name"=>"VARCHAR(255)",
+        "extension"=>"VARCHAR(50)",
+        "hash"=>"VARCHAR(100)"
+    ];
+    public const FIELDS = ['id',
+        "blobid",
+        "timestamp",
+        "mimetype",
+        "size",
+        "name",
+        "extension",
+        "hash"
+    ];
+    
+    public const FILESTORE_PATH = 'filestore';
     
     public const MIME_TYPES =[
         "pdf"=>"application/pdf",
@@ -70,7 +70,7 @@ class File
     public static function Load($blobid,$nohash=false) : File | null
     {
         $fields=['id','timestamp','mimetype','size','name','extension','hash'];
-        $q = DBHelper::Select(Files_FAT, $fields, ['blobid'=>$blobid]);
+        $q = DBHelper::Select(self::TABLE, $fields, ['blobid'=>$blobid]);
         $result = DBHelper::RunRow($q,[$blobid]);
         
         if(!$result)
@@ -104,13 +104,13 @@ class File
     public function UpdateSize()
     {
         $this->size = filesize(File::GetFilePath($this->blobid));
-        DBHelper::Update(Files_FAT,['size'=>$this->size],['blobid'=>$this->blobid]);
+        DBHelper::Update(self::TABLE,['size'=>$this->size],['blobid'=>$this->blobid]);
     }
     
     public function UpdateHash()
     {
         $this->hash = File::DoHash(File::GetFilePath($this->blobid));
-        DBHelper::Update(Files_FAT,['hash'=>$this->hash],['blobid'=>$this->blobid]);
+        DBHelper::Update(self::TABLE,['hash'=>$this->hash],['blobid'=>$this->blobid]);
     }
     
     public static function DoHash($filename,$algo=self::HASH_ALGO)
@@ -124,7 +124,7 @@ class File
     
     public static function GetIngestedFilePath($dir, $filename)
     {
-        return FILESTORE_PATH.DIRECTORY_SEPARATOR.self::INGEST_BASE_DIR.DIRECTORY_SEPARATOR.$dir. DIRECTORY_SEPARATOR.$filename;
+        return self::FILESTORE_PATH.DIRECTORY_SEPARATOR.self::INGEST_BASE_DIR.DIRECTORY_SEPARATOR.$dir. DIRECTORY_SEPARATOR.$filename;
     }
     
     public static function IngestFile($dir,$filename)
@@ -151,7 +151,7 @@ class File
     
     public static function FetchNextFile($dir)
     {
-        $ingest_path = FILESTORE_PATH.DIRECTORY_SEPARATOR.self::INGEST_BASE_DIR.DIRECTORY_SEPARATOR.$dir;
+        $ingest_path = self::FILESTORE_PATH.DIRECTORY_SEPARATOR.self::INGEST_BASE_DIR.DIRECTORY_SEPARATOR.$dir;
         if(!is_dir($ingest_path))
         {
             return "";
@@ -205,7 +205,7 @@ class File
     public static function FindDupe($hash, $size)
     {
         $fields = ['blobid'];
-        $q = DBHelper::Select(Files_FAT,$fields,['hash'=>$hash,'size'=>$size]);
+        $q = DBHelper::Select(self::TABLE,$fields,['hash'=>$hash,'size'=>$size]);
         $dupe = DBHelper::RunRow($q,[$hash,$size]);
         if($dupe)
         {
@@ -219,7 +219,7 @@ class File
         $dir1=$blobname[0].$blobname[1];
         $dir2=$blobname[2].$blobname[3];
         
-        $path2=FILESTORE_PATH.DIRECTORY_SEPARATOR.$dir1.DIRECTORY_SEPARATOR.$dir2;
+        $path2=self::FILESTORE_PATH.DIRECTORY_SEPARATOR.$dir1.DIRECTORY_SEPARATOR.$dir2;
         return $path2;
     }
     public static function GetFilePath($blobname)
@@ -261,7 +261,7 @@ class File
                 return null;
             }
         }
-        DBHelper::Insert(Files_FAT,[
+        DBHelper::Insert(self::TABLE,[
             null,
             $blobname, time(),$mime,
             0,pathinfo($filename)['filename'],

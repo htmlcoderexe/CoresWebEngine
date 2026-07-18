@@ -1,39 +1,34 @@
 <?php
 
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Scripting/PHPClass.php to edit this template
- */
-
 /**
  * Description of MusicTrack
  *
- * @author admin
  */
 
-Module::DemandProperty("title", "Title", "Title of something.");
-Module::DemandProperty("artist", "Artist", "The author or performer of this media file.");
-Module::DemandProperty("album", "Album", "A collection released by an artist that this item belongs to.");
-Module::DemandProperty("media.duration", "Duration", "Duration of a media file, in seconds.");
 
-$table = [
-    "title"=>"VARCHAR(255)",
-    "blobid"=>"VARCHAR(100)",
-    "duration"=>"INT",
-    "artist"=>"VARCHAR(255)",
-    "album"=>"VARCHAR(255)",
-    "timestamp"=>"INT",
-    "uid"=>"INT",
-    "gid"=>"INT"
-];
-
-Module::DemandTable(MusicTrack::TABLE, $table);
 
 class MusicTrack
 {
     public const TABLE = "music_tracks";
-    public const FIELDS = [
-        'id','title','artist','album','duration','blobid','timestamp'
+    public const SCHEMA = [
+        "title"=>"VARCHAR(255)",
+        "blobid"=>"VARCHAR(100)",
+        "duration"=>"INT",
+        "artist"=>"VARCHAR(255)",
+        "album"=>"VARCHAR(255)",
+        "timestamp"=>"INT",
+        "uid"=>"INT",
+        "gid"=>"INT"
+    ];
+    public const FIELDS = ['id',
+        "title",
+        "blobid",
+        "duration",
+        "artist",
+        "album",
+        "timestamp",
+        "uid",
+        "gid"
     ];
     
     public function __construct(

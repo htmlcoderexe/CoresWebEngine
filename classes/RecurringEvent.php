@@ -1,45 +1,5 @@
 <?php
 
-
-$recurrerr_event_schema = [
-    // event data
-    // body
-    "title"=>"varchar(255)",
-    "description"=>"varchar(2000)",
-    "category"=>"int",
-    // time
-    "day"=>"int",
-    "month"=>"int",
-    "year"=>"int",
-    "hour"=>"int",
-    "minute"=>"int",
-    "duration"=>"int", // in minutes
-    // recurrer specific data
-    "end"=>"int", // Unix Timestamp
-    "recur_type"=>"varchar(255)",
-    "recur_data"=>"varchar(255)",
-    // AAA data
-    "user"=>"int",
-    "user_group"=>"int",
-    "active"=>"int"
-    ];
-
-$exception_schema = [
-    "recurrer_id"=>"int",
-    "day"=>"int",
-    "month"=>"int",
-    "year"=>"int"
-];
-Module::DemandTable("calendar_exceptions", $exception_schema);
-Module::DemandTable("calendar_recurring_events", $recurrerr_event_schema);
-Module::DemandProperty("calendar.recurring.type", "Duration", "The duration of an event.");
-Module::DemandProperty("calendar.recurring.start_date", "Start date", "The starting date of a recurring event.");
-Module::DemandProperty("calendar.recurring.end_date", "End date", "The ending date of a recurring event.");
-Module::DemandProperty("calendar.recurring.data","Event type","Type of a calendar event.");
-Module::DemandProperty("calendar.recurring.latest_id","Calendar colour","How the event is marked in the month view.");
-Module::DemandProperty("calendar.recurring.latest_date","Schedule colour","How the event is marked in the week view.");
-Module::DemandProperty("calendar.event.parent","Schedule colour","Event's parent recurrer.");
-Module::DemandProperty("name", "Name", "Name of something.");
 /**
  * Description of RecurringEvent
  *
@@ -73,6 +33,36 @@ class RecurringEvent
     public const RECUR_WEEKLY = "week";
     public const RECUR_DAYS = "day";
     public const RECUR_MONTH = "month";
+    
+    public const SCHEMA = [
+        // event data
+        // body
+        "title"=>"varchar(255)",
+        "description"=>"varchar(2000)",
+        "category"=>"int",
+        // time
+        "day"=>"int",
+        "month"=>"int",
+        "year"=>"int",
+        "hour"=>"int",
+        "minute"=>"int",
+        "duration"=>"int", // in minutes
+        // recurrer specific data
+        "end"=>"int", // Unix Timestamp
+        "recur_type"=>"varchar(255)",
+        "recur_data"=>"varchar(255)",
+        // AAA data
+        "user"=>"int",
+        "user_group"=>"int",
+        "active"=>"int"
+        ];
+
+    public const EXCEPTION_SCHEMA = [
+        "recurrer_id"=>"int",
+        "day"=>"int",
+        "month"=>"int",
+        "year"=>"int"
+    ];
     
     public function __construct($id,$title,$description,$category,$year,$month,$day,$hour,$minute,$duration,$recur_type,$recur_data,$enddate=0)
     {

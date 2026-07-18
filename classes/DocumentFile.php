@@ -1,12 +1,5 @@
 <?php
 
-$docfiletable = [
-    "document_id" => "INT",
-    "blobid" => "VARCHAR(100)",
-    "format" => "VARCHAR(20)"
-    ];
-Module::DemandTable(DocumentFile::TABLE,$docfiletable);
-
 /**
  * Description of DocumentFile
  *
@@ -16,7 +9,16 @@ class DocumentFile
 {
     
     public const TABLE = 'document_files';
-    
+    public const SCHEMA = [
+        "document_id" => "INT",
+        "blobid" => "VARCHAR(100)",
+        "format" => "VARCHAR(20)"
+        ];
+    public const FIELDS = ['id',
+        "document_id",
+        "blobid",
+        "format"
+        ];
     public function __construct(
             public int $id,
             public int $document_id,

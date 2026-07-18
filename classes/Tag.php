@@ -1,6 +1,5 @@
 <?php
 
-Module::DemandProperty("tag","Tag","A tag that is applied to this object");
 /**
  * Description of Tag
  *

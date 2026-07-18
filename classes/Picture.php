@@ -1,29 +1,6 @@
 <?php
 
-Module::DemandProperty("thumb_blobid", "Thumbnail File ID", "File ID of the thumbnail image.");
-Module::DemandProperty("picture.text", "Image text", "Text contained in the image, may be automatically generated.");
-Module::DemandProperty("picture.width", "Width", "Image width, in pixels.");
-Module::DemandProperty("picture.height", "Height", "Image height, in pixels.");
-Module::DemandProperty("picture.takendate", "Taken date", "Date this picture was taken on.");
-Module::DemandProperty("picture.takentime", "Taken time", "Time this picture was taken at.");
-Module::DemandProperty("filetime","File time", "Date and time when this file was likely created");
-Module::DemandProperty("cached_count","Cached count", "Number of items that's cached for display in tables.");
 
-define("PICTURE_TABLE","pixdb");
-$pictable = [
-    "blobid"=>"VARCHAR(100)",
-    "thumbnail"=>"VARCHAR(100)",
-    "width"=>"INT",
-    "height"=>"INT",
-    "extension"=>"VARCHAR(50)",
-    "title"=>"VARCHAR(255)",
-    "text"=>"TEXT",
-    "exifdate"=>"INT",
-    "filedate"=>"INT",
-    "uid"=>"INT",
-    "gid"=>"INT"
-];
-Module::DemandTable(PICTURE_TABLE,$pictable);
 /**
  * Description of Picture
  *
@@ -33,6 +10,33 @@ class Picture
 {
     public const MAXIMUM_DIMENSION = 256;
     
+    public const TABLE = "pixdb";
+    public const SCHEMA = [
+        "blobid"=>"VARCHAR(100)",
+        "thumbnail"=>"VARCHAR(100)",
+        "width"=>"INT",
+        "height"=>"INT",
+        "extension"=>"VARCHAR(50)",
+        "title"=>"VARCHAR(255)",
+        "text"=>"TEXT",
+        "exifdate"=>"INT",
+        "filedate"=>"INT",
+        "uid"=>"INT",
+        "gid"=>"INT"
+    ];
+    public const FIELDS = [
+        "blobid",
+        "thumbnail",
+        "width",
+        "height",
+        "extension",
+        "title",
+        "text",
+        "exifdate",
+        "filedate",
+        "uid",
+        "gid"
+    ];
     public static $last_error;
     
     public $id;
@@ -86,7 +90,7 @@ class Picture
             'exifdate','filedate',
             'uid','gid'
             ];
-        $q=DBHelper::Select(PICTURE_TABLE,$fields,['id'=>$id]);
+        $q=DBHelper::Select(self::TABLE,$fields,['id'=>$id]);
         $row = DBHelper::RunRow($q,[$id]);
         if(!$row)
         {
@@ -117,7 +121,7 @@ class Picture
     
     public static function Create($blob, $thumb, $w, $h, $title, $text, $ext,$filedate,$totaldate)
     {
-        DBHelper::Insert(PICTURE_TABLE,[
+        DBHelper::Insert(self::TABLE,[
             null,
             $blob,$thumb,$w,$h,
             $ext,$title,$text,
@@ -411,7 +415,7 @@ class Picture
             'exifdate','filedate',
             'uid','gid'
             ];
-        $q="SELECT " . implode(",",$fields) . " FROM " . PICTURE_TABLE . 
+        $q="SELECT " . implode(",",$fields) . " FROM " . self::TABLE . 
                 " WHERE id IN (?". str_repeat(",?", count($justIDs)-1) . ")";
         $results = DBHelper::RunTable($q,$justIDs);
         foreach($results as $row)

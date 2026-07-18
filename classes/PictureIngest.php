@@ -1,9 +1,5 @@
 <?php
 
-Module::DemandProperty("ingest.folder", "Source ingest folder", "Folder used for this ingest operation");
-Module::DemandProperty("active","Active","Indicates whether this item is active or not.");
-Module::DemandProperty("visibility","Public visibility","Indicates the visibility level of this item");
-
 /**
  * Description of PictureIngest
  *

@@ -11,7 +11,7 @@ function ModuleFunction_pixdb_list_thumbnail($idlist, $extratext="")
 
 function ModuleAction_pixdb_albums()
 {
-    $q=DBHelper::Select(PIXDB_ALBUMS,["id","title","description","cached_count"],['1'=>'1'],['id'=>'DESC']);
+    $q=DBHelper::Select(PictureSet::TABLE,["id","title","description","cached_count"],['1'=>'1'],['id'=>'DESC']);
     $data=DBHelper::RunTable($q,[1]);
     $extratext="<a href=\"/pixdb/ingest/list\">Ingests</a><br />";
     $search=new TemplateProcessor("pixdb/searchbox");

@@ -24,41 +24,13 @@ global $_DEBUG_INFO;
 global $_PAGE_STYLESHEETS;
 global $_PAGE_SCRIPTS;
 
-
-require_once CLASS_DIR."Utility.php";
-require_once CLASS_DIR."StringSet.php";
 require_once CLASS_DIR."DBHelper.php";
-require_once CLASS_DIR."Logger.php";
 require_once CLASS_DIR."TemplateProcessor.php";
-require_once CLASS_DIR."User.php";
-require_once CLASS_DIR."UserGroup.php";
 require_once CLASS_DIR."User/UserExtendedProps.php";
-require_once CLASS_DIR."Module.php";
-require_once CLASS_DIR."AuthHelper.php";
-require_once CLASS_DIR."OrderedDBCollection.php";
-require_once CLASS_DIR."KB.php";
-require_once CLASS_DIR."KB_Page.php";
-require_once CLASS_DIR."KBGroup.php";
-require_once CLASS_DIR."KBPageDataProviderDB.php";
-require_once CLASS_DIR."KBPageInfo.php";
-require_once CLASS_DIR."KBPageRevision.php";
-require_once CLASS_DIR."EditorJSDocument.php";
 require_once CLASS_DIR."EVA.php";
-require_once CLASS_DIR."CalendarScheduler.php";
-require_once CLASS_DIR."CalendarEvent.php";
-require_once CLASS_DIR."RecurringEvent.php";
-require_once CLASS_DIR."File.php";
-require_once CLASS_DIR."HTTPHeaders.php";
-require_once CLASS_DIR."Tag.php";
-require_once CLASS_DIR."Document.php";
-require_once CLASS_DIR."JobScheduler.php";
-require_once CLASS_DIR."MusicTrack.php";
-require_once CLASS_DIR."Chip.php";
-
-require_once CLASS_DIR."Picture.php";
-require_once CLASS_DIR."PictureSet.php";
-require_once CLASS_DIR."PictureIngest.php";
-require_once CLASS_DIR."PictureIngestEntry.php";
+spl_autoload_register(function ($class) {
+    require_once CLASS_DIR. $class . '.php';
+});
 header("Content-Security-Policy:  frame-ancestors 'self' ".BASE_URI);
 ini_set("session.cache_limiter","");
 ini_set('xdebug.var_display_max_depth', 10);
@@ -69,6 +41,7 @@ EngineCore::$CurrentUser=User::GetCurrentUser();
 $_PAGE_SIDEBAR=Array();
 require_once CLASS_DIR."Router.php";
 EngineCore::StartLap();
+$time = microtime();
 Router::Dispatch();
 
 EngineCore::Write2Debug("<strong>Route:</strong>".EngineCore::GET("route"));
@@ -89,8 +62,9 @@ EngineCore::AddSideBar("&nbsp;", (new TemplateProcessor("membercard".$aerr))->pr
 
     
 
+//$time = microtime();
 $data=EngineCore::RenderPage();
-$time = microtime();
+//$time = microtime();
 $time = explode(' ', $time);
 $time = $time[1] + $time[0];
 $finish = $time;

@@ -1,6 +1,4 @@
 <?php
-require_once "IKBPageDataProvider.php";
-
 class KBPage
 {
     
@@ -418,5 +416,3 @@ class KBPage
     //*/
 }
 
-
-require_once "KBPage.test.php";

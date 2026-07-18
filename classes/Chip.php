@@ -1,14 +1,5 @@
 <?php
 
-$structure=[
-    "command"=>"varchar(100)",
-    "params"=>"varchar(400)",
-    "target" => "int",
-    "submitter" => "int",
-    "time"=>"int"
-];
-
-Module::DemandTable("chip_commands",$structure, true);
 /**
  * Description of Chip
  *
@@ -16,6 +7,21 @@ Module::DemandTable("chip_commands",$structure, true);
  */
 class Chip
 {
+    public const TABLE = "chip_commands";
+    public const SCHEMA = [
+        "command"=>"varchar(100)",
+        "params"=>"varchar(400)",
+        "target" => "int",
+        "submitter" => "int",
+        "time"=>"int"
+    ];
+    public const FIELDS = [
+        "command",
+        "params",
+        "target",
+        "submitter",
+        "time"
+    ];
     public static function SendCommand($gname, $command, $params, $time = 0)
     {
         $group = UserGroup::FromName($gname);

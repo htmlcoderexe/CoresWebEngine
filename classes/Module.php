@@ -1,5 +1,4 @@
 <?php
-define("MODULE_DIR","modules/");
 class Module
 {
     public $name;
@@ -7,6 +6,8 @@ class Module
     private $immafaultyshit=false;
     
     public const SPLIT_ROUTE = 7;
+    
+    public const MODULE_DIR = "modules/";
     
     public static function DemandProperty($propname,$dname="",$desc="")
     {
@@ -37,7 +38,7 @@ class Module
     }
     function __construct($name)
     {
-        $filename=MODULE_DIR.basename($name)."/main.php";
+        $filename=self::MODULE_DIR.basename($name)."/main.php";
         if(!file_exists($filename))
         {
             EngineCore::Write2Debug("<strong>Module failed to load:</strong> Module <em>'$name'</em> was not found.");

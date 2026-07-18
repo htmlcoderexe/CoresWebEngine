@@ -1,73 +1,74 @@
 <?php
-require_once "KB_Page.php";
-define("KB_JOB_TYPE_PAGEUPDATE",0);
-define("KB_JOB_PRIORITY_LOW",0);
-define("KB_JOB_PRIORITY_NORMAL",1);
-define("KB_JOB_PRIORITY_ELEVATED",2);
-define("KB_JOB_PRIORITY_HIGH",3);
-define("KB_JOB_PRIORITY_CRITICAL",4);
-define("KB_JOB_ARGUMENT_NONE",0);
 class KB
 {
-        
-        public static function CreatePage($title,$projId=-1)
+    
+    public const JOB_TYPE_PAGEUPDATE = 0;
+    public const JOB_PRIORITY_LOW = 0;
+    public const JOB_PRIORITY_NORMAL = 1;
+    public const JOB_PRIORITY_ELEVATED = 2;
+    public const JOB_PRIORITY_HIGH = 3;
+    public const JOB_PRIORITY_CRITICAL = 4;
+    
+    public const JOB_ARGUMENT_NONE = 0;
+    
+    public static function CreatePage($title,$projId=-1)
+    {
+        if($projId==-1)
         {
-            if($projId==-1)
+            $projId=KB::CurrentProjectID();
+        }
+        DBHelper::$DBLink->beginTransaction();
+        DBHelper::Insert('kb_pages',Array(null,$title,time(),$projId,time(),1,0,'','',''));
+        //Utility::Debug(mysql_error());
+        $id=DBHelper::GetLastId();
+        DBHelper::$DBLink->commit();
+        return $id;
+    }
+    public static function ListProjects()
+    {
+            $buffer="";
+            $projectlist=DBHelper::RunTable(DBHelper::Select('KB_projects',['id','name']),[]);
+            foreach($projectlist as $project)
             {
-                $projId=KB::CurrentProjectID();
+                    $buffer.= $project['name']."<br />";
             }
-            DBHelper::$DBLink->beginTransaction();
-            DBHelper::Insert('kb_pages',Array(null,$title,time(),$projId,time(),1,0,'','',''));
-            //Utility::Debug(mysql_error());
-            $id=DBHelper::GetLastId();
-            DBHelper::$DBLink->commit();
-            return $id;
-        }
-	public static function ListProjects()
-	{
-		$buffer="";
-		$projectlist=DBHelper::RunTable(DBHelper::Select('KB_projects',['id','name']),[]);
-		foreach($projectlist as $project)
-		{
-			$buffer.= $project['name']."<br />";
-		}
-		$ss=new StringSet(1,1,1);
-		$page=new KBPage(1);
-		return $page->text;
-	//	return $buffer;
-		//return "<pre>start job: <1B>3<0F1B>p<00C8FA>\r\nend job<1B>e<101B>i</pre>";
-	}
-        public static function CurrentProjectID()
-        {
-            return $_SESSION['kb_project_id'] ?? 0;
-        }
-        public static function SwitchProject($projId)
-        {
-            $_SESSION['kb_project_id']=$projId;
-        }
-        public static function ListPages($projId)
-        {
-            $fields = ["id,title,created,project_id,modified,creator_id"];
-            $q = DBHelper::Select("kb_pages",$fields,["project_id"=>$projId]);
-            $pages = DBHelper::RunTable($q,[$projId]);
-            return $pages;
-        }
-	public static function ScheduleJob($jobtype,$pageaffected,$param,$priority)
-	{
-		$time=(int)time();
-		$row=Array(
-			null,
-			$jobtype,
-			$pageaffected,
-			$param,
-			$time,
-			$priority
-		);
-		DBHelper::Insert("kb_job_queue",$row);
-	}
-	public static function EnqeuePageUpdate($pageid)
-	{
-		KB::ScheduleJob(KB_JOB_TYPE_PAGEUPDATE,$pageid,KB_JOB_ARGUMENT_NONE,KB_JOB_PRIORITY_NORMAL);
-	}
+            $ss=new StringSet(1,1,1);
+            $page=new KBPage(1);
+            return $page->text;
+    //	return $buffer;
+            //return "<pre>start job: <1B>3<0F1B>p<00C8FA>\r\nend job<1B>e<101B>i</pre>";
+    }
+    public static function CurrentProjectID()
+    {
+        return $_SESSION['kb_project_id'] ?? 0;
+    }
+    public static function SwitchProject($projId)
+    {
+        $_SESSION['kb_project_id']=$projId;
+    }
+    public static function ListPages($projId)
+    {
+        $fields = ["id,title,created,project_id,modified,creator_id"];
+        $q = DBHelper::Select("kb_pages",$fields,["project_id"=>$projId]);
+        $pages = DBHelper::RunTable($q,[$projId]);
+        return $pages;
+    }
+    public static function ScheduleJob($jobtype,$pageaffected,$param,$priority)
+    {
+            $time=(int)time();
+            $row=Array(
+                    null,
+                    $jobtype,
+                    $pageaffected,
+                    $param,
+                    $time,
+                    $priority
+            );
+            DBHelper::Insert("kb_job_queue",$row);
+    }
+    public static function EnqeuePageUpdate($pageid)
+    {
+            KB::ScheduleJob(self::JOB_TYPE_PAGEUPDATE,$pageid,self::JOB_ARGUMENT_NONE,self::JOB_PRIORITY_NORMAL);
+    }
 }
 

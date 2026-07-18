@@ -1,24 +1,6 @@
 <?php
 
-$fields=[
-    "title"=>"VARCHAR(100)",
-    "description"=>"TEXT",
-    "thumbnail"=>"VARCHAR(100)",
-    "created"=>"INT",
-    "cached_count"=>"INT",
-    "uid"=>"INT",
-    "gid"=>"INT"
-];
-$fields2=[
-    "albumid"=>"INT",
-    "picid"=>"INT",
-    "ordinal"=>"INT",
-    "description"=>"TEXT"
-];
-define("PIXDB_ALBUMS","pixdb_albums");
-define("PIXDB_ALBUM_PICS","pixdb_album_contents");
-Module::DemandTable(PIXDB_ALBUMS,$fields);
-Module::DemandTable(PIXDB_ALBUM_PICS,$fields2,false);
+
 /**
  * Description of PictureSet
  *
@@ -36,6 +18,23 @@ class PictureSet
     private $is_dirty=false;
     
     
+    public const TABLE = 'pixdb_albums';
+    public const SCHEMA = [
+        "title"=>"VARCHAR(100)",
+        "description"=>"TEXT",
+        "thumbnail"=>"VARCHAR(100)",
+        "created"=>"INT",
+        "cached_count"=>"INT",
+        "uid"=>"INT",
+        "gid"=>"INT"
+    ];
+    public const TABLE_LINKS = 'pixdb_album_contents';
+    public const SCHEMA_LINKS = [
+        "albumid"=>"INT",
+        "picid"=>"INT",
+        "ordinal"=>"INT",
+        "description"=>"TEXT"
+    ];
     /**
      * Constructs a PictureSet Object from the necessary bits.
      * @param int $id
@@ -70,7 +69,7 @@ class PictureSet
             'created','cached_count',
             'uid','gid'
             ];
-        $q=DBHelper::Select(PIXDB_ALBUMS,$fields,['id'=>$id]);
+        $q=DBHelper::Select(self::TABLE,$fields,['id'=>$id]);
         $result = DBHelper::RunRow($q,[$id]);
         if(!$result)
         {
@@ -102,7 +101,7 @@ class PictureSet
         $uid=$owner ?? EngineCore::$CurrentUser->userid;
         $now=time();
         // write the basic entry first
-        DBHelper::Insert(PIXDB_ALBUMS, [null,$title,$description,"",$now,0,$uid,0]);
+        DBHelper::Insert(self::TABLE, [null,$title,$description,"",$now,0,$uid,0]);
         $id = DBHelper::GetLastId();
         // create the object to populate data
         $album = new PictureSet($id,$title,$description,"",$now,0);
@@ -146,8 +145,8 @@ class PictureSet
     public static function DBGetPictures($albumid)
     {
         $q="SELECT p.id as id, p.blobid as blobid, p.thumbnail as thumb, p.extension as ext, p.width as w, p.height as h, a.description as description "
-                . "FROM ".PIXDB_ALBUM_PICS." as a "
-                . "INNER JOIN ".PICTURE_TABLE." as p "
+                . "FROM ".self::TABLE_LINKS." as a "
+                . "INNER JOIN ".Picture::TABLE." as p "
                 . "ON a.picid = p.id "
                 . "WHERE a.albumid = ? "
                 . "ORDER BY a.ordinal ASC ";
@@ -163,7 +162,7 @@ class PictureSet
             return $this->pictures;
         }
         $fields = ['picid','ordinal','description'];
-        $q=DBHelper::Select(PIXDB_ALBUM_PICS,$fields,['albumid'=>$this->id]);
+        $q=DBHelper::Select(self::TABLE_LINKS,$fields,['albumid'=>$this->id]);
         $result = DBHelper::RunTable($q,[$this->id]);
         $this->pictures=[];
         foreach($result as $row)
@@ -181,7 +180,7 @@ class PictureSet
     public function SaveToDB()
     {
         // update cached count and other data
-        DBHelper::Update(PIXDB_ALBUMS,['cached_count'=>$this->cached_count,'thumbnail'=>$this->thumbnail,'title'=>$this->title,'description'=>$this->description],['id'=>$this->id]);
+        DBHelper::Update(self::TABLE,['cached_count'=>$this->cached_count,'thumbnail'=>$this->thumbnail,'title'=>$this->title,'description'=>$this->description],['id'=>$this->id]);
         if(!$this->pictures || !$this->is_dirty)
         {
             return false;
@@ -190,11 +189,11 @@ class PictureSet
         // safty frist!
         DBHelper::BeginTransaction();
         // erase current entries
-        DBHelper::Delete(PIXDB_ALBUM_PICS,['albumid'=>$this->id]);
+        DBHelper::Delete(self::TABLE_LINKS,['albumid'=>$this->id]);
         // write updated entries
         foreach($this->pictures as $ord=>$entry)
         {
-            DBHelper::Insert(PIXDB_ALBUM_PICS,[$this->id,$entry['id'],$ord,$entry['description']]);
+            DBHelper::Insert(self::TABLE_LINKS,[$this->id,$entry['id'],$ord,$entry['description']]);
         }
         DBHelper::Commit();
         $this->is_dirty=false;
@@ -227,7 +226,7 @@ class PictureSet
     public static function DBIndexOf($albumid, $id)
     {
         $fields=['ordinal'];
-        $q=DBHelper::Select(PIXDB_ALBUM_PICS,$fields,['albumid'=>$albumid,'picid'=>$id]);
+        $q=DBHelper::Select(self::TABLE_LINKS,$fields,['albumid'=>$albumid,'picid'=>$id]);
         $ord = DBHelper::RunScalar($q);
         if($ord===false)
         {
@@ -302,7 +301,7 @@ class PictureSet
     public static function DBRemovePictureAt($albumid, $pos,$noupdate=false)
     {
         // delete entry from DB
-        DBHelper::Delete(PIXDB_ALBUM_PICS,['albumid'=>$albumid, 'ordinal'=>$pos]);
+        DBHelper::Delete(self::TABLE_LINKS,['albumid'=>$albumid, 'ordinal'=>$pos]);
         // shift rest of pictures down unless asked not to
         if(!$noupdate)
         {
@@ -334,9 +333,9 @@ class PictureSet
     public static function DBSetPictureAt($albumid,$position,$id,$description=null)
     {
         // delete entry from DB
-        DBHelper::Delete(PIXDB_ALBUM_PICS,['albumid'=>$albumid, 'ordinal'=>$position]);
+        DBHelper::Delete(self::TABLE_LINKS,['albumid'=>$albumid, 'ordinal'=>$position]);
         // write new entry
-        DBHelper::Insert(PIXDB_ALBUM_PICS,[null,$albumid,$id,$position,$description]);
+        DBHelper::Insert(self::TABLE_LINKS,[null,$albumid,$id,$position,$description]);
     }
     
     /**
@@ -362,11 +361,11 @@ class PictureSet
      */
     public static function DBShiftUp($albumid, $start)
     {
-        $count = DBHelper::Count(PIXDB_ALBUM_PICS,'ord',['albumid'=>$albumid]);
+        $count = DBHelper::Count(self::TABLE_LINKS,'ord',['albumid'=>$albumid]);
         DBHelper::BeginTransaction();
         for($i=$count-1; $i >=$start;$i--)
         {
-            DBHelper::Update(PIXDB_ALBUM_PICS,['ordinal'=>$i+1],['albumid'=>$albumid,'ordinal'=>$i]);
+            DBHelper::Update(self::TABLE_LINKS,['ordinal'=>$i+1],['albumid'=>$albumid,'ordinal'=>$i]);
         }
         DBHelper::Commit();
     }
@@ -383,11 +382,11 @@ class PictureSet
     
     public static function DBShiftDown($albumid,$start)
     {
-        $count = DBHelper::Count(PIXDB_ALBUM_PICS,'ord',['albumid'=>$albumid]);
+        $count = DBHelper::Count(self::TABLE_LINKS,'ord',['albumid'=>$albumid]);
         DBHelper::BeginTransaction();
         for($i=$start; $i <$count;$i++)
         {
-            DBHelper::Update(PIXDB_ALBUM_PICS,['ordinal'=>$i-1],['albumid'=>$albumid,'ordinal'=>$i]);
+            DBHelper::Update(self::TABLE_LINKS,['ordinal'=>$i-1],['albumid'=>$albumid,'ordinal'=>$i]);
         }
         DBHelper::Commit();
     }

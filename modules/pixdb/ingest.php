@@ -28,7 +28,7 @@ function ModuleAction_pixdb_ingest_view($params)
     {
         $tpl->tokens['next']=$page+2;
     }
-    $q="SELECT id as albumid, title as albumname FROM ".PIXDB_ALBUMS;
+    $q="SELECT id as albumid, title as albumname FROM ".PictureSet::TABLE;
     $albums = DBHelper::RunTable($q,[]);
     $tpl->tokens['page']=$page+1;
     $tpl->tokens['iid']=$id;
@@ -60,9 +60,9 @@ function ModuleAction_pixdb_ingest_create($params)
             EngineCore::GTFO("/pixdb/ingest/create");
             die();
         }
-        mkdir(FILESTORE_PATH. DIRECTORY_SEPARATOR . File::INGEST_BASE_DIR . DIRECTORY_SEPARATOR . PictureIngest::PICTURE_INGEST_DIR . DIRECTORY_SEPARATOR . $foldername);
-        mkdir(FILESTORE_PATH. DIRECTORY_SEPARATOR . File::INGEST_BASE_DIR . DIRECTORY_SEPARATOR . PictureIngest::PICTURE_INGEST_DIR . DIRECTORY_SEPARATOR . $foldername . DIRECTORY_SEPARATOR . ".failed");
-        mkdir(FILESTORE_PATH. DIRECTORY_SEPARATOR . File::INGEST_BASE_DIR . DIRECTORY_SEPARATOR . PictureIngest::PICTURE_INGEST_DIR . DIRECTORY_SEPARATOR . $foldername . DIRECTORY_SEPARATOR . ".dupes");
+        mkdir(File::FILESTORE_PATH. DIRECTORY_SEPARATOR . File::INGEST_BASE_DIR . DIRECTORY_SEPARATOR . PictureIngest::PICTURE_INGEST_DIR . DIRECTORY_SEPARATOR . $foldername);
+        mkdir(File::FILESTORE_PATH. DIRECTORY_SEPARATOR . File::INGEST_BASE_DIR . DIRECTORY_SEPARATOR . PictureIngest::PICTURE_INGEST_DIR . DIRECTORY_SEPARATOR . $foldername . DIRECTORY_SEPARATOR . ".failed");
+        mkdir(File::FILESTORE_PATH. DIRECTORY_SEPARATOR . File::INGEST_BASE_DIR . DIRECTORY_SEPARATOR . PictureIngest::PICTURE_INGEST_DIR . DIRECTORY_SEPARATOR . $foldername . DIRECTORY_SEPARATOR . ".dupes");
         $ingest = PictureIngest::Create(folder:$foldername,visibility:$visibility,active:true);
     }
     else
