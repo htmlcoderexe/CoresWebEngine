@@ -14,8 +14,9 @@ function ModuleAction_docs_new($params)
             $title=EngineCore::POST("title","<Untitled>");
             $desc = EngineCore::POST("description",$title);
             $sensitivity= EngineCore::POST("sensitivity","0");
-            $owner=EngineCore::POST("noshare","")===""?EVA::OWNER_NOBODY : EVA::OWNER_CURRENT;
-            $doc = Document::Create(title: $title, filelist: [$file->blobid],description:$desc,owner:$owner,visibility:$sensitivity);
+            $doctype = intval(EngineCore::POST("doctype",0));
+            $owner=EngineCore::$CurrentUser->userid;
+            $doc = Document::Create(title: $title, filelist: [$file->blobid],description:$desc,owner:$owner,visibility:$sensitivity, doctype: $doctype);
             EngineCore::GTFO("/docs/view/".$doc->id);
         }
         else
@@ -49,6 +50,40 @@ function ModuleAction_docs_view($params)
         $docview->tokens['files']=$links;
         EngineCore::SetPageContent($docview->process(true));
     }
+}
+
+function ModuleAction_docs_list($params)
+{
+    $cats = [
+        'other'=>0,
+        'books'=>1,
+        'manuals'=>2,
+        'whitepapers'=>3,
+        'events'=>4,
+        'admin'=>5,
+        'receipts'=>6,
+        'certs'=>7,
+        'references'=>8
+    ];
+    $uid = intval(EngineCore::$CurrentUser->userid);
+    $tpl = new TemplateProcessor('docs/doclistview');
+    $docs = null;
+    if($params && count($params)>0)
+    {
+        $cat = $params[0];
+        if(isset($cats[$cat]))
+        {
+            $tpl->tokens['current'] = $cat;
+            $docs = Document::GetAll(userid: $uid, type: $cats[$cat]);
+            $tpl->tokens['shownav']='true';
+        }
+    }
+    if($docs===null)
+    {
+        $docs = Document::GetAll(userid: $uid);
+    }
+    $tpl->tokens['docs']=$docs;
+    EngineCore::SetPageContent($tpl->process(true));
 }
 
 function ModuleAction_docs_upload($params)

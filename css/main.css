@@ -664,3 +664,25 @@ a.tagusername::before
         height:25vw;
     }
 }
+
+/*
+    Docs stuff
+*/
+
+.navtab:first-child
+{
+    border-left: 2px solid #00C000;
+}
+
+.navtab
+{
+    display: inline-block;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    border-right: 2px solid #00C000;
+}
+span.navtab 
+{
+    font-weight: bold;
+    text-decoration: underline;
+}

@@ -40,6 +40,7 @@ class Document
     public const TYPE_ADMINISTRATIVE = 5;
     public const TYPE_RECEIPT = 6;
     public const TYPE_CERT = 7;
+    public const TYPE_REFERENCE = 8;
     
     function __construct(
         public int $id,
@@ -74,13 +75,13 @@ class Document
     
     
     public static function Create(
-            string $title, 
-            string $description = "", 
-            int $doctype = self::TYPE_UNKNOWN,
-            int $visibility = self::SENSITIVITY_PUBLIC, 
-            int $owner = EVA::OWNER_NOBODY, 
-            array $filelist = [],
-            string $thumbnail = ""
+        string $title, 
+        string $description = "", 
+        int $doctype = self::TYPE_UNKNOWN,
+        int $visibility = self::SENSITIVITY_PUBLIC, 
+        int $owner = EVA::OWNER_NOBODY, 
+        array $filelist = [],
+        string $thumbnail = ""
     )
     {
         $row = [
@@ -106,5 +107,35 @@ class Document
                 doctype: $doctype, visibility: $visibility,
                 owner: $owner, files: $files, thumbnail: $thumbnail);
         return $doc;
+    }
+    
+    public static function GetAll(int $userid = -1, int $type = -1)
+    {
+        $docs = [];
+        $filters = [];
+        $p = [];
+        if($type!=-1)
+        {
+            $filters['type']=$type;
+            $p[]=$type;
+        }
+        $pubwhere = ['visibility'=>self::SENSITIVITY_PUBLIC];
+        $pubwhere = array_merge($pubwhere, $filters);
+        $pubp = [self::SENSITIVITY_PUBLIC];
+        $pubp = array_merge($pubp, $p);
+        $q= DBHelper::Select(table: self::TABLE, fields: self::FIELDS, where: $pubwhere);
+        $pubdocs = DBHelper::RunTable($q, $pubp);
+        $docs = array_merge($docs, $pubdocs);
+        if($userid!=-1)
+        {
+            $mywhere = ['visibility'=>self::SENSITIVITY_PRIVATE, 'uid'=>$userid];
+            $mywhere = array_merge($mywhere, $filters);
+            $myp = [self::SENSITIVITY_PRIVATE,$userid];
+            $myp = array_merge($myp, $p);
+            $q=DBHelper::Select(table: self::TABLE, fields: self::FIELDS, where: $mywhere);
+            $mydocs = DBHelper::RunTable($q,$myp);
+            $docs = array_merge($docs, $mydocs);
+        }
+        return $docs;
     }
 }
