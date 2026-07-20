@@ -33,6 +33,8 @@ function ModuleAction_docs_view($params)
     if($doc)
     {
         $docview=new TemplateProcessor("docs/viewdoc");
+        $tags = Tag::GetTags($doc->id,"document");
+        $docview->tokens['tags'] = $tags;
         $link= new TemplateProcessor("docs/filelink");
         $links="";
         foreach($doc->files as $fileobj)
@@ -48,6 +50,7 @@ function ModuleAction_docs_view($params)
         $docview->tokens['title']=$doc->title;
         $docview->tokens['description']=$doc->description;
         $docview->tokens['files']=$links;
+        $docview->tokens['id']=$doc->id;
         EngineCore::SetPageContent($docview->process(true));
     }
 }
@@ -84,6 +87,32 @@ function ModuleAction_docs_list($params)
     }
     $tpl->tokens['docs']=$docs;
     EngineCore::SetPageContent($tpl->process(true));
+}
+
+function ModuleAction_docs_tag($params)
+{
+    // for now just the one lol
+    $tag=$params[0];
+    $results = Tag::Find("document",$tag);
+    $q=DBHelper::Select(table: Document::TABLE, fields: Document::FIELDS, where: []) . " WHERE id IN (?". str_repeat(",?", count($results)-1) . ") AND (visibility = 0 OR uid = ? )";
+    $results[]= EngineCore::$CurrentUser->userid;
+    $docsrows = DBHelper::RunTable($q,$results);
+    $docs = [];
+    foreach($docsrows as $row)
+    {
+        // no need to load filelists
+        $doc = Document::FromRow($row, []);
+        $docs[]=$doc;
+    }
+    $tpl = new TemplateProcessor('docs/doclistview');
+    $tpl->tokens['docs']=$docs;
+    $tagtpl=new TemplateProcessor("system/showtags");
+    $tagtpl->tokens['tags']=[$tag];
+    $tagtpl->tokens['boxid']="tag_box_search";
+    EngineCore::AddPageContent($tagtpl->process(true));
+    EngineCore::AddPageContent($tpl->process(true));
+    return;
+    
 }
 
 function ModuleAction_docs_upload($params)
