@@ -1,3 +1,4 @@
+<a href="/docs/new">Upload new document</a><br />
 {#ifeq|{%shownav|false%}|true|
 {#ifeq|{%current|other%}|books|<span class="navtab"> Books </span>|<a class="navtab" href="/docs/list/books"> Books </a>#}
 {#ifeq|{%current|other%}|whitepapers|<span class="navtab"> Whitepapers </span>|<a class="navtab" href="/docs/list/whitepapers"> Whitepapers </a>#}
