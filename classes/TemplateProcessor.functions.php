@@ -158,6 +158,19 @@ function TemplateProcessorBuiltin_hread($size)
     return $output;
 }
 
+function TemplateProcessorBuiltin_ellipsis($text, $length, $ellipsis = "...")
+{
+    if(strlen($text)<=$length)
+    {
+        return $text;
+    }
+    if(strlen($ellipsis >= $length))
+    {
+        $ellipsis = "";
+    }
+    return substr($text, 0, $length - strlen($ellipsis)).$ellipsis;
+}
+
 function TemplateProcessorBuiltin_errors($channel="")
 {
     return EngineCore::GetUserErrors($channel);
