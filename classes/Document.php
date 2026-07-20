@@ -55,10 +55,7 @@ class Document
     
     public static function Load(int $id)
     {
-        $fields = [
-            'title','type','description','visibility','thumbnail','uid'
-        ];
-        $select = DBHelper::Select(self::TABLE, $fields, ['id'=>$id]);
+        $select = DBHelper::Select(self::TABLE, self::FIELDS, ['id'=>$id]);
         $result = DBHelper::RunRow($select, [$id]);
         if(!$result)
         {
@@ -66,13 +63,20 @@ class Document
         }
         $files = DocumentFile::GetFiles($id);
         
-        $doc = new Document(
-                id: $id, title: $result['title'], description: $result['description'],
-                doctype: $result['type'], visibility: $result['visibility'],
-                owner: $result['uid'], files: $files, thumbnail: $result['thumbnail']);
+        $doc = Document::FromRow($result, $files);
         return $doc;
     }
     
+    public static function FromRow(
+        array $row,
+        array $files = [])
+    {
+        $doc = new Document(
+                id: $row['id'], title: $row['title'], description: $row['description'],
+                doctype: $row['type'], visibility: $row['visibility'],
+                owner: $row['uid'], files: $files, thumbnail: $row['thumbnail']);
+        return $doc;
+    }
     
     public static function Create(
         string $title, 
