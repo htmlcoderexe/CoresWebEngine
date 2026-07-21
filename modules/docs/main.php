@@ -151,5 +151,30 @@ function ModuleAction_docs_migrate($params)
     die;
 }
 
+function ModuleAction_docs_epub($params)
+{
+    $form='<form action="/docs/epub" method="POST"  enctype="multipart/form-data"><input type="file" name="epub" /><button type="submit">Send</button></form>';
+    if(!isset($_FILES['epub']))
+    {
+        echo $form;
+        die;
+    }
+    $epub = new EpubParser($_FILES['epub']['tmp_name']);
+    if($epub->error)
+    {
+        echo $epub->error."<br />$form";
+        die;
+    }
+    echo "<h2>$epub->title</h2>";
+    echo "<h3>$epub->author</h3>";
+    echo "<p>$epub->description</p>";
+    if($epub->cover_image_data)
+    {
+        $url = "data:".$epub->cover_image_type.";base64,".base64_encode($epub->cover_image_data);
+        echo '<img src="'.$url.'" />';
+    }
+    die;
+}
+
 
 //*/
