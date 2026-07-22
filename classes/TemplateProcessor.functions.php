@@ -171,6 +171,11 @@ function TemplateProcessorBuiltin_ellipsis($text, $length, $ellipsis = "...")
     return substr($text, 0, $length - strlen($ellipsis)).$ellipsis;
 }
 
+function TemplateProcessorBuiltin_urlencode($text)
+{
+    return urlencode($text);
+}
+
 function TemplateProcessorBuiltin_errors($channel="")
 {
     return EngineCore::GetUserErrors($channel);
