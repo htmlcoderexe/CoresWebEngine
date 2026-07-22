@@ -37,6 +37,15 @@ function ModuleAction_docs_view($params)
         $docview->tokens['tags'] = $tags;
         $link= new TemplateProcessor("docs/filelink");
         $links="";
+        if($doc->thumbnail!="")
+        {
+            $thumb = File::Load($doc->thumbnail);
+            if($thumb)
+            {
+                $docview->tokens['thumbnail'] = $thumb->blobid;
+                $docview->tokens['thumbnail_ext'] = $thumb->filext;
+            }
+        }
         foreach($doc->files as $fileobj)
         {
             $fileid = $fileobj->blobid;

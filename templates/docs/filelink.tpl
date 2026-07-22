@@ -1,1 +1,1 @@
-<a href="/files/stream/{%blobid|%}/{%blobid|%}.{%ext|%}">{%filename|%}.{%ext|%}</a>, {%size|%} <br />
+<a href="/files/stream/{%blobid|%}/{#urlencode|{%filename|%}.{%ext|%}#}">{%filename|%}.{%ext|%}</a>, {%size|%} <br />

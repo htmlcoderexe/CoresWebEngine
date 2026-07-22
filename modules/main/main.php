@@ -63,11 +63,17 @@ function ModuleAction_main_crankjobs($params)
     //*/
     $time_max = $time_start + 60000000000;
     $mp3idling = false;
+    $epubidling = false;
     while(hrtime(true)<$time_max)
     {
         if(!$mp3idling)
         {
             $mp3idling = !MusicTrack::Ingest("mp3");
+            flush();
+        }
+        if(!$epubidling)
+        {
+            $epubidling = !Document::IngestEpub("epub");
             flush();
         }
         $stillrunning = [];
@@ -79,7 +85,7 @@ function ModuleAction_main_crankjobs($params)
             }
         }
         $ingestorobjects = $stillrunning;
-        if(count($ingestorobjects)<1 && $mp3idling)
+        if(count($ingestorobjects)<1 && $mp3idling && $epubidling)
         {
             break;
         }

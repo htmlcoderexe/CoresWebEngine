@@ -142,4 +142,46 @@ class Document
         }
         return $docs;
     }
+    
+    
+    public static function IngestEpub(string $dir)
+    {
+        echo "ingesting from $dir...<br />";
+        $filename = File::SelectNextFile($dir);
+        if(!$filename)
+        {
+            echo "no new files to ingest, quitting<br />";
+            return false;
+        }
+        $filepath = File::GetIngestedFilePath($dir, $filename);
+        echo "found &lt;$filename&gt;<br />";
+        $epub = new EpubParser($filepath);
+        if($epub->error)
+        {
+            echo "very bad epub: $epub->error<br />";
+            File::RejectFile($dir, $filename);
+            return true;
+        }
+        if($epub->cover_image_data)
+        {
+            $url = "data:".$epub->cover_image_type.";base64,".base64_encode($epub->cover_image_data);
+            $picture = Picture::FromURL($url);
+            if($picture)
+            {
+                $thumbnail = $picture->thumbnail_blob_id;
+            }
+        }
+        $file = File::IngestFile($dir, $filename);
+        $book = self::Create(
+                title: $epub->title,
+                description: $epub->description,
+                doctype: self::TYPE_BOOK,
+                filelist: [$file->blobid],
+                thumbnail: $thumbnail
+        );
+        Tag::Attach($book->id, "author:".$epub->author,"document");
+        echo "&lt;$filename&gt; added as {$book->id}.<br />";
+        return true;
+    }
+    
 }
