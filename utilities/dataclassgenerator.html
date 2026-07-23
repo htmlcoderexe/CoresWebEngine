@@ -1,0 +1,325 @@
+<!doctype html>
+<html>
+<head>
+    <title>dataclass generator</title>
+    <style>
+    #output
+    {
+        width: 100%;
+        height: 30em;
+    }
+    </style>
+</head>
+<body>
+
+class name: <input id="cname" />
+<br />
+table name: <input id="tablename" />
+<br />
+Fields:
+<br />
+<button id="loadfields">Load</button><button id="savefields">Save</button><textarea id="fieldstore"></textarea>
+<div id="fields">
+
+</div>
+<button id="fieldplus">+</button>
+<br />
+<button id="generate">Generate</button>
+<br />
+<textarea id="output"></textarea>
+<script>
+window.fl = [];
+window.fd =     document.getElementById('fields');
+window.gb =     document.getElementById('generate');
+window.out =    document.getElementById('output');
+window.fp =     document.getElementById('fieldplus');
+window.cn =     document.getElementById('cname');
+window.tn =     document.getElementById('tablename');
+window.lf =     document.getElementById('loadfields');
+window.sf =     document.getElementById('savefields');
+window.fs =     document.getElementById('fieldstore');
+
+function getFieldList()
+{
+    let fieldlist = [];
+    fieldlist.push({'name':'id', 'ftype': 'INT', 'description': 'ID of the object'});
+    window.fl.forEach((field)=>{
+        let fn = field.fn.value;
+        let fd = field.fd.value;
+        let pr = field.fp.value;
+        let opt = field.ft.value;
+        let ft = 'INT';
+        switch(opt)
+        {
+            case '1':
+            {
+                ft = 'VARCHAR(' + pr + ')';
+                break;
+            }
+            case '2':
+            {
+                ft = 'TEXT';
+                break;
+            }
+        }
+        console.log(opt);
+        fieldlist.push({'name':fn, 'ftype': ft, 'description': fd});
+    });
+    return fieldlist;
+}
+
+function generate()
+{
+    let fieldlist = getFieldList();
+    let cname = window.cn.value;
+    let tname = window.tn.value;
+    let cls = genClass(fieldlist, cname, tname);
+    window.out.value = cls;
+}
+
+function makeHeader()
+{
+    let output = "<"+"?php\r\n\r\n/**\r\n * \r\n */\r\n";
+    return output;
+}
+
+function makeCtor(fieldlist)
+{
+    let output="\t/**\r\n";
+    output +="\t * Creates an instance of the object.\r\n";
+    fieldlist.forEach((f)=>{
+        output+="\t * @param "+(f.ftype=='INT'?'int':'string')+' $'+f.name+' '+f.description+'\r\n';
+    });
+    output+="\t */\r\n";
+    output+="\tpublic function __construct(\r\n";
+    output += "\t\tpublic int $id";
+    for(let i = 1; i<fieldlist.length;i++)
+    {
+        output += ",\r\n\t\tpublic "+(fieldlist[i].ftype=='INT'?'int':'string')+' $'+fieldlist[i].name+'';
+    }
+    output+="\r\n\t){}\r\n";
+    return output;
+}
+function makeRowGen(fieldlist, classname)
+{
+    let output="\t/**\r\n";
+    output += "\t * Creates an instance of "+classname+" from associative array (for example, database row)\r\n";
+    output += "\t * @param array $row Database row or other associative array\r\n";
+    output += "\t * @return "+classname+"|null The object created from the row.\r\n";
+    output += "\t */\r\n";
+    output += "\tpublic static function FromRow(array $row) : "+classname+" | null\r\n";
+    output += "\t{\r\n";
+    output += "\t\t$obj = new "+classname+"(\r\n";
+    output += "\t\t\tid: $row['id']";
+    for(let i = 1; i<fieldlist.length;i++)
+    {
+        output += ",\r\n\t\t\t"+fieldlist[i].name+": $row['"+fieldlist[i].name+"']";
+    }
+    output += "\r\n\t\t);\r\n";
+    output += "\t\treturn $obj;\r\n\t}\r\n";
+    return output;
+}
+
+function makeTable(tablename)
+{
+    let output = "\tpublic const TABLE = '"+tablename+"';\r\n";
+    return output;
+}
+
+function makeFields(fieldlist)
+{
+    let output="\tpublic const FIELDS = ['id'";
+    for(let i = 1; i<fieldlist.length;i++)
+    {
+        output+=",\r\n\t\t'"+fieldlist[i].name+"'";
+    }
+    output += "\r\n\t];\r\n";
+    return output;
+}
+function makeSchema(fieldlist)
+{
+    let output="\tpublic const SCHEMA = [\r\n";
+    for(let i = 1; i<fieldlist.length-1;i++)
+    {
+        output+="\t\t'"+fieldlist[i].name+"'=>'"+fieldlist[i].ftype+"',\r\n";
+    }
+    output+="\t\t'"+fieldlist[fieldlist.length-1].name+"'=>'"+fieldlist[fieldlist.length-1].ftype+"'\r\n";
+    output+="\t];\r\n";
+    return output;
+}
+
+function makeLoad(classname)
+{
+    let output ="";
+    output += "\t/**\r\n";
+    output += "\t * Loads a specific "+classname+" by ID\r\n";
+    output += "\t * @param int $id ID to be loaded.\r\n";
+    output += "\t * @returns "+classname+"|null The "+classname+" instance if found\r\n";
+    output += "\t */\r\n";
+    output += "\tpublic static function Load(int $id) : "+classname+" | null\r\n\t{\r\n";
+    output += "\t\t$row = DBHelper::GetRowById(table: self::TABLE, id: $id, fields: self::FIELDS);\r\n";
+    output += "\t\tif(!$row)\r\n\t\t{\r\n\t\t\treturn null;\r\n\t\t}\r\n";
+    output += "\t\t$obj = self::FromRow($row);\r\n\t\treturn $obj;\r\n";
+    output += "\t}\r\n";
+    return  output;
+}
+
+function makeSave(fieldlist)
+{
+    let output = "\t/**\r\n\t* Saves the state of the object to the database.\r\n\t*/\r\n\tpublic function Update()\r\n\t{\r\n";
+    output +="\t\t$update = [\r\n";
+    for(let i = 1; i<fieldlist.length-1;i++)
+    {
+        output+="\t\t\t'"+fieldlist[i].name+"'=>$this->"+fieldlist[i].name+",\r\n";
+    }
+    output+="\t\t\t'"+fieldlist[fieldlist.length-1].name+"'=>$this->"+fieldlist[fieldlist.length-1].name+"\r\n";
+    output += "\t\t];\r\n";
+    output += "\t\tDBHelper::Update(table: self::TABLE, where: ['id'=>$this->id], assignments: $update);\r\n";
+    output += "\t}\r\n";
+    return  output;
+}
+
+function makeCreate(fieldlist, classname, tablename)
+{
+    let output = "\t/**\r\n";
+    output += "\t * Creates a new "+classname+" object and saves it to the database.\r\n";
+    for(let i = 1; i<fieldlist.length;i++)
+    {
+        output += "\t * @param "+(fieldlist[i].ftype=='INT'?'int':'string')+' $'+fieldlist[i].name+' '+fieldlist[i].description+'\r\n';
+    }
+    output += "\t * @returns " + classname + "|null The newly created object, if successful.\r\n";
+    output += "\t */\r\n";
+    output += "\tpublic static function Create(\r\n\t\t";
+    let plist = [];
+    let flist = [];
+    for(let i = 1; i<fieldlist.length;i++)
+    {
+        plist.push(""+(fieldlist[i].ftype=='INT'?'int':'string')+' $'+fieldlist[i].name+'');
+        flist.push("$"+fieldlist[i].name);
+    }
+    output += plist.join(",\r\n\t\t");
+    output += "\r\n\t)\r\n\t{\r\n";
+    output += "\t\t$row = [null,";
+    output += flist.join(", ");
+    output += "];\r\n";
+    output += "\t\tDBHelper::Insert(table: self::TABLE, values: $row);\r\n";
+    output += "\t\t$id = DBHelper::GetLastId();\r\n";
+    output += "\t\t$obj = new "+classname+"(\r\n";
+    output += "\t\t\tid: $id";
+    for(let i = 1; i<fieldlist.length;i++)
+    {
+        output += ",\r\n\t\t\t"+fieldlist[i].name+": $"+fieldlist[i].name+"";
+    }
+    output += "\r\n\t\t);\r\n";
+    output += "\t\treturn $obj;\r\n";
+    output += "\t}\r\n";
+    return output;
+}
+
+function genClass(fieldlist, classname, tablename)
+{
+    let output = "";
+    output += makeHeader();
+    output += "class "+classname+"\r\n{\r\n";
+    output += makeCtor(fieldlist);
+    output += "\t\r\n";
+    output += makeTable(tablename);
+    output += "\t\r\n";
+    output += makeSchema(fieldlist);
+    output += "\t\r\n";
+    output += makeFields(fieldlist);
+    output += "\t\r\n";
+    output += makeRowGen(fieldlist, classname);
+    output += "\t\r\n";
+    output += makeLoad(classname);
+    output += "\t\r\n";
+    output += makeSave(fieldlist);
+    output += "\t\r\n";
+    output += makeCreate(fieldlist, classname, tablename);
+    output += "}";
+    return output;
+}
+
+function addField(fname=false, fdesc=false, ftype=false)
+{
+    let fn = document.createElement('input');
+    fn.placeholder='field name';
+    if(fname!==false)
+    {
+        fn.value = fname;
+    }
+    let sel = document.createElement('select');
+    let oint = document.createElement('option');
+    oint.value=0;
+    oint.innerHTML='INT';
+    let ovc = document.createElement('option');
+    ovc.value=1;
+    ovc.innerHTML='VARCHAR';
+    let otxt = document.createElement('option');
+    otxt.value=2;
+    otxt.innerHTML='TEXT';
+    sel.appendChild(oint);
+    sel.appendChild(ovc);
+    sel.appendChild(otxt);
+    let pr = document.createElement('input');
+    pr.placeholder='extra params';
+    let idx = 0;
+    if(ftype!==false)
+    {
+        let c = ftype[0];
+        switch(c)
+        {
+            case "V":
+            {
+                idx = 1;
+                let nn = ftype.replace('VARCHAR(','').replace(')','');
+                pr.value = nn;
+                break;
+            }
+            case "T":
+            {
+                idx = 2;
+            }
+        }
+    }
+    sel.selectedIndex = idx;
+    let df = document.createElement('input');
+    df.placeholder='field description';
+    if(fdesc!==false)
+    {
+        df.value = fdesc;
+    }
+    let br = document.createElement('br');
+    window.fl.push({'fn': fn, 'ft': sel, 'fp': pr, 'fd': df});
+    window.fd.appendChild(fn);
+    window.fd.appendChild(df);
+    window.fd.appendChild(sel);
+    window.fd.appendChild(pr);
+    window.fd.appendChild(br);
+}
+
+function loadFields()
+{
+    let txt = window.fs.value;
+    let obj = JSON.parse(txt);
+    
+    window.fd.innerHTML ='';
+    obj.forEach((f)=>{
+        if(f.name!='id')
+        {
+            addField(f.name, f.description, f.ftype);
+        }
+    });
+}
+
+function saveFields()
+{
+    window.fs.value = JSON.stringify(getFieldList());
+}
+
+window.fp.addEventListener('click', (e)=>{addField()});
+window.gb.addEventListener('click', (e)=>{generate()});
+window.sf.addEventListener('click', (e)=>{saveFields()});
+window.lf.addEventListener('click', (e)=>{loadFields()});
+</script>
+</body>
