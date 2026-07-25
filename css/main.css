@@ -687,3 +687,30 @@ span.navtab
     font-weight: bold;
     text-decoration: underline;
 }
+
+/*
+    file stuff
+*/
+
+.filelink
+{
+    border: 2px solid #00C000;
+    display: inline-block;
+    padding: 2px;
+    height: 72px;
+}
+.filelink a
+{
+    display: inline-block;
+    padding-right: 1em;
+}
+.filelink span
+{
+    display: inline-block;
+    text-align: center; 
+    vertical-align: center;
+    height: 100%;
+    position:relative;
+    top: 0;
+    
+}

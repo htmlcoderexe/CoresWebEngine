@@ -121,8 +121,9 @@ class SoftwareRelease
 			version: $version,
 			description: $description,
 			type: $type,
-			time: $time
-		);
+			time: $time,
+                        files: []
+                );
 		return $obj;
 	}
         

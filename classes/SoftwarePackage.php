@@ -157,8 +157,9 @@ class SoftwarePackage
 			publisher: $publisher,
 			type: $type,
 			uid: $uid,
-			gid: $gid
-		);
+			gid: $gid,
+                        releases: []
+                );
 		return $obj;
 	}
 }
