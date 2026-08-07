@@ -9,13 +9,13 @@ class SoftwarePublisher
 	 * Creates an instance of the object.
 	 * @param int $id ID of the object
 	 * @param string $name Publisher name
-	 * @param int $description Publisher description
+	 * @param string $description Publisher description
 	 * @param string $icon Image blobid representing the publisher
 	 */
 	public function __construct(
 		public int $id,
 		public string $name,
-		public int $description,
+		public string $description,
 		public string $icon
 	){}
 	
@@ -23,7 +23,7 @@ class SoftwarePublisher
 	
 	public const SCHEMA = [
 		'name'=>'VARCHAR(200)',
-		'description'=>'INT',
+		'description'=>'TEXT',
 		'icon'=>'VARCHAR(100)'
 	];
 	
@@ -81,13 +81,13 @@ class SoftwarePublisher
 	/**
 	 * Creates a new SoftwarePublisher object and saves it to the database.
 	 * @param string $name Publisher name
-	 * @param int $description Publisher description
+	 * @param string $description Publisher description
 	 * @param string $icon Image blobid representing the publisher
 	 * @returns SoftwarePublisher|null The newly created object, if successful.
 	 */
 	public static function Create(
 		string $name,
-		int $description,
+		string $description,
 		string $icon
 	)
 	{
@@ -102,4 +102,15 @@ class SoftwarePublisher
 		);
 		return $obj;
 	}
+        public static function GetList()
+        {
+            $result = [];
+            $filters = [];
+            $p = [];
+            $where = [];
+            $q= DBHelper::Select(table: self::TABLE, fields: self::FIELDS, where: $where);
+            $result = DBHelper::RunTable($q, $p);
+            return $result;
+
+        }
 }
