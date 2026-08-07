@@ -3,5 +3,5 @@ RewriteRule ^(assets-site|assets-user|css|images-site|images-user|js|index.php)(
 RewriteCond %{QUERY_STRING} ^(.*)$
 RewriteRule ^/?([a-zA-Z_/0-9\.:%\?&\s\-]+)$ index.php?%1&route=$1 [B,L]
 RewriteRule ^/?(.+)$ index.php?route=$1 [B,L]
-php_value upload_max_filesize 140M
-php_value post_max_size 142M
+php_value upload_max_filesize 1400M
+php_value post_max_size 1420M
