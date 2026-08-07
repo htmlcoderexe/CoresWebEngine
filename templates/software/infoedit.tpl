@@ -1,3 +1,19 @@
+<script>
+    function showhidenewpublisher()
+    {
+        let newp = document.getElementById('newpublisher');
+        let sel = document.getElementById('pubselect');
+        let val = sel.value;
+        if(val!=-1)
+        {
+            newp.style.display = 'none';
+        }
+        else
+        {
+            newp.style.display = 'block';
+        }
+    }
+</script>
 <form action="/software/save" enctype="multipart/form-data" method="POST">
     <input type="hidden" name="id" value="{%id|-1%}" />
     <table>
@@ -39,12 +55,22 @@
                     <option>Repository</option>
                     <option>Self-contained</option>
             </select></td>
-        </tr>{#ifset|publishers|
+        </tr>
         <tr>
             <td>Publisher:</td>
-            <td><select name="publisher">{#foreach|{%publishers%}|
-                <option{#ifeq|{%publisher%}|{:id:}|selected#} value="{:id:}">{:name:}</option>#}
-            </select></td>
-        </tr>#}
+            <td><select id="pubselect" onchange="showhidenewpublisher();" name="publisher">{#ifset|publishers|{#foreach|{%publishers%}|
+                    <option{#ifeq|{%publisher%}|{:id:}|selected#} value="{:id:}">{:name:}</option>#}
+#}                  <option value="-1">New...</option>
+                </select>
+                <div id="newpublisher">
+                    Name: <input name="pubname" /><br />
+                    Description: <input name="pubdesc" /><br />
+                </div>
+            </td>
+        </tr>
     </table>
+    <button type="submit">Save</button>
 </form>
+<script>
+    showhidenewpublisher();
+</script>

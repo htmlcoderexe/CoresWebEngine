@@ -133,7 +133,8 @@ class SoftwareRelease
          */
         public static function GetReleases(int $id) : array
         {
-            $rows = DBHelper::GetRowsByField(table:self::TABLE, field:'software_id', value:$id, fields:self::FIELDS);
+            $sel = DBHelper::Select(table:self::TABLE, where: ['software_id'=>$id], fields:self::FIELDS, orderby: ['version'=>'desc']);
+            $rows = DBHelper::RunTable($sel,[$id]);
             if(!$rows)
             {
                 return [];

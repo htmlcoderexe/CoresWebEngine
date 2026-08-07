@@ -162,4 +162,13 @@ class SoftwarePackage
                 );
 		return $obj;
 	}
+        
+    public static function GetList($where = [])
+    {
+        $p = array_values($where);
+        $q= DBHelper::Select(table: self::TABLE, fields: self::FIELDS, where: $where);
+        $result = DBHelper::RunTable($q, $p);
+        return $result;
+        
+    }
 }

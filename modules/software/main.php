@@ -8,6 +8,55 @@ function ModuleAction_software_init($params)
     Module::DemandTable(SoftwareReleaseFile::TABLE, SoftwareReleaseFile::SCHEMA);
 }
 
+function ModuleAction_software_default($params)
+{
+    ModuleAction_software_all($params);
+}
+
+function ModuleAction_software_all($params)
+{
+    $sw = SoftwarePackage::GetList();
+    $tpl = new TemplateProcessor("software/listview");
+    $tpl->tokens['sw'] =$sw;
+    EngineCore::SetPageContent($tpl->process(true));
+    
+}
+
+function ModuleFunction_listpublishers()
+{
+        $tg = SoftwarePublisher::TABLE;
+        $tt = SoftwarePackage::TABLE;
+        $qc = "SELECT $tg.id as pid, $tg.name as name, COUNT($tt.id) as swcount, $tg.description as description "
+                . "FROM $tg LEFT JOIN $tt "
+                . "ON $tg.id = $tt.publisher "
+                . "GROUP BY $tg.id "
+                . "ORDER BY swcount ";
+        $groups = DBHelper::RunTable($qc, []);
+        return $groups;
+}
+
+function ModuleAction_software_publisher($params)
+{
+    $id = intval($params[0] ?? 0);
+    $publisher = SoftwarePublisher::Load($id);
+    if($publisher)
+    { 
+        $sw = SoftwarePackage::GetList(['publisher'=>$id]);
+        $tpl = new TemplateProcessor("software/listview");
+        $tpl->tokens['sw'] =$sw;
+        EngineCore::SetPageContent($tpl->process(true));
+    }
+    else
+    {
+        $publishers = ModuleFunction_listpublishers();
+        $tpl = new TemplateProcessor("software/publishers");
+        $tpl->tokens['publishers'] =$publishers;
+        EngineCore::SetPageContent($tpl->process(true));
+        
+    }
+    
+}
+
 function ModuleAction_software_view($params)
 {
     $id = intval($params[0] ?? 0);
@@ -39,16 +88,27 @@ function ModuleAction_software_view($params)
         EngineCore::SetPageContent($tpl->process(true));
         return;
     }
-
+    if(EngineCore::$CurrentUser->HasPermission('super'))
+    {
+        $addlink = "<a href=\"/software/newrelease/$id\">Add new version</a><br />";
+        EngineCore::AddPageContent($addlink);
+    }
     $tpl = new TemplateProcessor("software/view");
     $tpl->tokens = (array)$sw;
-    EngineCore::SetPageContent($tpl->process(true));
+    $publisher = SoftwarePublisher::Load($sw->publisher);
+    if($publisher)
+    {
+        $tpl->tokens['publisher_name'] = $publisher->name;
+        $tpl->tokens['publisher_description'] = $publisher->description;
+        $tpl->tokens['publisher_id'] = $publisher->id;
+    }
+    EngineCore::AddPageContent($tpl->process(true));
 }
 
 function ModuleAction_software_new($params)
 {
     $tpl = new TemplateProcessor("software/infoedit");
-    $publishers =[['id'=>1, 'name'=>'test'],['id'=>2, 'name'=>'test2']];
+    $publishers = SoftwarePublisher::GetList();
     $tpl->tokens['publishers'] = $publishers;
     EngineCore::SetPageContent($tpl->process(true));
 }
@@ -79,7 +139,13 @@ function ModuleAction_software_save($params)
     $screenshot_album = $album->id;
     $uid = EngineCore::$CurrentUser->userid;
     $gid = 0;
-    //var_dump($_POST);die;
+    if($publisher == -1)
+    {
+        $pname = EngineCore::POST('pubname','Unknown');
+        $pdesc = EngineCore::POST('pubdesc');
+        $p = SoftwarePublisher::Create($pname, $pdesc, '');
+        $publisher = $p->id;
+    }
     if($id==-1)
     {
         // create new
