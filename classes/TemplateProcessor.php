@@ -2,8 +2,8 @@
 require_once("TemplateProcessor.functions.php");
 class TemplateProcessor
 {
+        private static $layoutsdir = "layouts/";
 	private $tplprefix="templates/";
-        private $layoutsdir="layouts/";
 	private $tplpostfix=".tpl";
 	private $tplfpostfix=".tpl.php";
 	private $tplfuncprefix="TemplateFunction";
@@ -13,6 +13,7 @@ class TemplateProcessor
 	private $cb;
         private $isLayout;
         
+        private $specialdir = '';
         
         private $pointer;
         private $chars;
@@ -32,9 +33,10 @@ class TemplateProcessor
         
         public const EMPTY_NODE = [["type"=>"literal","stringval"=>""]];
         
-        function __construct($file,$useLayout=false)
+        function __construct($file,$useLayout=false,$dir = '')
 	{
             $this->isLayout=$useLayout;
+            $this->specialdir = $dir;
 		$this->tokens=Array();
 		if(strpos($file,",")!==false)
 		{
@@ -48,8 +50,8 @@ class TemplateProcessor
 			}
 			
 		}
-		
-		$this->contents=file_get_contents(($this->isLayout?$this->layoutsdir:$this->tplprefix).$file.$this->tplpostfix) or die("File not found: $file");
+		$this->tplprefix = $this->specialdir == '' ? $this->tplprefix : $this->specialdir;
+		$this->contents=file_get_contents(($this->isLayout?self::$layoutsdir:$this->tplprefix).$file.$this->tplpostfix) or die("File not found: $file");
 		$this->cb=$this->contents;
                 $this->fname=$file;
 		//var_dump($this);
@@ -120,6 +122,10 @@ class TemplateProcessor
                 {
                     return $this->process_template($node);
                 }
+                case "subview":
+                {
+                    return $this->process_subview($node);
+                }
                 case "template_func":
                 {
                     return $this->process_template_func($node);
@@ -154,8 +160,7 @@ class TemplateProcessor
                 }
                 else
                 {
-                    echo "fuck!!!!!";
-                    var_dump($output);
+                    $this->varstack[]=(array)$output;
                 }
                 
             }
@@ -239,8 +244,18 @@ class TemplateProcessor
                 }
                 $params[$paramname]=$paramvalue;
             }
-            $t = new TemplateProcessor($template);
+            $t = new TemplateProcessor(file: $template);//, dir:$this->specialdir);
             $t->tokens=$params;
+            return ["type"=>"literal","stringval"=>$t->do_new_parser()];
+        }
+        private function process_subview($node)
+        {
+            $template = $this->process_nodelist($node['template_name']);
+            $this->process_nodelist($node['object']);
+            $object  = (array)array_pop($this->varstack);
+            
+            $t = new TemplateProcessor(file: $template, dir:$this->specialdir);
+            $t->tokens=$object;
             return ["type"=>"literal","stringval"=>$t->do_new_parser()];
         }
         
@@ -254,7 +269,7 @@ class TemplateProcessor
             {
                 $params[]=$this->process_nodelist($param);
             }
-            $ffname=($this->isLayout?$this->layoutsdir:$this->tplprefix).$this->fname.$this->tplfpostfix;
+            $ffname=($this->isLayout?self::$layoutsdir:$this->tplprefix).$this->fname.$this->tplfpostfix;
 		if(!file_exists($ffname)) //if it ain't there, what's the point anyway
                 {
                     EngineCore::Write2Debug("couldn't load \"$ffname\"<br />");
@@ -563,6 +578,34 @@ class TemplateProcessor
                                         $default=$this->get_nodelist();
                                         $current_node['default']=$default;
                                         $current_node['type']="variable_default";
+                                        $current_node['weight']+=self::CountNodeWeights($default);
+                                    }
+                                    $list[]=$current_node;
+                                    $current_node=[
+                                       "type"=>"literal",
+                                        "stringval"=>""
+                                    ];
+                                    break;
+                                }
+                                case "@":
+                                {
+                                    array_push($this->terminator_stack,"@");
+                                    $list[]=$current_node;
+                                    $this->pointer++;
+                                    $this->pointer++;
+                                    $current_node =[];
+                                    $viewname=$this->get_nodelist();
+                                    // check if it was var or vardefault
+                                    $current_node['type']="subview";
+                                    $current_node['template_name']=$viewname;
+                                    $current_node['weight']=1;
+                                    $current_node['weight']+=self::CountNodeWeights($viewname);
+                                    if($this->last_terminator=="|")
+                                    {
+                                        $this->last_terminator="";
+                                        $default=$this->get_nodelist();
+                                        $current_node['object']=$default;
+                                        $current_node['type']="subview";
                                         $current_node['weight']+=self::CountNodeWeights($default);
                                     }
                                     $list[]=$current_node;
