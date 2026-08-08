@@ -22,7 +22,7 @@
     </select>
     
     
-    <input name="up" type="hidden" value="yes" /><br />
+    <input name="submission_check" type="hidden" value="yes" /><br />
     <input name="fileup" type="file" />
     <button type="submit">Create</button>
 </form>
