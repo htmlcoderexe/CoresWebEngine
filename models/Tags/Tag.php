@@ -1,5 +1,6 @@
 <?php
-
+namespace Models\Tags;
+use \DBHelper as DBHelper;
 /**
  * Description of Tag
  *

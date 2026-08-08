@@ -1,0 +1,189 @@
+<?php
+namespace Models\Documents;
+use \Models\File as File;
+use \DBHelper as DBHelper;
+/**
+ * Description of Document
+ *
+ * @author admin
+ */
+class Document
+{
+    public const TABLE = 'documents';
+    public const SCHEMA = [
+        "title"=>"VARCHAR(255)",
+        "type"=>"INT",
+        "description"=>"TEXT",
+        "visibility"=>"INT",
+        "thumbnail"=>"VARCHAR(100)",
+        "uid"=>"INT",
+        "gid"=>"INT"
+    ];
+    public const FIELDS = ['id',
+        "title",
+        "type",
+        "description",
+        "visibility",
+        "thumbnail",
+        "uid",
+        "gid"
+    ];
+    
+    public const SENSITIVITY_PUBLIC = 0;
+    public const SENSITIVITY_GROUP = 1;
+    public const SENSITIVITY_PRIVATE = 2;
+    public const SENSITIVITY_SECRET = 3;
+    
+    public const TYPE_UNKNOWN = 0;
+    public const TYPE_BOOK = 1;
+    public const TYPE_MANUAL = 2;
+    public const TYPE_WHITEPAPER = 3;
+    public const TYPE_EVENT = 4;
+    public const TYPE_ADMINISTRATIVE = 5;
+    public const TYPE_RECEIPT = 6;
+    public const TYPE_CERT = 7;
+    public const TYPE_REFERENCE = 8;
+    
+    function __construct(
+        public int $id,
+        public string $title, 
+        public string $description = "", 
+        public int $doctype = self::TYPE_UNKNOWN,
+        public int $visibility = self::SENSITIVITY_PUBLIC, 
+        public int $owner = EVA::OWNER_NOBODY, 
+        public array $files = [],
+        public string $thumbnail = ""
+    ){}
+    
+    public static function Load(int $id)
+    {
+        $select = DBHelper::Select(self::TABLE, self::FIELDS, ['id'=>$id]);
+        $result = DBHelper::RunRow($select, [$id]);
+        if(!$result)
+        {
+            return null;
+        }
+        $files = DocumentFile::GetFiles($id);
+        
+        $doc = Document::FromRow($result, $files);
+        return $doc;
+    }
+    
+    public static function FromRow(
+        array $row,
+        array $files = [])
+    {
+        $doc = new Document(
+                id: $row['id'], title: $row['title'], description: $row['description'],
+                doctype: $row['type'], visibility: $row['visibility'],
+                owner: $row['uid'], files: $files, thumbnail: $row['thumbnail']);
+        return $doc;
+    }
+    
+    public static function Create(
+        string $title, 
+        string $description = "", 
+        int $doctype = self::TYPE_UNKNOWN,
+        int $visibility = self::SENSITIVITY_PUBLIC, 
+        int $owner = EVA::OWNER_NOBODY, 
+        array $filelist = [],
+        string $thumbnail = ""
+    )
+    {
+        $row = [
+            null, $title, $doctype, $description,
+            $visibility,
+            $thumbnail,
+            $owner, 0
+        ];
+        DBHelper::Insert(self::TABLE, $row);
+        $docId = DBHelper::GetLastId();
+        $files = [];
+        foreach($filelist as $blobid)
+        {
+            $docfile = DocumentFile::Create($docId, $blobid);
+            if(!$docfile)
+            {
+                continue;
+            }
+            $files[]=$docfile;
+        }
+        $doc = new Document(
+                id: $docId, title: $title, description: $description,
+                doctype: $doctype, visibility: $visibility,
+                owner: $owner, files: $files, thumbnail: $thumbnail);
+        return $doc;
+    }
+    
+    public static function GetAll(int $userid = -1, int $type = -1)
+    {
+        $docs = [];
+        $filters = [];
+        $p = [];
+        if($type!=-1)
+        {
+            $filters['type']=$type;
+            $p[]=$type;
+        }
+        $pubwhere = ['visibility'=>self::SENSITIVITY_PUBLIC];
+        $pubwhere = array_merge($pubwhere, $filters);
+        $pubp = [self::SENSITIVITY_PUBLIC];
+        $pubp = array_merge($pubp, $p);
+        $q= DBHelper::Select(table: self::TABLE, fields: self::FIELDS, where: $pubwhere);
+        $pubdocs = DBHelper::RunTable($q, $pubp);
+        $docs = array_merge($docs, $pubdocs);
+        if($userid!=-1)
+        {
+            $mywhere = ['visibility'=>self::SENSITIVITY_PRIVATE, 'uid'=>$userid];
+            $mywhere = array_merge($mywhere, $filters);
+            $myp = [self::SENSITIVITY_PRIVATE,$userid];
+            $myp = array_merge($myp, $p);
+            $q=DBHelper::Select(table: self::TABLE, fields: self::FIELDS, where: $mywhere);
+            $mydocs = DBHelper::RunTable($q,$myp);
+            $docs = array_merge($docs, $mydocs);
+        }
+        return $docs;
+    }
+    
+    
+    public static function IngestEpub(string $dir)
+    {
+        echo "ingesting from $dir...<br />";
+        $filename = File::SelectNextFile($dir);
+        if(!$filename)
+        {
+            echo "no new files to ingest, quitting<br />";
+            return false;
+        }
+        $filepath = File::GetIngestedFilePath($dir, $filename);
+        echo "found &lt;$filename&gt;<br />";
+        $epub = new EpubParser($filepath);
+        if($epub->error)
+        {
+            echo "very bad epub: $epub->error<br />";
+            File::RejectFile($dir, $filename);
+            return true;
+        }
+        if($epub->cover_image_data)
+        {
+            $url = "data:".$epub->cover_image_type.";base64,".base64_encode($epub->cover_image_data);
+            $picture = Picture::FromURL($url);
+            if($picture)
+            {
+                $thumbnail = $picture->thumbnail_blob_id;
+            }
+        }
+        $file = File::IngestFile($dir, $filename);
+        $book = self::Create(
+                title: $epub->title,
+                description: $epub->description,
+                doctype: self::TYPE_BOOK,
+                filelist: [$file->blobid],
+                thumbnail: $thumbnail
+        );
+        Tag::Attach($book->id, "author:".$epub->author,"document");
+        echo "&lt;$filename&gt; added as {$book->id}.<br />";
+        return true;
+    }
+    
+}
