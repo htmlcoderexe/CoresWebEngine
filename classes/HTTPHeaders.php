@@ -97,6 +97,20 @@ class HTTPHeaders
         return [$start,$end];
     }
     
+    public static function GetAccepts($header)
+    {
+        $options = explode(",",$header);
+        $accepts = [];
+        foreach($options as $option)
+        {
+            $halfs = explode(";",$option);
+            $mime = $halfs[0];
+            $opts = $halfs[1] ?? "";
+            $accepts[]=['mime'=>$mime,'options'=>$opts];
+        }
+        return $accepts;
+    }
+    
     public static function GetReferer()
     {
         // netbeans pls
