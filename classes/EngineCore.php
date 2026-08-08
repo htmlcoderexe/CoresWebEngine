@@ -14,6 +14,7 @@ class EngineCore
      * @var bool
      */
     public static $DEBUG;
+    private static $layoutsdir="layouts/";
 
     /**
      * Raw mode outputs directly instead of buffering
@@ -319,6 +320,25 @@ class EngineCore
     {
         // dear netbeans I promise it'll be fine
         return isset($_POST[$var]) ? $_POST[$var] : $default;
+    }
+    
+    public static function VerifyPOST()
+    {
+        return self::POST('submission_check') !== '';
+    }
+    
+    public static function GetSubmission($fields)
+    {
+        $sub = [];
+        if(!self::VerifyPOST())
+        {
+            return null;
+        }
+        foreach($fields as $field=>$default)
+        {
+            $sub[$field] = self::POST($field, $default);
+        }
+        return $sub;
     }
 
     /**
