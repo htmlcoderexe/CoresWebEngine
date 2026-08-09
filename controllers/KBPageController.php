@@ -146,4 +146,22 @@ class KBPageController
             die;
 	}
     }
+    #[Route('kb/tag')]
+    public static function ListByTag($tag = '')
+    {
+            // for now just the one lol
+        $results = Tag::Find("kbpage",$tag);
+        $fields = ['id','title'];
+        $q="SELECT " . implode(",",$fields) . " FROM kb_pages WHERE id IN (?". str_repeat(",?", count($results)-1) . ")";
+        $pages = DBHelper::RunTable($q,$results);
+        if(!$pages)
+        {
+            $pages = [];
+        }
+        $entity = ['entity_type'=>'pagelist'];
+        $entity['pages']=$pages;
+        $entity['entity_type'] = 'kb/pagelist';
+        $entity['tags']=[$tag];
+        return $entity;
+    }
 }
