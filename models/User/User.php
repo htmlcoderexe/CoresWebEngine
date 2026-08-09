@@ -220,6 +220,10 @@ class User
      */
     public function HasPermission($permission)
     {
+        if($permission == '')
+        {
+            return true;
+        }
         // guests DO NOT get permissions
         if($this->IsGuest())
         {
