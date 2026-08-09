@@ -2,6 +2,7 @@
 namespace Cores;
 
 use Common\HTTPHeaders;
+use Common\DBHelper;
 
 /**
  * Main class to service all page-related needs
