@@ -384,6 +384,19 @@ class EngineCore
         }
         echo "<a href=\"$url\">Go to $url</a>";
     }
+    
+    static function Error(int $code, string $message = '', string $title = '')
+    {
+        $entity = [
+            'entity_type' => 'errors/'.$code,
+            'error' => $code,
+            'message' => $message,
+            'title' => $title
+        ];
+        return $entity;
+    }
+    
+    
     /**
      * Gets the user's time offset - only works from second page load on
      * @return int the time offset, falling back to 0 (UTC) if not found
