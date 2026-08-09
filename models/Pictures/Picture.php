@@ -1,5 +1,12 @@
 <?php
+namespace Models\Pictures;
 
+use Common\DBHelper;
+use Cores\EngineCore;
+
+use Models\File;
+use DateTimeImmutable;
+use Cores\JobScheduler;
 
 /**
  * Description of Picture

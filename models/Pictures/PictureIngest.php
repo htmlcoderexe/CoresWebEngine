@@ -1,4 +1,7 @@
 <?php
+namespace Models\Pictures;
+use Models\User\User;
+use Common\DBHelper;
 
 /**
  * Description of PictureIngest

@@ -1,4 +1,8 @@
 <?php
+namespace Models\Pictures;
+
+use Common\DBHelper;
+use Cores\EngineCore;
 
 
 /**

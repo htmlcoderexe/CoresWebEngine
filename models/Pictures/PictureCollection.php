@@ -1,4 +1,5 @@
 <?php
+namespace Models\Pictures;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license

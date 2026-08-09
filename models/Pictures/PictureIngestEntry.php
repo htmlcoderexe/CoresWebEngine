@@ -1,4 +1,7 @@
 <?php
+namespace Models\Pictures;
+
+use Common\DBHelper;
 
 /**
  * Description of PictureIngestEntry
