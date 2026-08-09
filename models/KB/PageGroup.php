@@ -1,32 +1,33 @@
 <?php
+namespace Models\KB;
 
 
 
 
-class KBGroup
+class PageGroup
 {
     public $items;
     public $id;
-    public IKBGroupBacker $backer;
-    public function __construct(IKBGroupBacker $backer, $id,$items)
+    public IGroupBacker $backer;
+    public function __construct(IGroupBacker $backer, $id,$items)
     {
         $this->id=$id;
         $this->items = $items;
         $this->backer = $backer;
     }
-    public static function Load(IKBGroupBacker $backer, $id)
+    public static function Load(IGroupBacker $backer, $id)
     {
         $items = $backer->GetItems($id);
         if(count($items)>0)
         {
-            return new KBGroup($backer, $id, $items);
+            return new PageGroup($backer, $id, $items);
         }
     }
     public function Save()
     {
         $this->backer->SetItems(id: $this->id, items: $this->items);
         }
-    public static function Find(IKBGroupBacker $backer, $id) : int
+    public static function Find(IGroupBacker $backer, $id) : int
     {
         $gid = $backer->Find($id);
         return $gid;
@@ -35,9 +36,9 @@ class KBGroup
     public static function Create($backer, $id )
     {
         $items = [];
-        return new KBGroup($backer, $id, $items);
+        return new PageGroup($backer, $id, $items);
     }
-    public static function ProcessMove(IKBGroupBacker $backer,int $itemId, int $cp=0, int $cg=0, int $cn=0, int $np=0, int $ng=0,int $nn=0) : KBGroupMoveResult
+    public static function ProcessMove(IGroupBacker $backer,int $itemId, int $cp=0, int $cg=0, int $cn=0, int $np=0, int $ng=0,int $nn=0) : PageGroupMoveResult
     {
         // null move
         if($np+$ng+$nn == 0)
@@ -45,7 +46,7 @@ class KBGroup
             if($cg == 0)
             {
                 // do nothing
-                return new KBGroupMoveResult(noChange: true);
+                return new PageGroupMoveResult(noChange: true);
             }
             else
             {
@@ -55,7 +56,7 @@ class KBGroup
                 // update cg!
                 $currentGroup->Save();
                 // item is 0,0,0
-                return new KBGroupMoveResult(itemId: $itemId, leftGroup:$cg, affectedItems:$items);
+                return new PageGroupMoveResult(itemId: $itemId, leftGroup:$cg, affectedItems:$items);
             }
         }
         // resolve target group
@@ -126,7 +127,7 @@ class KBGroup
         if($ng != $cg)
         {
             $update = ['id'=>$itemId,'left'=>0,'joined'=>0];
-            $update = new KBGroupMoveResult(itemId: $itemId);
+            $update = new PageGroupMoveResult(itemId: $itemId);
             $items = [];
             if($cg!=0)
             {
@@ -159,14 +160,14 @@ class KBGroup
         }
         else
         {
-            $update = new KBGroupMoveResult(itemId: $itemId, leftGroup: $targetGroup->id, joinedGroup: $targetGroup->id);
+            $update = new PageGroupMoveResult(itemId: $itemId, leftGroup: $targetGroup->id, joinedGroup: $targetGroup->id);
             // move within cg/ng
             // this must return item's new positions
             // update ng/cg
             $currIndex = $targetGroup->IndexOf($itemId);
             if($currIndex ===  $anchorIndex)
             {
-                $update = new KBGroupMoveResult(noChange:true);
+                $update = new PageGroupMoveResult(noChange:true);
                 return $update;
             }
             $items = $targetGroup->Move($currIndex, $anchorIndex);

@@ -1,6 +1,7 @@
 <?php
+namespace Models\KB;
 
-class KBPageSequence
+class PageSequence
 {
     public $pages;
     public $id;

@@ -1,5 +1,6 @@
 <?php
-interface IKBGroupBacker
+namespace Models\KB;
+interface IGroupBacker
 {
     /**
      * Fetches a group's items

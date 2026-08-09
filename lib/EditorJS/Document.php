@@ -1,12 +1,13 @@
 <?php
+namespace Common\EditorJS;
 
 
 /**
- * Description of EditorJSDocument
+ * Description of Document
  *
  * 
  */
-class EditorJSDocument
+class Document
 {
     public $blocks = [];
     public $images = [];
@@ -18,7 +19,7 @@ class EditorJSDocument
         {
             return null;
         }
-        $result = new EditorJSDocument();
+        $result = new Document();
         $result->blocks = $data['blocks'];
         $result->RefreshImageList();
         $result->GetPlainText();
@@ -26,7 +27,7 @@ class EditorJSDocument
     }
     public static function FromBlocks($blocks)
     {
-        $result = new EditorJSDocument();
+        $result = new Document();
         $result->blocks = $blocks;
         $result->RefreshImageList();
         $result->GetPlainText();
@@ -79,7 +80,7 @@ class EditorJSDocument
         $content ="";
         foreach($this->blocks as $block)
         {
-            $content.=EditorJSDocumentFormatter::DoBlock($block);
+            $content.=DocumentFormatter::DoBlock($block);
         }
         return $content;
     }

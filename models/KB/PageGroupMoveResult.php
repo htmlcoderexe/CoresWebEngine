@@ -1,11 +1,12 @@
 <?php
+namespace Models\KB;
 
 
 /**
  * Description of KBGroupMoveResult
  *
  */
-class KBGroupMoveResult
+class PageGroupMoveResult
 {
     public bool $noChange = false;
     public int $leftGroup = 0;

@@ -1,17 +1,20 @@
 <?php
+namespace Models\KB;
+use \Common\DBHelper;
+use \Common\EditorJS\Document as EditorJSDocument;
 
 /**
  * Description of KBPageDataProviderDB
  *
  */
-class KBPageDataProviderDB implements IKBPageDataProvider
+class PageDataProviderDB implements IPageDataProvider
 {
     
     public function __construct(
             public string $pageTable, 
             public string $revisionTable){}
     
-    public function LoadPage(int $id) : KBPageInfo|null
+    public function LoadPage(int $id) : PageInfo|null
     {
         $fields = ["id,title,created,project_id,modified,creator_id,latest,html,text,ejsdoc"];
         $q = DBHelper::Select($this->pageTable,$fields,["id"=>$id]);
@@ -25,7 +28,7 @@ class KBPageDataProviderDB implements IKBPageDataProvider
         {
             $doc = new EditorJSDocument();
         }
-        $result = new KBPageInfo(
+        $result = new PageInfo(
                 id: $id,
                 title: $page['title'],
                 
@@ -39,7 +42,7 @@ class KBPageDataProviderDB implements IKBPageDataProvider
         return $result;
     }
     
-    public function SavePage(KBPageInfo $page)
+    public function SavePage(PageInfo $page)
     {
         DBHelper::Update($this->pageTable,
                 ['title'=>$page->title,
@@ -51,14 +54,14 @@ class KBPageDataProviderDB implements IKBPageDataProvider
                 ['id'=>$page->id]);
     }
 
-    public function SaveRevision(\KBPageInfo $page) : KBPageRevision
+    public function SaveRevision(PageInfo $page) : PageRevision
     {
         $time =time();
         $json = json_encode($page->ejsdoc);
         $d=[null,$page->id,$page->title,$json,$page->text,$page->html,$time,0];
         DBHelper::Insert($this->revisionTable,$d);
         $latest = DBHelper::GetLastId();
-        return new KBPageRevision(
+        return new PageRevision(
                 id: $latest,
                 title: $page->title,
                 json: $json,
@@ -84,7 +87,7 @@ class KBPageDataProviderDB implements IKBPageDataProvider
         return $result;
     }
 
-    public function LoadRevision(int $revisionId): KBPageRevision|null
+    public function LoadRevision(int $revisionId): PageRevision|null
     {
         $q = DBHelper::Select($this->revisionTable, ['id','content_json','content_plaintext','content_html','page_id','timestamp','userid', 'title'],['id'=>$revisionId]);
         $results = DBHelper::RunRow($q,[$revisionId]);
@@ -92,7 +95,7 @@ class KBPageDataProviderDB implements IKBPageDataProvider
         {
             return null;
         }
-        return new KBPageRevision(
+        return new PageRevision(
                 id: $results['id'],
                 title: $results['title'],
                 json: $results['content_json'],

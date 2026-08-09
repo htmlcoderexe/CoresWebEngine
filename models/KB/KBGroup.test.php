@@ -1,8 +1,9 @@
 <?php
 
-require_once "MiniTest.php";
+namespace Models\KB;
+//require_once "MiniTest.php";
 
-class KBGroupTestBacker implements IKBGroupBacker
+class GroupTestBacker implements IKBGroupBacker
 {
     public $groups;
     public function __construct($groups = [])

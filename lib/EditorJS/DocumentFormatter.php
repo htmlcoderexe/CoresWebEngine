@@ -1,6 +1,7 @@
 <?php
+namespace Common\EditorJS;
 
-class EditorJSDocumentFormatter
+class DocumentFormatter
 {
     public const TEMPLATES = [
         'paragraph'=>"<p>%s</p>\n",
@@ -50,13 +51,13 @@ class EditorJSDocumentFormatter
     
     public static function Paragraph($block)
     {
-        $text = (new EditorJSBlock($block))->get('text') ?? "";
+        $text = (new Block($block))->get('text') ?? "";
         return sprintf(self::TEMPLATES['paragraph'],$text);
     }
     
     public static function Header($block)
     {
-        $b=new EditorJSBlock($block);
+        $b=new Block($block);
         $text = $b->get('text') ?? "";
         $level = $b->get('level') ?? 2;
         return sprintf(self::TEMPLATES['header'],$text,$level);
@@ -64,7 +65,7 @@ class EditorJSDocumentFormatter
     
     public static function List($block)
     {
-        $b=new EditorJSBlock($block);
+        $b=new Block($block);
         $items = $b->get('items');
         $type = $b->get('style');
         $c = count($items);
@@ -83,7 +84,7 @@ class EditorJSDocumentFormatter
     
     public static function Image($block)
     {
-        $b=new EditorJSBlock($block);
+        $b=new Block($block);
         $src=$b->get('url');
         $caption = $b->get('caption');
         if($caption && $caption !="")
@@ -96,19 +97,19 @@ class EditorJSDocumentFormatter
     
     public static function Quote($block)
     {
-        $text = (new EditorJSBlock($block))->get('text') ?? "";
+        $text = (new Block($block))->get('text') ?? "";
         return sprintf(self::TEMPLATES['quote'],$text);
     }
     
     public static function Code($block)
     {
-        $text = (new EditorJSBlock($block))->get('code') ?? "";
+        $text = (new Block($block))->get('code') ?? "";
         return sprintf(self::TEMPLATES['code'],$text);
     }
     
     public static function Table($block)
     {
-        $b=new EditorJSBlock($block);
+        $b=new Block($block);
         $table = $b->get('content');
         $headings = $b->get('withHeadings');
         $c=count($table);
@@ -140,7 +141,7 @@ class EditorJSDocumentFormatter
     // the preprocessed version!!
     public static function ChapterNav($block)
     {
-        $b=new EditorJSBlock($block);
+        $b=new Block($block);
         $previd=$b->get('prev') ?? -1;
         $nextid=$b->get('next') ?? -1;
         $indexid=$b->get('index') ?? -1;

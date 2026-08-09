@@ -37,7 +37,7 @@ spl_autoload_register(function ($class) {
     }
     else
     {
-        throw new Exception("Unable to load [$class] from [$fullpath]");
+        //throw new Exception("Unable to load [$class] from [$fullpath]");
     }
 });
 

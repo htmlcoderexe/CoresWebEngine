@@ -1,10 +1,11 @@
 <?php
+namespace Models\KB;
 
 /**
  * Description of KBPageRevision
  *
  */
-class KBPageRevision
+class PageRevision
 {
     public int $id;
     public int $page_id;

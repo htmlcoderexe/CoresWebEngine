@@ -1,9 +1,9 @@
 <?php
 
 namespace Controllers;
-use \EngineCore as EngineCore;
+use \Cores\EngineCore as EngineCore;
 use \Route as Route;
-use \DBHelper as DBHelper;
+use \Common\DBHelper as DBHelper;
 
 use \Models\Documents\Document as Document;
 use \Models\File as File;

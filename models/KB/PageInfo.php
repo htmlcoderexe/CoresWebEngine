@@ -1,11 +1,12 @@
 <?php
+namespace Models\KB;
 
 
 /**
  * Description of KBPageInfo
  *
  */
-class KBPageInfo
+class PageInfo
 {
     public $id;
     public $title;

@@ -1,5 +1,6 @@
 <?php
-require_once "MiniTest.php";
+namespace Models\KB;
+//require_once "MiniTest.php";
 class KBPageDataProviderMock implements IKBPageDataProvider
 {
     

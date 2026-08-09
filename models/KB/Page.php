@@ -1,5 +1,7 @@
 <?php
 namespace Models\KB;
+use Common\EditorJS\Document as EditorJSDocument;
+use Common\DBHelper;
 class Page
 {
     
@@ -8,8 +10,8 @@ class Page
     
     
     public function __construct(
-            public IKBPageDataProvider $PageProvider,
-            public IKBGroupBacker $GroupProvider,
+            public IPageDataProvider $PageProvider,
+            public IGroupBacker $GroupProvider,
             public int $id, 
             public string $title, 
             public string $text,
@@ -21,14 +23,14 @@ class Page
             public int $modified = 0,
             public int $creator = 0){}
     
-    public static function Load(IKBPageDataProvider $provider, IKBGroupBacker $groupDb, int $id)
+    public static function Load(IPageDataProvider $provider, IGroupBacker $groupDb, int $id)
     {
         $data = $provider->LoadPage($id);
         if($data===null)
         {
             return null;
         }
-        $result = new KBPage(
+        $result = new Page(
                 PageProvider: $provider,
                 GroupProvider: $groupDb,
                 id: $id, 
@@ -43,9 +45,9 @@ class Page
         return $result;
     }
     
-    public function GetKBPageInfo() : KBPageInfo
+    public function GetPageInfo() : PageInfo
     {
-        return new KBPageInfo(
+        return new PageInfo(
                 title: $this->title,
                     project_id: $this->project_id,
                     ejsdoc: $this->ejsdoc,
@@ -57,16 +59,16 @@ class Page
     }
     public function Save()
     {
-        $page = $this->GetKBPageInfo();
+        $page = $this->GetPageInfo();
         $this->PageProvider->SavePage($page);
     }
     public function SaveNewRevision()
     {
-        $page = $this->GetKBPageInfo();
+        $page = $this->GetPageInfo();
         $newLatest = $this->PageProvider->SaveRevision($page);
         $this->latest_revision=$newLatest->id;
     }
-    public static function GetLastRevision(IKBPageDataProvider $provider, int $pageId) : KBPageRevision|null
+    public static function GetLastRevision(IPageDataProvider $provider, int $pageId) : PageRevision|null
     {
         $revId = $provider->GetLatestRevisionID($pageId);
         $rev = $provider->LoadRevision($revId);
@@ -123,7 +125,7 @@ class Page
     }
     
     
-    public static function MakeChapterNav($prev, $index, $next, IKBPageDataProvider $provider, IKBGroupBacker $groupDb, $full = false)
+    public static function MakeChapterNav($prev, $index, $next, IPageDataProvider $provider, IGroupBacker $groupDb, $full = false)
     {
         if(!$full)
         {
@@ -142,9 +144,9 @@ class Page
             'type'=>'chapternav',
             'data'=>[]
         ];
-        $ppage = KBPage::Load(provider: $provider, groupDb: $groupDb, id: $prev);
-        $npage = KBPage::Load(provider: $provider, groupDb: $groupDb, id: $next);
-        $ipage = KBPage::Load(provider: $provider, groupDb: $groupDb, id: $index);
+        $ppage = Page::Load(provider: $provider, groupDb: $groupDb, id: $prev);
+        $npage = Page::Load(provider: $provider, groupDb: $groupDb, id: $next);
+        $ipage = Page::Load(provider: $provider, groupDb: $groupDb, id: $index);
         if($ppage)
         {
             $processednav['data']['prev'] = $prev;
@@ -163,9 +165,9 @@ class Page
         return $processednav;
     }
     
-    public static function GenerateIndexBlock(IKBPageDataProvider $provider, IKBGroupBacker $groupDb, int $id)
+    public static function GenerateIndexBlock(IPageDataProvider $provider, IGroupBacker $groupDb, int $id)
     {
-        $cat=KBGroup::Load(id:$id, backer: $groupDb);
+        $cat=PageGroup::Load(id:$id, backer: $groupDb);
         $li ="<a href=\"/kb/view/%s\">%s</a>";
         if(!$cat)
         {
@@ -181,7 +183,7 @@ class Page
         $items = false;
         for($i=0;$i<count($cat->items);$i++)
         {
-            $page = KBPage::Load(provider: $provider, groupDb: $groupDb, id: $cat->items[$i]['id']);
+            $page = Page::Load(provider: $provider, groupDb: $groupDb, id: $cat->items[$i]['id']);
             if($page)
             {
                 $block['data']['items'][]=['content'=>sprintf($li,$page->id,$page->title)];
@@ -197,7 +199,7 @@ class Page
         
     }
     
-    public static function ProcessIndexBlock(IKBPageDataProvider $provider, IKBGroupBacker $groupDb,$doc,$id)
+    public static function ProcessIndexBlock(IPageDataProvider $provider, IGroupBacker $groupDb,$doc,$id)
     {
         $indexblock = self::GenerateIndexBlock($provider, $groupDb, $id);
         $newblocks = [];
@@ -224,7 +226,7 @@ class Page
         return EditorJSDocument::FromBlocks($newblocks);
     }
     
-    public static function ProcessChapterNav(IKBPageDataProvider $provider, IKBGroupBacker $groupDb,$doc)
+    public static function ProcessChapterNav(IPageDataProvider $provider, IGroupBacker $groupDb,$doc)
     {
         $chapternav = $doc->GetChapterNav();
         $prev = $chapternav['data']['prev'] ?? -1;
@@ -249,7 +251,7 @@ class Page
     public function ActionChapterNav($chapternav)
     {
         $db = $this->GroupProvider;
-        $cg = KBGroup::Find(backer: $db, id: $this->id);
+        $cg = PageGroup::Find(backer: $db, id: $this->id);
         $cn = 0;
         $cp = 0;
         $np = intval($chapternav['data']['prev']);
@@ -257,14 +259,14 @@ class Page
         $nn =intval($chapternav['data']['next']);
         if($cg>0)
         {
-            $currentGroup = KBGroup::Load(backer: $db, id: $cg);
+            $currentGroup = PageGroup::Load(backer: $db, id: $cg);
             $iOf = $currentGroup->IndexOf($this->id);
             $itemdata= $currentGroup->items[$iOf];
             $cp = $itemdata['prev'];
             $cn = $itemdata['next'];
         }
         
-        $newPos = KBGroup::ProcessMove(backer: $db,
+        $newPos = PageGroup::ProcessMove(backer: $db,
                 cg: $cg,
                 cn: $cn,
                 cp: $cp,
@@ -290,29 +292,29 @@ class Page
                 continue;
             }
             
-            $p = KBPage::Load(provider: $this->PageProvider, groupDb: $db, id: $item['id']);
-            $gid = KBGroup::Find(backer: $db, id: $item['id']);
+            $p = Page::Load(provider: $this->PageProvider, groupDb: $db, id: $item['id']);
+            $gid = PageGroup::Find(backer: $db, id: $item['id']);
             $p->UpdateChapterNav(group: $gid, prev: $item['prev'], next: $item['next']);
         }
         
         if($newPos->joinedGroup>0)
         {
             //redo index
-            $p = KBPage::Load(provider: $this->PageProvider, groupDb: $db, id: $newPos->joinedGroup);
+            $p = Page::Load(provider: $this->PageProvider, groupDb: $db, id: $newPos->joinedGroup);
             $p->RenderHTML();
             $p->Save();
         }
         if($newPos->leftGroup>0 && $newPos->leftGroup!=$newPos->joinedGroup)
         {
             // redo this one too   
-            $p = KBPage::Load(provider: $this->PageProvider, groupDb: $db, id: $newPos->leftGroup);
+            $p = Page::Load(provider: $this->PageProvider, groupDb: $db, id: $newPos->leftGroup);
             $p->RenderHTML();
             $p->Save();
         }
         return $updatednav;
         /*/
-        $updates = KBPageSequence::ProcessMove($this->id,$chapternav['data']['index'],$chapternav['data']['prev'],$chapternav['data']['next']);
-        $group = KBPageSequence::Load($updates[0]);
+        $updates = PageSequence::ProcessMove($this->id,$chapternav['data']['index'],$chapternav['data']['prev'],$chapternav['data']['next']);
+        $group = PageSequence::Load($updates[0]);
         if($group)
         {
             foreach($group->pages->items as $page)
@@ -324,11 +326,11 @@ class Page
                     $this->ejsdoc->SetChapterNav($updatednav);
                     continue;
                 }
-                $p = KBPage::Load($page['entityId']);
+                $p = Page::Load($page['entityId']);
                 $p->UpdateChapterNav($group->id, $page['prev'], $page['next']);
             }
             
-            $groupPage = KBPage::Load($chapternav['data']['index']);
+            $groupPage = Page::Load($chapternav['data']['index']);
             if($groupPage)
             {
                 Logger::log("updated group page");
@@ -347,7 +349,7 @@ class Page
             {
                 if($update['group']!=$gid)
                 {
-                    $groupPage = KBPage::Load($update['group']);
+                    $groupPage = Page::Load($update['group']);
                     if($groupPage)
                     {
                         Logger::log("updated group page");
@@ -363,7 +365,7 @@ class Page
                     continue;
                 }
 
-                $page = KBPage::Load($update['id']);
+                $page = Page::Load($update['id']);
                 if(!$page)
                 {
                     continue;
@@ -392,8 +394,8 @@ class Page
     public static function generateIndex($id)
     {
         $output="";
-        $db = new KBGroupDBBacker(tablename: 'kb_groups');
-        $cat=KBGroup::Load(backer: $db, id: $id);
+        $db = new PageGroupDBBacker(tablename: 'kb_groups');
+        $cat=PageGroup::Load(backer: $db, id: $id);
         $li ="\n\t<li><a href=\"/kb/view/%s\">%s</a></li>";
         $list_acc="";
         if($cat)
@@ -401,7 +403,7 @@ class Page
             
             for($i=0;$i<count($cat->items);$i++)
             {
-                $page = KBPage::Load($cat->items[$i]['id']);
+                $page = Page::Load($cat->items[$i]['id']);
                 if($page)
                 {
                     $list_acc.=sprintf($li,$page->id,$page->title);

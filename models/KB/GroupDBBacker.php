@@ -1,6 +1,8 @@
 <?php
+namespace Models\KB;
+use Common\DBHelper;
 
-class KBGroupDBBacker implements IKBGroupBacker
+class GroupDBBacker implements IGroupBacker
 {
     public $table;
     public function __construct($tablename)

@@ -1,7 +1,7 @@
 <?php
+namespace Common\EditorJS;
 
-
-class EditorJSBlock
+class Block
 {
     private $block;
     public function __construct($block)
