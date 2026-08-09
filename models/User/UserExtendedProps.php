@@ -1,5 +1,6 @@
 <?php
 namespace Models\User;
+use Common\DBHelper;
 class UserExtendedProps
 {
         /*

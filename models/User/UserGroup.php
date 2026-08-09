@@ -1,5 +1,7 @@
 <?php
 namespace Models\User;
+use Common\DBHelper;
+use Cores\EngineCore;
 /**
  * Represents a group of users
  *
