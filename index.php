@@ -140,7 +140,9 @@ switch($mime)
     }
     case "application/json":
     {
-        
+        if(isset($result['error']))
+        {
+    
             if($result['message']=='')
             {
                 $result['message'] = Common\HTTPHeaders::Statuses[$result['error']]??'Uknown error';
@@ -149,6 +151,7 @@ switch($mime)
             {
                 $result['title'] = Common\HTTPHeaders::Statuses[$result['error']]??'Uknown error';
             }
+        }
         EngineCore::EmitJSON($result);
         break;
     }
