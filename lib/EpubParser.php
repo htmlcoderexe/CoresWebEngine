@@ -1,5 +1,5 @@
 <?php
-
+namespace Common;
 
 /**
  * Provides functionality to extract data from EPUB files.

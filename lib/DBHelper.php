@@ -1,5 +1,5 @@
 <?php
-
+namespace Common;
 //if(!isset($_GET['showerror']))
 error_reporting(0);
 
@@ -9,6 +9,10 @@ error_reporting(E_ALL);
 //mysql_connect(DB_SERVER,DB_USER,DB_PASS);
 //mysql_select_db(MAIN_DATABASE);
 define("DB_VERIFICATION_TABLE","verified_tables");
+
+use \PDO as PDO;
+use PDOStatement as PDOStatement;
+use Cores\EngineCore as EngineCore;
 
 class DBHelper
 {
@@ -499,4 +503,4 @@ class DBHelper
     
 }
 
-DBHelper::$DBLink = new PDO('mysql:host=' . DB_SERVER . ';dbname=' . MAIN_DATABASE, DB_USER, DB_PASS);
+DBHelper::$DBLink = new \PDO('mysql:host=' . DB_SERVER . ';dbname=' . MAIN_DATABASE, DB_USER, DB_PASS);

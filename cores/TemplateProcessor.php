@@ -1,4 +1,6 @@
 <?php
+namespace Cores;
+
 require_once("TemplateProcessor.functions.php");
 class TemplateProcessor
 {

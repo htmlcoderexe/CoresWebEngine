@@ -1,4 +1,5 @@
 <?php
+namespace Models\User;
 /**
  * Represents a group of users
  *

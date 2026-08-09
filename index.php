@@ -5,37 +5,13 @@
 // consult the file "config.example.php" for what is needed
 require_once "config.php"; 
 
-$time = microtime();
-$time = explode(' ', $time);
-$time = $time[1] + $time[0];
-$start = $time;
-global $_DEBUG;
-$_DEBUG=true;
-require_once CLASS_DIR."EngineCore.php";
-//EngineCore::$DEBUG = true;
-ini_set("display_errors", "1");
-error_reporting(E_ALL & ~E_NOTICE);
-setlocale(LC_CTYPE, "en_US.UTF-8");
-
-global $_PAGE_CONTENT;
-global $_PAGE_SIDEBAR;
-global $_PAGE_TITLE;
-global $_DEBUG_INFO;
-global $_PAGE_STYLESHEETS;
-global $_PAGE_SCRIPTS;
-
-require_once CLASS_DIR."DBHelper.php";
-require_once CLASS_DIR."TemplateProcessor.php";
-require_once CLASS_DIR."User/UserExtendedProps.php";
-require_once CLASS_DIR."EVA.php";
-
-
-
 spl_autoload_register(function ($class) {
     
     $mapping = [
         'Models'=>'models',
-        'ViewModels'=>'viewmodels'
+        'ViewModels'=>'viewmodels',
+        'Common'=>'lib',
+        'Cores'=>'cores'
     ];
     if(file_exists(CLASS_DIR. $class . '.php'))
     {
@@ -64,15 +40,50 @@ spl_autoload_register(function ($class) {
         throw new Exception("Unable to load [$class] from [$fullpath]");
     }
 });
+
+
+use Models\User\User as User;
+use Cores\EngineCore as EngineCore;
+use Cores\Router as Router;
+use Cores\TemplateProcessor as TemplateProcessor;
+
+$time = microtime();
+$time = explode(' ', $time);
+$time = $time[1] + $time[0];
+$start = $time;
+global $_DEBUG;
+$_DEBUG=true;
+//EngineCore::$DEBUG = true;
+ini_set("display_errors", "1");
+error_reporting(E_ALL & ~E_NOTICE);
+setlocale(LC_CTYPE, "en_US.UTF-8");
+
+global $_PAGE_CONTENT;
+global $_PAGE_SIDEBAR;
+global $_PAGE_TITLE;
+global $_DEBUG_INFO;
+global $_PAGE_STYLESHEETS;
+global $_PAGE_SCRIPTS;
+
+require_once "cores/TemplateProcessor.php";
+require_once "cores/Router.php";
+require_once "cores/EngineCore.php";
+require_once "lib/DBHelper.php";
+require_once "lib/EVA.php";
+require_once "models/User/UserExtendedProps.php";
+
+
+
+
+
 header("Content-Security-Policy:  frame-ancestors 'self' ".BASE_URI);
 ini_set("session.cache_limiter","");
 ini_set('xdebug.var_display_max_depth', 10);
 ini_set('xdebug.var_display_max_children', 256);
 ini_set('xdebug.var_display_max_data', 1024);
 session_start();
-EngineCore::$CurrentUser=\User::GetCurrentUser();
+EngineCore::$CurrentUser=User::GetCurrentUser();
 $_PAGE_SIDEBAR=Array();
-require_once CLASS_DIR."Router.php";
 
 #[\Attribute]
 class Route
@@ -112,13 +123,13 @@ if(!$result)
 }
 
 $viewname = $result['entity_type'];
-$accepts = \HTTPHeaders::GetAccepts($_SERVER['HTTP_ACCEPT']);
+$accepts = Common\HTTPHeaders::GetAccepts($_SERVER['HTTP_ACCEPT']);
 $mime = $accepts[0]['mime'];
 switch($mime)
 {
     case "text/html":
     {
-        $tpl = new TemplateProcessor($viewname,false,'views/');
+        $tpl = new Cores\TemplateProcessor($viewname,false,'views/');
         $tpl->tokens = $result;
         EngineCore::SetPageContent($tpl->process(true));
         break;

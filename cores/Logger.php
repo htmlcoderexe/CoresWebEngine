@@ -1,4 +1,5 @@
 <?php
+namespace Cores;
 class Logger
 {
     public const TYPE_ERROR = 1;

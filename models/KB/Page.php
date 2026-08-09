@@ -1,5 +1,6 @@
 <?php
-class KBPage
+namespace Models\KB;
+class Page
 {
     
     

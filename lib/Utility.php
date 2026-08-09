@@ -1,5 +1,5 @@
 <?php
-
+namespace Common;
 class Utility
 {
     const RANDOM_CHR_UPPER =0;

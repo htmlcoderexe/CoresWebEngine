@@ -1,5 +1,7 @@
 <?php
 
+use Models\User\User as User;
+use Models\User\UserExtendedProps as UserExtendedProps;
 global $lipsum;
 $lipsum = <<<LIPSUM
 

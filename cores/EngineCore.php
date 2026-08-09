@@ -1,5 +1,7 @@
 <?php
 
+namespace Cores;
+
 /**
  * Main class to service all page-related needs
  *

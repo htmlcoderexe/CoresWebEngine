@@ -1,4 +1,5 @@
 <?php
+namespace Cores;
 class Module
 {
     public $name;

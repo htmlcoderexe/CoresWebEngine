@@ -1,4 +1,5 @@
 <?php
+namespace Common;
 class EVA
 {
 	public $id;

@@ -1,5 +1,5 @@
 <?php
-
+namespace Common;
 
 /**
  * Description of HTTPHeaders
