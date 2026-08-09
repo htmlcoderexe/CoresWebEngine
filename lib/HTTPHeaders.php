@@ -14,6 +14,7 @@ class HTTPHeaders
         
         304 => "Not Modified",
         
+        403 => "Unauthorized",
         404 => "Not Found",
         416 => "Requested Range Not Satisfiable"
     ];
