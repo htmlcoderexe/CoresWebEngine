@@ -126,4 +126,24 @@ class KBPageController
         EngineCore::GTFO("/kb/view/".$id);
         die;
     }
+    
+    #[Route('kb/create','kb.create')]
+    public static function CreatePage()
+    {
+        $def = ['title'=>'Untitled Page'];
+        $sub = EngineCore::GetSubmission($def);
+	if(!$sub)
+	{
+            return [
+                'entity_type'=>'kb/create'
+            ];
+        }
+	else
+	{
+            $id=\Models\KB\Manager::CreatePage($sub['title']);
+
+            EngineCore::GTFO("/kb/edit/".$id);
+            die;
+	}
+    }
 }

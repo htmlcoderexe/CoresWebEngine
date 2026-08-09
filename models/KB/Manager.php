@@ -1,5 +1,8 @@
 <?php
-class KB
+namespace Models\KB;
+use Common\DBHelper;
+
+class Manager
 {
     
     public const JOB_TYPE_PAGEUPDATE = 0;
@@ -15,7 +18,7 @@ class KB
     {
         if($projId==-1)
         {
-            $projId=KB::CurrentProjectID();
+            $projId=self::CurrentProjectID();
         }
         DBHelper::$DBLink->beginTransaction();
         DBHelper::Insert('kb_pages',Array(null,$title,time(),$projId,time(),1,0,'','',''));
@@ -33,7 +36,7 @@ class KB
                     $buffer.= $project['name']."<br />";
             }
             $ss=new StringSet(1,1,1);
-            $page=new KBPage(1);
+            $page=new Page(1);
             return $page->text;
     //	return $buffer;
             //return "<pre>start job: <1B>3<0F1B>p<00C8FA>\r\nend job<1B>e<101B>i</pre>";
@@ -68,7 +71,7 @@ class KB
     }
     public static function EnqeuePageUpdate($pageid)
     {
-            KB::ScheduleJob(self::JOB_TYPE_PAGEUPDATE,$pageid,self::JOB_ARGUMENT_NONE,self::JOB_PRIORITY_NORMAL);
+            self::ScheduleJob(self::JOB_TYPE_PAGEUPDATE,$pageid,self::JOB_ARGUMENT_NONE,self::JOB_PRIORITY_NORMAL);
     }
 }
 
