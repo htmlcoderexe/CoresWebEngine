@@ -1,6 +1,9 @@
 <?php
-
 namespace Controllers;
+use Common\HTTPHeaders;
+use Cores\Logger;
+use Models\File;
+
 
 class FileServer
 {
@@ -17,18 +20,18 @@ class FileServer
                 // bad range
                 Logger::log("Bad range: ".$_SERVER['HTTP_RANGE']);
                 HTTPHeaders::Status(416);
-                \File::ServeByBlobID($id);
+                File::ServeByBlobID($id);
             }
             else
             {
                 Logger::log("Good range: ".$_SERVER['HTTP_RANGE']);
                 list($start,$end)=$parsed_range;
-                \File::ServeByBlobID($id,$start,$end);
+                File::ServeByBlobID($id,$start,$end);
             }
         }
         else
         {
-            \File::ServeByBlobID($id);
+            File::ServeByBlobID($id);
         }
     }
 }

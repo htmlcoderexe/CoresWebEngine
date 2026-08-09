@@ -1,9 +1,9 @@
 <?php
 namespace Models;
-use \DBHelper as DBHelper;
-use \HTTPHeaders as HTTPHeaders;
-use \Logger as Logger;
-use \Utility as Utility;
+use Common\DBHelper as DBHelper;
+use Common\HTTPHeaders as HTTPHeaders;
+use Cores\Logger as Logger;
+use Common\Utility as Utility;
 
 class File
 {

@@ -1,5 +1,6 @@
 <?php
 namespace Cores;
+use Common\DBHelper;
 class Logger
 {
     public const TYPE_ERROR = 1;
