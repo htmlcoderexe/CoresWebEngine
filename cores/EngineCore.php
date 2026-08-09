@@ -383,6 +383,7 @@ class EngineCore
             HTTPHeaders::Location($url);
         }
         echo "<a href=\"$url\">Go to $url</a>";
+        die;
     }
     
     static function Error(int $code, string $message = '', string $title = '')
