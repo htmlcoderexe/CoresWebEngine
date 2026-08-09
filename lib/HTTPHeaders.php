@@ -10,11 +10,14 @@ class HTTPHeaders
 {
     const Statuses = [
         200 => "OK",
+        201 => "Created",
         206 => "Partial Content",
         
         304 => "Not Modified",
         
-        403 => "Unauthorized",
+        400 => "Bad Request",
+        401 => "Unauthorized",
+        403 => "Forbidden",
         404 => "Not Found",
         416 => "Requested Range Not Satisfiable",
         
