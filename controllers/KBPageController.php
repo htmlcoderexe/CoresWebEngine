@@ -29,18 +29,16 @@ class KBPageController
             $entity = ['entity_type'=>'errors/404', 'message'=>'This KB page does not exist.'];
             return $entity;
         }
+        $entity = get_object_vars($page);
+        $entity['entity_type']="kb/page";
         $cu=User::GetCurrentUser();
 	if($cu->HasPermission('super'))
 	{
-		//EngineCore::AddPageContent((new TemplateProcessor("pagebar,id=$id"))->process(true));
+            $entity['editlinks'] = 'true';
 	}
-	// $pagedata=KB_Page::GetLastRevision($id)['content_html'];
-        $entity = (array)$page;
-        $entity['entity_type']="kb/page";
         $tags = \Models\Tags\Tag::GetTags($page->id,"kbpage");
         $entity['tags'] = $tags;
         EngineCore::SetPageTitle($page->title);
         return $entity;
-	//EngineCore::AddPageContent($t->process(true));
     }
 }
