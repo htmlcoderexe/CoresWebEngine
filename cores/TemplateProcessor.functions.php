@@ -2,6 +2,7 @@
 
 use Models\User\User as User;
 use Models\User\UserExtendedProps as UserExtendedProps;
+use Cores\EngineCore;
 global $lipsum;
 $lipsum = <<<LIPSUM
 
@@ -181,4 +182,9 @@ function TemplateProcessorBuiltin_urlencode($text)
 function TemplateProcessorBuiltin_errors($channel="")
 {
     return EngineCore::GetUserErrors($channel);
+}
+// TODO: actual CSRF
+function TemplateProcessorBuiltin_CSRF()
+{
+    return '<input type="hidden" name="submission_check" value="yes" />';
 }
