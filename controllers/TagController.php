@@ -29,4 +29,31 @@ class TagController
         $results = Tag::Find($evatype, $tag);
         EngineCore::EmitJSON($results);
     }
+    #[Route('tag/add')]
+    public static function AddTag($type='', $id=0)
+    {
+        $id = intval($id);
+        $def = ['tag'=>''];
+        $sub = EngineCore::GetSubmission($def);
+        if(!$sub||$sub['tag']==''||$type==''||$id==0)
+        {
+            return EngineCore::Error(400);
+        }
+        if(!EngineCore::CheckPermission("tag.super"))
+        {
+
+            return EngineCore::Error(401);
+        }
+        if(Tag::Attach($id,$sub['tag'],$type))
+        {
+            return EngineCore::Error(201);
+        }
+        return EngineCore::Error(304);
+    }
+    #[Route('tag/get')]
+    public static function GetTag($id=0)
+    {       
+        $results = Tag::GetTags($id);
+        EngineCore::EmitJSON($results);
+    }
 }

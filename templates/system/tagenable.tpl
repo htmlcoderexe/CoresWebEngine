@@ -38,38 +38,10 @@ function attachTag(id, button)
         if(ajax.readyState===4)
         {
             button.disabled = false;
-            if(ajax.status === 200)
+            if(ajax.status === 201)
             {
-                try
-                {
-                    var result = JSON.parse(ajax.responseText);
-                    var responseCode = result.responseCode;
-                    switch(responseCode)
-                    {
-                        case "OK":
-                        {
-                            source.value="";
-                            loadTag(tag);
-                            break;
-                        }
-                        case "Denied":
-                        {
-                            break;
-                        }
-                        case "NotFound":
-                        {
-                            break;
-                        }
-                        default:
-                        {
-                            break;
-                        }
-                    }
-                }
-                catch(error)
-                {
-                   
-                }
+                source.value="";
+                loadTag(tag);
                 
             }
             else
@@ -81,7 +53,7 @@ function attachTag(id, button)
     ajax.open("POST",tagendpoint,true);
     ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
     ajax.setRequestHeader("Accept", "application/json");
-    ajax.send("tag="+encodeURIComponent(tag));
+    ajax.send("tag="+encodeURIComponent(tag)+"&{#CSRF_FIELD#}={#CSRF_TOKEN#}");
 }
 </script>
     {{system/showtags|boxid={%boxid%}|tags={%tags%}|linkprefix={%linkprefix%}}}
