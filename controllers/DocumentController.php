@@ -144,7 +144,7 @@ class DocumentController
         $entity = [];
         $entity['docs']=$docs;
         
-        $entity['entity_type'] = 'docs/doclistview';
+        $entity['entity_type'] = 'docs/doclist';
         $entity['tags']=[$tag];
         return $entity;
     }
