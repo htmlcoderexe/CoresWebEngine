@@ -118,7 +118,7 @@ class ChapterNavEditable {
 {{system/tagenable|id={%id%}|type=kbpage|linkprefix=/kb/tag/|boxid=tags_container_kb|tags={%tags%}}}
 <form enctype="multipart/form-data" action="/kb/save" method="POST" id="kbform">
     <input name="title" id="title" size="50" value="{%title|%}" />
-    <input name="submission_check" value="true" type="hidden" />
+    {#CSRF#}
 <!--<textarea name="text" id ="text" cols="56" rows="20">{%pagetext|%}</textarea>-->
     <input name="text" id="text" type="hidden" />
     <div id="editorjs"></div>

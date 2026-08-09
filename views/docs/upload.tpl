@@ -1,4 +1,5 @@
-<form action="/docs/new" method="post" enctype="multipart/form-data">
+<form action="/docs/new" method="post" enctype="multipart/form-data">    
+    {#CSRF#}<br />
     <label for="title">Document title: </label><br />
     <input id="title" name="title" /><br />
     <label for="description">Description:</label> <br />
@@ -22,7 +23,7 @@
     </select>
     
     
-    <input name="submission_check" type="hidden" value="yes" /><br />
+    
     <input name="fileup" type="file" />
     <button type="submit">Create</button>
 </form>
