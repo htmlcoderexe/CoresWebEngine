@@ -31,7 +31,7 @@ function attachTag(id, button)
         return;
     }
     var tag = source.value;
-    var tagendpoint ="/main/tag/add/{%type%}/{%id%}";
+    var tagendpoint ="/tag/add/{%type%}/{%id%}";
     let ajax = new XMLHttpRequest();
     ajax.onreadystatechange=function()
     {
@@ -80,6 +80,7 @@ function attachTag(id, button)
     };
     ajax.open("POST",tagendpoint,true);
     ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    ajax.setRequestHeader("Accept", "application/json");
     ajax.send("tag="+encodeURIComponent(tag));
 }
 </script>
@@ -87,5 +88,5 @@ function attachTag(id, button)
 
 
 <div class="suggestable_input_container">
-    <input data-suggestionsource="/main/tag/suggest/" data-evaobject="{%id%}" oninput="doSuggest(this);" onkeydown="doKeyboardNav(event);" onblur="" id="tag_input" name="tag_input" size=20 /><button type="button" onclick="attachTag('tag_input',this);">Add tag</button>
+    <input data-suggestionsource="/tag/suggest/" data-evaobject="{%id%}" oninput="doSuggest(this);" onkeydown="doKeyboardNav(event);" onblur="" id="tag_input" name="tag_input" size=20 /><button type="button" onclick="attachTag('tag_input',this);">Add tag</button>
 </div>
