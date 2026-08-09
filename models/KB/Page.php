@@ -10,8 +10,8 @@ class Page
     
     
     public function __construct(
-            public IPageDataProvider $PageProvider,
-            public IGroupBacker $GroupProvider,
+            private IPageDataProvider $PageProvider,
+            private IGroupBacker $GroupProvider,
             public int $id, 
             public string $title, 
             public string $text,
