@@ -13,6 +13,7 @@ use \Models\User\User;
 use \Models\KB\Page;
 use \Models\KB\PageDataProviderDB;
 use \Models\KB\GroupDBBacker;
+use Models\KB\Manager;
 
 use \Models\Tags\Tag;
 
@@ -24,6 +25,20 @@ use \Models\Pictures\Picture;
  */
 class KBPageController
 {
+    #[Route('kb/default')]
+    public static function Index()
+    {
+        $pid=Manager::CurrentProjectID();
+        $pages = Manager::ListPages($pid);
+        $entity = ['entity_type'=>'kb/index',
+            'pages'=>$pages,
+            'prev'=>$pid-1,
+            'cur'=>$pid,
+            'next'=>$pid+1
+            ];
+        return $entity;
+    }
+    
     #[Route('kb/view')]
     public static function ViewPage($id = 0)
     {
@@ -163,5 +178,12 @@ class KBPageController
         $entity['entity_type'] = 'kb/pagelist';
         $entity['tags']=[$tag];
         return $entity;
+    }
+    #[Route('kb/project')]
+    public static function SetProject($id = 0)
+    {
+        $projID = intval($id);
+        Manager::SwitchProject($projID);
+        EngineCore::GTFO("/kb");
     }
 }
