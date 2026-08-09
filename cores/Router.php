@@ -13,8 +13,17 @@ class Router
         //  to "(example.net)/index.php?route=path/to/something"
         // "route" gets populated with the path component
         $query=EngineCore::GET("route");
+        
         //split route into individual segments
-        $pieces=$query==''?[]:explode("/",$query);
+        $pieces_pre=$query==''?[]:explode("/",$query);
+        $pieces = [];
+        foreach($pieces_pre as $piece)
+        {
+            if($piece!="")
+            {
+                $pieces[]=$piece;
+            }
+        }
         if(count($pieces)<1)
         {
             $pieces[]=self::DEFAULT_ROUTE;
