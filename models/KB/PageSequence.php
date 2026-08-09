@@ -1,5 +1,7 @@
 <?php
 namespace Models\KB;
+use Common\DBHelper;
+use \OrderedDBCollection;
 
 class PageSequence
 {
