@@ -15,6 +15,7 @@ function PingPongTheDingDong(element)
 	indicator.src="/images-site/loading.gif";
 	ajax.open("POST","/userpanel/property",true);
 	ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+	ajax.setRequestHeader("Accept", "application/json");
 	ajax.send("property="+encodeURIComponent(element.name)+"&value="+encodeURIComponent(element.value));
 	
 	//alert(""); 
@@ -103,6 +104,7 @@ function DoPostUpdate()
     };
     ajax.open("POST",TargetEndpoint,true);
     ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+	ajax.setRequestHeader("Accept", "application/json");
     ajax.send("property="+encodeURIComponent(TargetProperty)+"&value="+encodeURIComponent(value));
 }
 
@@ -241,6 +243,7 @@ function doSuggest(target)
         }
     };
     ajax.open("GET",suggestURL+encodeURIComponent(target.value),true);
+	ajax.setRequestHeader("Accept", "application/json");
     ajax.send(null);
 }
 
