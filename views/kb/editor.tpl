@@ -115,13 +115,14 @@ class ChapterNavEditable {
         e.preventDefault();
     }
 </script>
-{{system/tagenable|id={%pageid%}|type=kbpage|linkprefix=/kb/tag/|boxid=tags_container_kb|tags={%tags%}}}
+{{system/tagenable|id={%id%}|type=kbpage|linkprefix=/kb/tag/|boxid=tags_container_kb|tags={%tags%}}}
 <form enctype="multipart/form-data" action="/kb/save" method="POST" id="kbform">
     <input name="title" id="title" size="50" value="{%title|%}" />
+    <input name="submission_check" value="true" type="hidden" />
 <!--<textarea name="text" id ="text" cols="56" rows="20">{%pagetext|%}</textarea>-->
     <input name="text" id="text" type="hidden" />
     <div id="editorjs"></div>
-<input name="pageid" type="hidden" value="{%pageid|-1%}" /><!-- onclick="doExtImages(this.parentElement.querySelector('#text'));event.preventDefault();"-->
+<input name="pageid" type="hidden" value="{%id|-1%}" /><!-- onclick="doExtImages(this.parentElement.querySelector('#text'));event.preventDefault();"-->
 <button id="savebutton">Save page</button>
 </form> 
 <script src="/js/peeler.js"></script>
