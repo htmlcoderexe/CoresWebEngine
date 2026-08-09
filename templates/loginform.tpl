@@ -1,4 +1,4 @@
-	<form action="{%action|/auth/login%}" method="POST">
+	<form action="{%action|/login%}" method="POST">
 <table>
 {#ifset|loginprompt|<tr><th colspan="2">{%loginprompt|%}(<a class="smalllink" href="/auth/signup">Sign up</a>)</th></tr>|#}{#ifset|aerr|<tr><th colspan="2">{%aerr|%}</th></tr>||#}
 <tr><td>{%usernamelabel|Username:%}</td><td><input size="12" type="text" name="username" value="{%username|%}"/></td></tr>
