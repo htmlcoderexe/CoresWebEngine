@@ -1,6 +1,7 @@
 <?php
-
 namespace Cores;
+
+use Common\HTTPHeaders;
 
 /**
  * Main class to service all page-related needs
