@@ -6,14 +6,16 @@ use \Route;
 use \Cores\EngineCore;
 
 use \Common\DBHelper;
-use Common\EditorJS\Document as EditorJSDocument;
+use \Common\EditorJS\Document as EditorJSDocument;
+use \Common\HTTPHeaders;
 
 use \Models\User\User;
 
 use \Models\KB\Page;
+use \Models\KB\PageSequence;   
 use \Models\KB\PageDataProviderDB;
 use \Models\KB\GroupDBBacker;
-use Models\KB\Manager;
+use \Models\KB\Manager;
 
 use \Models\Tags\Tag;
 
@@ -185,5 +187,47 @@ class KBPageController
         $projID = intval($id);
         Manager::SwitchProject($projID);
         EngineCore::GTFO("/kb");
+    }
+    #[Route('kb/info')]
+    public static function PageInfo($id = '')
+    {
+        $id = intval($id);
+        $provider = new PageDataProviderDB(pageTable: 'kb_pages', revisionTable: 'kb_page_revisions');
+        $gdb = new GroupDBBacker(tablename: 'kb_groups');
+        $page = Page::Load(provider: $provider, groupDb: $gdb, id: $id);
+        $data = null;
+        if($page)
+        {
+           $data = [
+               'title'=>$page->title,
+               'id'=>$page->id,
+               'excerpt'=>substr($page->text,0,150),
+               'isIndex'=>false
+           ];
+           if(PageSequence::Exists($page->id))
+           {
+               $data['isIndex'] = true;
+           }
+           HTTPHeaders::Status(200);
+           EngineCore::EmitJSON($data);
+
+        }
+        HTTPHeaders::Status(404);
+        EngineCore::EmitJSON($data);
+    }
+    
+    #[Route('kb/suggest')]
+    public static function SearchPageTitle($prefix = '')
+    {
+        $data = [];
+        if($prefix != "")
+        {
+
+            $query_params = ["%" . $prefix . "%"];
+            $q = "SELECT title,id FROM kb_pages WHERE title LIKE ?";
+            $data = DBHelper::RunTable($q,$query_params);
+        }
+        HTTPHeaders::Status(200);
+        EngineCore::EmitJSON($data);
     }
 }
