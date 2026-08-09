@@ -119,12 +119,16 @@ $time = microtime();
 $result = Router::Dispatch();
 if(!$result)
 {
-    die("404");
+    $result = EngineCore::Error(404);
 }
 
 $viewname = $result['entity_type'];
 $accepts = Common\HTTPHeaders::GetAccepts($_SERVER['HTTP_ACCEPT']);
 $mime = $accepts[0]['mime'];
+if(isset($result['error']))
+{
+    Common\HTTPHeaders::Status($result['error']);
+}
 switch($mime)
 {
     case "text/html":
@@ -136,6 +140,15 @@ switch($mime)
     }
     case "application/json":
     {
+        
+            if($result['message']=='')
+            {
+                $result['message'] = Common\HTTPHeaders::Statuses[$result['error']]??'Uknown error';
+            }
+            if($result['title']=='')
+            {
+                $result['title'] = Common\HTTPHeaders::Statuses[$result['error']]??'Uknown error';
+            }
         EngineCore::EmitJSON($result);
         break;
     }
