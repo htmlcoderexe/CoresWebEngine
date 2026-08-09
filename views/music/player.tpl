@@ -431,7 +431,7 @@
             }
             fake_console(this.currentIndex);
             this._title_animation_counter = 0;
-            this._audio.src = "/files/stream/" + song.file + "/" + song.file + ".mp3";
+            this._audio.src = "/files/stream/" + song.blobid + "/" + song.blobid + ".mp3";
             this._audio.load();
             this._audio.fastSeek(0);
             if(forcePlay || this.playing)
@@ -477,12 +477,21 @@
         
         loadLibrary()
         {
-            fetch(this.libraryUrl)
+            fetch(this.libraryUrl,
+{
+    method: "POST",
+    mode: "cors", // <-- Change this
+    headers: {
+        "Accept":"application/json", 
+        "Content-Type":"application/json"
+    },
+    body: "{}"
+})
                 .then((response)=>{
                 if(response.ok)
                 {
                     response.json().then((data)=>{
-                        this.library = data;
+                        this.library = data.tracks;
                         var i =0;
                         for(i=0;i<this.library.length;i++)
                         {

@@ -1,5 +1,7 @@
 <?php
-
+namespace Models;
+use Common\DBHelper;
+use Cores\EngineCore;
 /**
  * Description of MusicTrack
  *
