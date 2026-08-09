@@ -3,6 +3,7 @@ namespace Cores;
 
 use Common\HTTPHeaders;
 use Common\DBHelper;
+use Models\User\User;
 
 /**
  * Main class to service all page-related needs
