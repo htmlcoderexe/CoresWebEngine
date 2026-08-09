@@ -1,14 +1,11 @@
 <?php
 namespace Controllers;
 
-use \Chip;
-use \Route;
-
-use Cores\EngineCore;
-
+use Chip;
 use Common\HTTPHeaders;
-
+use Cores\EngineCore;
 use Models\User\User;
+use Route;
 
 
 /**
