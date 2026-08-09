@@ -3,6 +3,7 @@ namespace Controllers;
 
 use \Route;
 use Models\MusicTrack;
+use Models\File;
 use Cores\EngineCore;
 
 /**
@@ -82,6 +83,6 @@ class MusicLibrary
         }
         $f = File::Upload($farr);
         $mp3 = MusicTrack::CreateFromFile($f->blobid);
-        EngineCore::GTFO("/music/play/" . $mp3->id);
+        EngineCore::GTFO("/music/track/" . $mp3->id);
     }
 }

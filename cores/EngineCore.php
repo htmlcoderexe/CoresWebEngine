@@ -332,7 +332,7 @@ class EngineCore
     
     public static function GetSubmission($fields)
     {
-        $sub = [];
+        $sub = ['status'=>'OK'];
         if(!self::VerifyPOST())
         {
             return null;

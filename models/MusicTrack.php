@@ -86,7 +86,7 @@ class MusicTrack
         return $list;
     }
     
-    public static function Create(string $title, string $blobid, int $duration, string $artist = "", string $album = "", int $owner = EVA::OWNER_NOBODY)
+    public static function Create(string $title, string $blobid, int $duration, string $artist = "", string $album = "", int $owner = 0)
     {
         $now = time();
         $row = [null, $title, $blobid, $duration, $artist, $album, $now, $owner, 0];
