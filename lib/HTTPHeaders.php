@@ -16,7 +16,9 @@ class HTTPHeaders
         
         403 => "Unauthorized",
         404 => "Not Found",
-        416 => "Requested Range Not Satisfiable"
+        416 => "Requested Range Not Satisfiable",
+        
+        500 => "Server Error"
     ];
     public static function Status($code)
     {
