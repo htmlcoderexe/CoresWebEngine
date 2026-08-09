@@ -88,7 +88,7 @@ $_PAGE_SIDEBAR=Array();
 #[\Attribute]
 class Route
 {
-    public function __construct(public string $path){}
+    public function __construct(public string $path, public string $perms = ''){}
 }
 #[\Attribute]
 class View
@@ -109,7 +109,7 @@ foreach(glob("controllers/*.php") as $filename)
         foreach($routes as $route)
         {
             $r = $route->newInstance();
-            Router::AddRoute($r->path, $func->getClosure());
+            Router::AddRoute($r->path, $func->getClosure(), $r->perms);
         }
     }
 }

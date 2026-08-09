@@ -4,6 +4,7 @@ namespace Cores;
 class Router
 {
     public static $RouteMap = [];
+    public static $RoutePermissions = [];
     public const DEFAULT_ROUTE = "main";
     public const DEFAULT_ACTION = "default";
     public static function Dispatch()
@@ -24,15 +25,21 @@ class Router
             $pieces[]=self::DEFAULT_ACTION;
         }
         $mapzoom = &self::$RouteMap;
+        $route_pieces = [];
         while(count($pieces)>0)
         {
             $p = array_shift($pieces);
+            $route_pieces[]=$p;
             if(isset($mapzoom[$p]))
             {
                 if(is_callable($mapzoom[$p]))
                 {
-                   
-                   return $mapzoom[$p](...$pieces);
+                    $route = implode(separator: "/", array:  $route_pieces);
+                    if(!EngineCore::$CurrentUser->HasPermission(self::$RoutePermissions[$route]))
+                    {
+                        return EngineCore::Error(403);
+                    }
+                    return $mapzoom[$p](...$pieces);
                 }
                 else
                 {
@@ -44,27 +51,9 @@ class Router
             //404
             return false;
         }
-        
-        //first segment should be module name, shift it off
-        $modulename=count($pieces)>0?array_shift($pieces):"main"; //munch, munch
-        //second segment is action, shift it off
-        $action=count($pieces)>0?array_shift($pieces):"default"; //om nom nom
-        //default route
-        if($modulename == "")
-        {
-            $modulename = Router::DEFAULT_ROUTE;
-        }
-        // default action
-        if($action == "")
-        {
-            $action = Router::DEFAULT_ACTION;
-        }
-        $module=new Module($modulename);
-        //hand the rest of segments as arguments to module's action. This can be empty
-        $module->PerformAction($action,$pieces); //CHOMP!!
     }
     
-    public static function AddRoute(string $route, callable $func)
+    public static function AddRoute(string $route, callable $func, string $perms = '')
     {
         $pieces = explode(separator: "/", string: $route);
         if(count($pieces)===1)
@@ -111,6 +100,7 @@ class Router
             return false;
         }
         $map[$pieces[count($pieces)-1]] = $func;
+        self::$RoutePermissions[$route] = $perms;
         return true;
     }
 }
