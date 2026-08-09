@@ -21,4 +21,12 @@ class TagController
         $suggestions = Tag::GetSuggestions($prefix, $evatype);
         EngineCore::EmitJSON($suggestions);
     }
+    #[Route('tag/find')]
+    public static function FindByTag($tagortype='', $tag ='')
+    {
+        $evatype = $tag != '' ? $tagortype : '';
+        $tag = $tag == '' ? $tagortype : $tag;
+        $results = Tag::Find($evatype, $tag);
+        EngineCore::EmitJSON($results);
+    }
 }
