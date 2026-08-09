@@ -2,13 +2,21 @@
 
 namespace Controllers;
 use \Route;
-use \Common\DBHelper;
-use \Models\User\User;
+
 use \Cores\EngineCore;
+
+use \Common\DBHelper;
+use Common\EditorJS\Document as EditorJSDocument;
+
+use \Models\User\User;
+
 use \Models\KB\Page;
 use \Models\KB\PageDataProviderDB;
 use \Models\KB\GroupDBBacker;
+
 use \Models\Tags\Tag;
+
+use \Models\Pictures\Picture;
 /**
  * Description of KBPageController
  *
@@ -59,5 +67,63 @@ class KBPageController
         $entity['tags'] = $tags;
         EngineCore::SetPageTitle("Editing ".$page->title);
 	return $entity;
+    }
+    
+    #[Route('kb/save','kb.edit')]
+    public static function SavePage()
+    {
+        $def = [
+            'pageid'=>0,
+            'text'=>'',
+            'title'=>'<untitled>'
+        ];
+        $submission = EngineCore::GetSubmission($def);
+        if(!$submission)
+        {
+            return;
+        }
+        $id=intval($submission['pageid']);
+        $provider = new PageDataProviderDB(pageTable: 'kb_pages', revisionTable: 'kb_page_revisions');
+        $gdb = new GroupDBBacker(tablename: 'kb_groups');
+        $page = Page::Load(provider: $provider, groupDb: $gdb, id: $id);
+        if(!$page)
+        {
+            return EngineCore::Error(404);
+        }
+	$text=$submission['text'];
+        $title=$submission['title'];
+        $postObj = EditorJSDocument::FromJSON($text);
+        if(!$postObj)
+        {
+            // throw an error idk
+        }
+        $URLs = $postObj->images;
+        $map = [];
+        for($i=0;$i<count($URLs);$i++)
+        {
+            $URL=$URLs[$i];
+            // local reference, do not redo
+            if(substr($URL,0,strlen(BASE_URI))===BASE_URI)
+            {
+                continue;
+            }
+            $img = Picture::FromURL($URL);
+            if($img)
+            {
+                $map[$URL] = BASE_URI."/files/stream/{$img->blob_id}/{$img->blob_id}.{$img->extension}";
+            }
+        }
+        if(count($map)>0)
+        {        
+            $postObj->UpdateImages($map);
+        }
+        $page->title=$title;
+        $page->ejsdoc = $postObj;
+        $page->ProcessPage();
+        $page->SaveNewRevision();
+        $page->Save();
+        //var_dump($page);die;
+        EngineCore::GTFO("/kb/view/".$id);
+        die;
     }
 }
