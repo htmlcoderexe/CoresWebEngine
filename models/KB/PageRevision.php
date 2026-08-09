@@ -8,7 +8,7 @@ namespace Models\KB;
 class PageRevision
 {
     public int $id;
-    public int $page_id;
+    public int $pageId;
     public string $title;
     public string $json;
     public string $html;
