@@ -184,7 +184,17 @@ function TemplateProcessorBuiltin_errors($channel="")
     return EngineCore::GetUserErrors($channel);
 }
 // TODO: actual CSRF
+define('CSRF_FIELD','submission_check');
+define('CSRF_TOKEN','yes');
 function TemplateProcessorBuiltin_CSRF()
 {
-    return '<input type="hidden" name="submission_check" value="yes" />';
+    return '<input type="hidden" name="'.CSRF_FIELD.'" value="'.CSRF_TOKEN.'" />';
+}
+function TemplateProcessorBuiltin_CSRF_TOKEN()
+{
+    return CSRF_TOKEN;
+}
+function TemplateProcessorBuiltin_CSRF_FIELD()
+{
+    return CSRF_FIELD;
 }
