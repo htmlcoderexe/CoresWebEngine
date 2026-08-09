@@ -144,9 +144,9 @@ class Page
             'type'=>'chapternav',
             'data'=>[]
         ];
-        $ppage = Page::Load(provider: $provider, groupDb: $groupDb, id: $prev);
-        $npage = Page::Load(provider: $provider, groupDb: $groupDb, id: $next);
-        $ipage = Page::Load(provider: $provider, groupDb: $groupDb, id: $index);
+        $ppage = Page::Load(provider: $provider, groupDb: $groupDb, id: intval($prev));
+        $npage = Page::Load(provider: $provider, groupDb: $groupDb, id: intval($next));
+        $ipage = Page::Load(provider: $provider, groupDb: $groupDb, id: intval($index));
         if($ppage)
         {
             $processednav['data']['prev'] = $prev;
