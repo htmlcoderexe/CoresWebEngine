@@ -15,7 +15,6 @@ class Router
         $query=EngineCore::GET("route");
         //split route into individual segments
         $pieces=$query==''?[]:explode("/",$query);
-        
         if(count($pieces)<1)
         {
             $pieces[]=self::DEFAULT_ROUTE;
@@ -59,6 +58,7 @@ class Router
         if(count($pieces)===1)
         {
             $pieces[]='default';
+            $route.="/default";
         }
         // at least 2 pieces
         // for 3 stage route like /ticket/group/view
