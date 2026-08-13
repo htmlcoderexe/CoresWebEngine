@@ -3,10 +3,10 @@ namespace Models\Pictures;
 
 use Common\DBHelper;
 use Cores\EngineCore;
-
-use Models\File;
-use DateTimeImmutable;
 use Cores\JobScheduler;
+use DateTimeImmutable;
+use Models\File;
+use Models\Tags\Tag;
 
 /**
  * Description of Picture

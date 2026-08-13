@@ -9,7 +9,7 @@
     {#foreach|{%pictures%}|
 <div class="thumbnail">
     <img src="/files/stream/{:blobid:}/{:blobid:}.{:extension:}" style="display:none" />
-    <a href="/pixdb/showpic/{:id:}" data-imageid="{:id:}" onclick="showImage(event, {:id:});"><img src="/files/stream/{:thumbnail:}/{:blobid:}_thumbnail.png" width="{:thumb_width:}" height="{:thumb_height:}" /></a>
+    <a href="/pixdb/view/{:id:}" data-imageid="{:id:}" onclick="showImage(event, {:id:});"><img src="/files/stream/{:thumbnail:}/{:blobid:}_thumbnail.png" width="{:thumb_width:}" height="{:thumb_height:}" /></a>
 </div>#}
 </div>
 <div class="lightbox" style="visibility:hidden">
@@ -41,7 +41,7 @@ imagelist.push({ id: {:id:}, src: "/files/stream/{:blobid:}/{:blobid:}.{:extensi
         console.log(imagelist);
         document.querySelector(".lightbox").style.visibility = "visible";
         document.querySelector(".lightbox img").src = imagelist[offset].src;
-        document.querySelector("#lightbox_clickthru").href = "/pixdb/showpic/"+imagelist[offset].id;
+        document.querySelector("#lightbox_clickthru").href = "/pixdb/view/"+imagelist[offset].id;
         document.body.style.overflow ="hidden";
     }
     function showNext(e)
