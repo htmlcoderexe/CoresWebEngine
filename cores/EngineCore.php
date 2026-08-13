@@ -329,7 +329,12 @@ class EngineCore
     
     public static function VerifyPOST()
     {
-        return self::POST('submission_check') !== '';
+        return \Common\CSRF::VerifyToken();
+    }
+    
+    public static function IsPOST()
+    {
+        return $_SERVER['REQUEST_METHOD'] == 'POST';
     }
     
     public static function GetSubmission($fields)

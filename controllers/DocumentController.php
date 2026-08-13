@@ -93,34 +93,33 @@ class DocumentController
     #[Route('docs/new')]
     public static function New()
     {
+        if(!EngineCore::IsPOST())
+        {
+            return ['entity_type'=>'docs/upload'];
+        }
         $def = [
             'title'=>'<Untitled>',
             'description'=>'',
             'sensitivity'=>0,
             'doctype'=>0];
         $data = EngineCore::GetSubmission($def);
-        if(!$data)
+        
+        $file=File::Upload($_FILES['fileup']);
+        if($file)
         {
-            return ['entity_type'=>'docs/upload'];
+            $title=$data["title"];
+            $desc = $data["description"];
+            $sensitivity= intval($data["sensitivity"]);
+            $doctype = intval($data["doctype"]);
+            $owner=EngineCore::$CurrentUser->userid;
+            $doc = Document::Create(title: $title, filelist: [$file->blobid],description:$desc,owner:$owner,visibility:$sensitivity, doctype: $doctype);
+            EngineCore::GTFO("/docs/view/".$doc->id);
         }
         else
         {
-            $file=File::Upload($_FILES['fileup']);
-            if($file)
-            {
-                $title=$data["title"];
-                $desc = $data["description"];
-                $sensitivity= intval($data["sensitivity"]);
-                $doctype = intval($data["doctype"]);
-                $owner=EngineCore::$CurrentUser->userid;
-                $doc = Document::Create(title: $title, filelist: [$file->blobid],description:$desc,owner:$owner,visibility:$sensitivity, doctype: $doctype);
-                EngineCore::GTFO("/docs/view/".$doc->id);
-            }
-            else
-            {
-                return ['entity_type'=>'docs/upload'];
-            }
+            return ['entity_type'=>'docs/upload'];
         }
+        
     }
     
     #[Route('docs/tag')]

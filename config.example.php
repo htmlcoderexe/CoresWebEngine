@@ -6,3 +6,4 @@ define("MAIN_DATABASE", "main_db_example");
 define("DB_USER", "exampleuser");
 define("DB_PASS", "examplepass");
 define("DB_SERVER", "localhost");
+define("CSRF_SECRET", "EXAMPLESECRET");

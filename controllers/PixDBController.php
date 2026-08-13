@@ -40,12 +40,12 @@ class PixDBController
         {
             return EngineCore::Error(404);
         }
-        $redo_lang = EngineCore::GetSubmission(["redo_lang"=>""]);
-        if($redo_lang)
+        if(EngineCore::IsPOST())
         {
             JobScheduler::Schedule("tesseract", $pic->blob_id);
-            EngineCore::GTFO("/pixdb/view/$id");
-            return;
         }
+        EngineCore::GTFO("/pixdb/view/$id");
+        return;
+        
     }
 }

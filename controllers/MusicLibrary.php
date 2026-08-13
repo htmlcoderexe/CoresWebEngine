@@ -69,6 +69,10 @@ class MusicLibrary
     #[Route('music/upload','musicupload')]
     public static function UploadMP3()
     {
+        if(!EngineCore::IsPOST())
+        {
+            return ['entity_type'=>'music/upload'];
+        }
         $sub = EngineCore::GetSubmission([]);
         if(!$sub || !isset($_FILES['musicupload']))
         {

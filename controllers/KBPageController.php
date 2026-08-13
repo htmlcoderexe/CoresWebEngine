@@ -89,16 +89,16 @@ class KBPageController
     #[Route('kb/save','kb.edit')]
     public static function SavePage()
     {
+        if(!EngineCore::IsPOST())
+        {
+            EngineCore::GTFO('/kb');
+        }
         $def = [
             'pageid'=>0,
             'text'=>'',
             'title'=>'<untitled>'
         ];
         $submission = EngineCore::GetSubmission($def);
-        if(!$submission)
-        {
-            return;
-        }
         $id=intval($submission['pageid']);
         $provider = new PageDataProviderDB(pageTable: 'kb_pages', revisionTable: 'kb_page_revisions');
         $gdb = new GroupDBBacker(tablename: 'kb_groups');
@@ -147,21 +147,17 @@ class KBPageController
     #[Route('kb/create','kb.create')]
     public static function CreatePage()
     {
+        if(!EngineCore::IsPOST())
+        {
+            return ['entity_type'=>'kb/create'];
+        }
         $def = ['title'=>'Untitled Page'];
         $sub = EngineCore::GetSubmission($def);
-	if(!$sub)
-	{
-            return [
-                'entity_type'=>'kb/create'
-            ];
-        }
-	else
-	{
-            $id=\Models\KB\Manager::CreatePage($sub['title']);
+        $id=\Models\KB\Manager::CreatePage($sub['title']);
 
-            EngineCore::GTFO("/kb/edit/".$id);
-            die;
-	}
+        EngineCore::GTFO("/kb/edit/".$id);
+        die;
+	
     }
     #[Route('kb/tag')]
     public static function ListByTag($tag = '')

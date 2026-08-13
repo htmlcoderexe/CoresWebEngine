@@ -5,6 +5,8 @@
 // consult the file "config.example.php" for what is needed
 require_once "config.php"; 
 
+
+
 spl_autoload_register(function ($class) {
     
     $mapping = [
@@ -47,6 +49,46 @@ use Cores\EngineCore as EngineCore;
 use Cores\Router as Router;
 use Cores\TemplateProcessor as TemplateProcessor;
 
+function emit_result($result)
+{
+    $viewname = $result['entity_type'];
+    $accepts = Common\HTTPHeaders::GetAccepts($_SERVER['HTTP_ACCEPT']);
+    $mime = $accepts[0]['mime'];
+    if(isset($result['error']))
+    {
+        Common\HTTPHeaders::Status($result['error']);
+    }
+    switch($mime)
+    {
+        case "text/html":
+        {
+            $tpl = new Cores\TemplateProcessor($viewname,false,'views/');
+            $tpl->tokens = $result;
+            EngineCore::SetPageContent($tpl->process(true));
+            break;
+        }
+        case "application/json":
+        {
+            if(isset($result['error']))
+            {
+
+                if($result['message']=='')
+                {
+                    $result['message'] = Common\HTTPHeaders::Statuses[$result['error']]??'Uknown error';
+                }
+                if($result['title']=='')
+                {
+                    $result['title'] = Common\HTTPHeaders::Statuses[$result['error']]??'Uknown error';
+                }
+            }
+            EngineCore::EmitJSON($result);
+            break;
+        }
+    }
+}
+
+
+
 $time = microtime();
 $time = explode(' ', $time);
 $time = $time[1] + $time[0];
@@ -70,19 +112,36 @@ require_once "cores/Router.php";
 require_once "cores/EngineCore.php";
 require_once "lib/DBHelper.php";
 require_once "lib/EVA.php";
+require_once "lib/CSRF.php";
 require_once "models/User/UserExtendedProps.php";
 
 
 
 
-
-header("Content-Security-Policy:  frame-ancestors 'self' ".BASE_URI);
 ini_set("session.cache_limiter","");
 ini_set('xdebug.var_display_max_depth', 10);
 ini_set('xdebug.var_display_max_children', 256);
 ini_set('xdebug.var_display_max_data', 1024);
-session_start();
+   session_start();
+ 
+if(!isset($_SESSION['secret_id']))
+{
+    \Common\CSRF::SetupSecret();
+}
+
+\Common\CSRF::SetupToken();
+
+header("Content-Security-Policy:  frame-ancestors 'self' ".BASE_URI);
+//header("X-CSRF: ".\Common\CSRF::$token);
+
+$result = "";
+if(EngineCore::IsPOST() && !\Common\CSRF::VerifyToken())
+{
+$result = EngineCore::Error(code: 403, message: "CSRF error.");
+}
+
 EngineCore::$CurrentUser=User::GetCurrentUser();
+
 $_PAGE_SIDEBAR=Array();
 
 #[\Attribute]
@@ -115,47 +174,17 @@ foreach(glob("controllers/*.php") as $filename)
 }
 //die;
 EngineCore::StartLap();
+
 $time = microtime();
-$result = Router::Dispatch();
 if(!$result)
 {
-    $result = EngineCore::Error(404);
-}
-
-$viewname = $result['entity_type'];
-$accepts = Common\HTTPHeaders::GetAccepts($_SERVER['HTTP_ACCEPT']);
-$mime = $accepts[0]['mime'];
-if(isset($result['error']))
-{
-    Common\HTTPHeaders::Status($result['error']);
-}
-switch($mime)
-{
-    case "text/html":
+    $result = Router::Dispatch();
+    if(!$result)
     {
-        $tpl = new Cores\TemplateProcessor($viewname,false,'views/');
-        $tpl->tokens = $result;
-        EngineCore::SetPageContent($tpl->process(true));
-        break;
-    }
-    case "application/json":
-    {
-        if(isset($result['error']))
-        {
-    
-            if($result['message']=='')
-            {
-                $result['message'] = Common\HTTPHeaders::Statuses[$result['error']]??'Uknown error';
-            }
-            if($result['title']=='')
-            {
-                $result['title'] = Common\HTTPHeaders::Statuses[$result['error']]??'Uknown error';
-            }
-        }
-        EngineCore::EmitJSON($result);
-        break;
+        $result = EngineCore::Error(404);
     }
 }
+emit_result($result);
 
 
 EngineCore::Write2Debug("<strong>Route:</strong>".EngineCore::GET("route"));

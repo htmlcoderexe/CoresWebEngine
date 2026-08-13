@@ -137,6 +137,7 @@ class User
     {
         // it's that simple!
         unset($_SESSION['userid']);
+        session_destroy();
     }
 
     //end auth

@@ -35,7 +35,7 @@ class TagController
         $id = intval($id);
         $def = ['tag'=>''];
         $sub = EngineCore::GetSubmission($def);
-        if(!$sub||$sub['tag']==''||$type==''||$id==0)
+        if(!EngineCore::IsPOST() || !$sub||$sub['tag']==''||$type==''||$id==0)
         {
             return EngineCore::Error(400);
         }
