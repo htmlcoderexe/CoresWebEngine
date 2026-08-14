@@ -150,6 +150,11 @@ class Route
     public function __construct(public string $path, public string $perms = ''){}
 }
 #[\Attribute]
+class PostRoute
+{
+    public function __construct(public string $path, public string $perms = ''){}
+}
+#[\Attribute]
 class View
 {
     public function __construct(public string $name){}
@@ -169,6 +174,12 @@ foreach(glob("controllers/*.php") as $filename)
         {
             $r = $route->newInstance();
             Router::AddRoute($r->path, $func->getClosure(), $r->perms);
+        }
+        $routes = $func->getAttributes("PostRoute");
+        foreach($routes as $route)
+        {
+            $r = $route->newInstance();
+            Router::AddPostRoute($r->path, $func->getClosure(), $r->perms);
         }
     }
 }

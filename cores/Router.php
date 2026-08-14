@@ -5,8 +5,12 @@ class Router
 {
     public static $RouteMap = [];
     public static $RoutePermissions = [];
+    public static $PostRouteMap = [];
+    public static $PostRoutePermissions = [];
     public const DEFAULT_ROUTE = "main";
     public const DEFAULT_ACTION = "default";
+    public const METHOD_GET = 0;
+    public const METHOD_POST = 1;
     public static function Dispatch()
     {
         //  URL rewriting converts requests of the form "(example.net)/path/to/something"
@@ -32,7 +36,14 @@ class Router
         {
             $pieces[]=self::DEFAULT_ACTION;
         }
+        
         $mapzoom = &self::$RouteMap;
+        
+        if(EngineCore::IsPOST())
+        {
+            $mapzoom = &self::$PostRouteMap;
+        }
+        
         $route_pieces = [];
         while(count($pieces)>0)
         {
@@ -43,7 +54,12 @@ class Router
                 if(is_callable($mapzoom[$p]))
                 {
                     $route = implode(separator: "/", array:  $route_pieces);
-                    if(!EngineCore::$CurrentUser->HasPermission(self::$RoutePermissions[$route]))
+                    $routeperms = self::$RoutePermissions;
+                    if(EngineCore::IsPOST())
+                    {
+                        $routeperms = self::$PostRoutePermissions;
+                    }
+                    if(!EngineCore::$CurrentUser->HasPermission($routeperms[$route]))
                     {
                         return EngineCore::Error(403);
                     }
@@ -61,7 +77,17 @@ class Router
         }
     }
     
+    
     public static function AddRoute(string $route, callable $func, string $perms = '')
+    {
+        return self::AddPostOrGetRoute($route, $func, self::METHOD_GET, $perms);
+    }
+    public static function AddPostRoute(string $route, callable $func, string $perms = '')
+    {
+        return self::AddPostOrGetRoute($route, $func, self::METHOD_POST, $perms);
+    }
+    
+    public static function AddPostOrGetRoute(string $route, callable $func, int $method = self::METHOD_GET, string $perms = '')
     {
         $pieces = explode(separator: "/", string: $route);
         if(count($pieces)===1)
@@ -90,6 +116,10 @@ class Router
         
         //*/
         $map = &self::$RouteMap;
+        if($method === self::METHOD_POST)
+        {
+            $map = &self::$PostRouteMap;
+        }
         $level = 0;
         for($i=0;$i<count($pieces)-1;$i++)
         {
@@ -109,7 +139,19 @@ class Router
             return false;
         }
         $map[$pieces[count($pieces)-1]] = $func;
-        self::$RoutePermissions[$route] = $perms;
+        switch($method)
+        {
+            case self::METHOD_GET:
+            {
+                self::$RoutePermissions[$route] = $perms;
+                break;
+            }
+            case self::METHOD_POST:
+            {
+                self::$PostRoutePermissions[$route] = $perms;
+                break;
+            }    
+        }
         return true;
     }
 }
