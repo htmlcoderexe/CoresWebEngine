@@ -10,7 +10,7 @@
     {#foreach|{%pictures%}|
 <div class="thumbnail" data-selected="false">
     <img src="/files/stream/{:blobid:}/{:blobid:}.{:extension:}" style="display:none" />
-    <a href="/pixdb/showpic/{:id:}" data-imageid="{:id:}" onclick="itemClicked(event, {:id:});"><img src="/files/stream/{:thumbnail:}/{:blobid:}_thumbnail.png" width="{:thumb_width:}" height="{:thumb_height:}" /></a>
+    <a href="/pixdb/view/{:id:}" data-imageid="{:id:}" onclick="itemClicked(event, {:id:});"><img src="/files/stream/{:thumbnail:}/{:blobid:}_thumbnail.png" width="{:thumb_width:}" height="{:thumb_height:}" /></a>
 </div>#}
 <div style="width:100%;text-align:center;">
 {#ifset|prev|<a href="/pixdb/ingest/view/{%iid%}/{%prev%}">Previous page</a>#}{#ifset|page| <strong>{%page%}</strong> {#ifset|next|<a href="/pixdb/ingest/view/{%iid%}/{%next%}">Next page</a>#}
@@ -117,7 +117,7 @@ imagelist.push({ id: {:id:}, src: "/files/stream/{:blobid:}/{:blobid:}.{:extensi
         console.log(imagelist);
         document.querySelector(".lightbox").style.visibility = "visible";
         document.querySelector(".lightbox img").src = imagelist[offset].src;
-        document.querySelector("#lightbox_clickthru").href = "/pixdb/showpic/"+imagelist[offset].id;
+        document.querySelector("#lightbox_clickthru").href = "/pixdb/view/"+imagelist[offset].id;
         document.body.style.overflow ="hidden";
     }
     function showNext(e)
