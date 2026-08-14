@@ -1,6 +1,7 @@
 <h3><a href="/pixdb/ingest/list">Go back</a></h3>
 <h3>Modify or create an ingest task</h3>
 <form action="/pixdb/ingest/create" method="POST">
+    {#CSRF#}
     <label for="foldername">Folder:</label><input name="foldername" id="foldername" value="{%foldername|%}"/><br />
     <h3>Visibility</h3>
     <label for="visibility0">Private</label><input type="radio" name="visibility" id="visibility0" value="0" {#ifeq|{%visibility|0%}|0|checked |#}/>

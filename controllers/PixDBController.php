@@ -2,13 +2,13 @@
 
 namespace Controllers;
 
+use Common\DBHelper;
 use Cores\EngineCore;
-use Cores\JobScheduler;
 use Models\Pictures\Picture;
 use Models\Pictures\PictureSet;
 use Models\Tags\Tag;
-use Route;
 use PostRoute;
+use Route;
 
 /**
  * Description of PixDBController
@@ -25,6 +25,14 @@ class PixDBController
             'extra_text'=>$text
             ];
     }
+    
+    
+    #[Route('pixdb/default')]
+    public static function Index()
+    {
+        EngineCore::GTFO('/pixdb/albums');
+    }
+    
     
     #[Route('pixdb/view')]
     public static function ShowImage($id = 0)
@@ -138,6 +146,97 @@ class PixDBController
             }
         }
         EngineCore::GTFO("/pixdb/");
+    }
+    
+    #[Route('pixdb/albums')]
+    public static function ShowAlbums()
+    {
+        $q=DBHelper::Select(PictureSet::TABLE,["id","title","description","cached_count"],['1'=>'1'],['id'=>'DESC']);
+        $data=DBHelper::RunTable($q,[1]);
+        $extratext="<a href=\"/pixdb/ingest/list\">Ingests</a><br />";
+        return ["entity_type" => "pixdb/albumlist",
+            "albums" => $data,
+            "extra_text" => $extratext
+        ];
+    }
+    
+    public static function RemoveFromIngest($ingest_id, $picture_ids)
+    {
+        foreach($picture_ids as $id)
+        {
+            PictureIngestEntry::Delete(ingest_id: $ingest_id, picture_id: $id);
+        }
+    }
+    
+    public static function MassAttachTags($tags, $picture_ids)
+    {
+        foreach($picture_ids as $id)
+        {
+            foreach($tags as $tag)
+            {
+                Tag::Attach($id,$tag,'picture');
+            }
+        }
+    }
+    public static function MassRemoveTags($tags, $picture_ids)
+    {
+        foreach($picture_ids as $id)
+        {
+            foreach($tags as $tag)
+            {
+                Tag::Remove($id,$tag,'picture');
+            }
+        }
+    }
+    
+    #[PostRoute('pixdb/processbatch','pixdb.manage')]
+    public static function ProcessImageBatchOperation()
+    {
+        $picids=EngineCore::POST("picids");
+        if(!$picids)
+        {
+            EngineCore::FromWhenceYouCame();
+            die;
+        }
+        $ids=explode(",",$picids);
+        $iid=EngineCore::POST("owner");
+        $dis = EngineCore::POST("disassociate");
+        if($dis && $iid)
+        {
+            self::RemoveFromIngest($iid, $picids);
+        }
+        $tadd=EngineCore::POST("tagstoadd");
+        if($tadd)
+        {
+            self::MassAttachTags($tadd, $picids);
+        }
+        $trem=EngineCore::POST("tagstoremove");
+        if($trem)
+        {
+            self::MassRemoveTags($tadd, $picids);
+        }
+        $albumid=EngineCore::POST("albumid",0);
+
+        if(EngineCore::POST("doalbum"))
+        {
+            if($albumid==-1)
+            {
+                $album = PictureSet::Create(EngineCore::POST("albumname","untitled"),"",$ids);
+            }
+            else
+            {
+                $album = PictureSet::Load($albumid);
+                if($album)
+                {
+                    foreach($ids as $id)
+                    {
+                        $album->AddPicture($id);
+                    }
+                }
+            }
+        }
+
+        EngineCore::FromWhenceYouCame();
     }
     
 }
