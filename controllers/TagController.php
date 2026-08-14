@@ -4,6 +4,7 @@ namespace Controllers;
 
 use Models\Tags\Tag;
 use \Route;
+use \PostRoute;
 use Cores\EngineCore;
 
 /**
@@ -29,7 +30,7 @@ class TagController
         $results = Tag::Find($evatype, $tag);
         EngineCore::EmitJSON($results);
     }
-    #[Route('tag/add')]
+    #[PostRoute('tag/add')]
     public static function AddTag($type='', $id=0)
     {
         $id = intval($id);
