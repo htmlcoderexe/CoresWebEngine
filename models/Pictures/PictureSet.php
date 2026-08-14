@@ -141,6 +141,7 @@ class PictureSet
             }
         }
         // write the populated object back to DB and return it
+        $album->is_dirty=true;
         $album->SaveToDB();
         
         return $album;
