@@ -26,6 +26,7 @@ function toggle(id, el)
 <h3>Select up to {%max%} images to upload:</h3>
 <span class="user_error">{#foreach|{#errors|error#}|{:*:}<br />#}</span>
 <form action="/pixdb/upload/" method="POST" enctype="multipart/form-data">
+    {#CSRF#}
     <label for="createalbum">Create an album</label><input type="checkbox" name="createalbum" id="createalbum" value="true" onchange="toggle('albumopts',this);" /><br />
     <div id="albumopts" style="display:none;"><label for="albumtitle">Album title:</label><input name="albumtitle" /></div>
     <label for="applytags">Apply tags to the images</label><input type="checkbox" name="applytags" id="applytags" value="true" onchange="toggle('tagger',this);" /><br />
