@@ -8,6 +8,7 @@ use Models\Pictures\Picture;
 use Models\Pictures\PictureSet;
 use Models\Tags\Tag;
 use Route;
+use PostRoute;
 
 /**
  * Description of PixDBController
@@ -41,7 +42,7 @@ class PixDBController
         return $entity;
     }
     
-    #[Route('pixdb/retesseract', 'pixdb.manage')]
+    #[PostRoute('pixdb/retesseract', 'pixdb.manage')]
     public static function RedoTesseractOCR($id = 0)
     {
         $id = intval($id);
@@ -49,10 +50,6 @@ class PixDBController
         if(!$pic)
         {
             return EngineCore::Error(404);
-        }
-        if(EngineCore::IsPOST())
-        {
-            JobScheduler::Schedule("tesseract", $pic->blob_id);
         }
         EngineCore::GTFO("/pixdb/view/$id");
         return;
@@ -92,6 +89,55 @@ class PixDBController
         }
         $pics = $album->GetPictures();
         return self::ThumbnailView($pics, "{$album->title}");
+    }
+    
+    #[Route('pixdb/upload','pixdb.upload')]
+    public static function ShowUploadForm()
+    {
+        $max = ini_get("max_file_uploads");
+        return ['entity_type'=>'pixdb/uploadbulk','max'=>$max];
+    }
+    #[PostRoute('pixdb/upload','pixdb.upload')]
+    public static function UploadPics()
+    {
+        $pic_ids = [];
+        for($i=0;$i<count($_FILES['picupload']['name']);$i++)
+        {
+            $pic=Picture::FromUpload($_FILES['picupload'], $i);
+            if($pic)
+            {
+                if(EngineCore::POST("applytags","")=="true")
+                {
+                    foreach(EngineCore::POST("new_tags",[]) as $newtag)
+                    {
+                        Tag::Attach($pic->id, $newtag,'picture');
+                    }
+                }
+                $pic_ids[]= $pic->id;
+            }
+            else
+            {
+                $err = Picture::$last_error;
+                EngineCore::WriteUserError("Failed to upload: $err", "error");
+            }
+        }
+        if(!$pic_ids) // epic fail
+        {
+            EngineCore::GTFO("/pixdb/");
+        }
+        if(EngineCore::POST("createalbum",'')=="true")
+        {
+            $a = PictureSet::Create(EngineCore::POST("albumtitle",''), EngineCore::POST("albumdescription",''), $pic_ids);
+            if($a)
+            {
+                EngineCore::GTFO("/pixdb/album/".$a->id);
+            }
+            else
+            {
+                EngineCore::GTFO("/pixdb/");
+            }
+        }
+        EngineCore::GTFO("/pixdb/");
     }
     
 }
