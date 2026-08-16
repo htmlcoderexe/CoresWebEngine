@@ -237,7 +237,7 @@ class File
     public static function New($filename)
     {
         $fname = basename($filename);
-        $ext = pathinfo($fname)['extension'];
+        $ext = pathinfo($fname)['extension'] ?? "";
         $mime = array_key_exists($ext,self::MIME_TYPES) ? self::MIME_TYPES[$ext] : "UNKNOWN";
         $blobname = Utility::CreateRandomString(self::BLOBID_LENGTH,Utility::RANDOM_CHR_MIX);
         $path2=self::GetFileDir($blobname);
