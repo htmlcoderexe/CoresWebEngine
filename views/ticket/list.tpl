@@ -1,5 +1,5 @@
- <a href="/ticket/submit/{%gid|%}">Submit a ticket</a><br />
- <a href="/ticket/groups/all">Show groups</a><br />
+ <a href="/tickets/submit/{%gid|%}">Submit a ticket</a><br />
+ <a href="/tickets/groups/index">Show groups</a><br />
  <h2>{%groupname|Unassigned tickets%}</h2>
  {#ifeq|{%ticketcount%}|0|No tickets!|
 <table class="ticket-ticketlist sortable" style="width:100%">
@@ -13,7 +13,7 @@
     </tr>
     </thead><tbody>
     {#foreach|{%tickets%}|<tr>
-        <td><a href="/ticket/view/{:ticketNumber:}">{:ticketNumber:}</a></td>
+        <td><a href="/tickets/view/{:ticketNumber:}">{:ticketNumber:}</a></td>
         <td>{:title:}</td>
         <td>{#userinfo|username|{:subject:}#}</td>
         <td data-timestamp="{:time:}">{#date|Y-m-d h:i:s|{:time:}#}</td>

@@ -31,22 +31,22 @@
             
         }
     </script>
-<a href="/ticket/list/">Back to index</a> | <a href="/ticket/submit/">Submit a ticket</a>
+<a href="/tickets/list/">Back to index</a> | <a href="/tickets/submit/">Submit a ticket</a>
 <h2>{%number%}</h2>
 <h4>Submitted by {#userinfo|username|{%submitter%}#}</h4>
 <h4>Status: {%status%}</h4>
-{#ifeq|{%statuscode%}|0|<form action="/ticket/modify/{%number%}" method="POST">
-    <input name="newstate" value="1" type="hidden" />
+{#ifeq|{%last_status%}|0|<form action="/tickets/modify/{%number%}" method="POST">
+    <input name="newstate" value="1" type="hidden" />{#CSRF#}
     <button>Begin work</button>
 </form>|#}
-{#ifeq|{%statuscode%}|6||<form action="/ticket/modify/{%number%}" method="POST">
-    <input name="newstate" value="6" type="hidden" />
+{#ifeq|{%last_status%}|6||<form action="/tickets/modify/{%number%}" method="POST">
+    <input name="newstate" value="6" type="hidden" />{#CSRF#}
     <button>Close</button>
 </form>#}
 
 <h3>{%title%}</h3>
 <h2>Assigned to: {%ticket_group_name%}</h2>
-<form action="/ticket/modify/{%number%}" method="POST"><br />
+<form action="/tickets/modify/{%number%}" method="POST"><br />{#CSRF#}
     <select name="ticket_group">
         {#foreach|{%groups%}|<option value="{:gid:}" {#ifeq|{:gid:}|{%ticket_group_id%}|selected="selected"#}>{:name:}</option>#}
     </select>
@@ -54,7 +54,8 @@
 </form>
 <p>{%description%}</p>
 
-{#ifeq|{%statuscode%}|6||<form action="/ticket/modify/{%number%}" method="POST"  enctype="multipart/form-data">
+{#ifeq|{%last_status%}|6||<form action="/tickets/modify/{%number%}" method="POST"  enctype="multipart/form-data">
+{#CSRF#}
     <input type="hidden" name="newupdate" value="bepis" />
     <textarea class="" name="update_text"></textarea><br />
     <span id="uploader_0"><input name="update_attachment[]" type="file"/><button type="button" onclick="RemoveUploader(0);return false;">-</button><br /></span>

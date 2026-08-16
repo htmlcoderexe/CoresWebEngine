@@ -1,5 +1,6 @@
 <a href="/ticket/list/">Back to index</a> 
 <form action ="/ticket/{%verb|submit%}" method ="POST">
+    {#CSRF#}
     <label for="title">Short description</label><br />
     <input name="title" id ="title" type ="text" value="{%title|%}"/><br />
     <select name="ticket_group">
