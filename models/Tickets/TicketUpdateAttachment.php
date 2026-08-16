@@ -1,4 +1,8 @@
 <?php
+namespace Models\Tickets;
+
+use Common\DBHelper;
+use Models\File;
 
 
 /**

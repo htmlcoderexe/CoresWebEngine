@@ -1,4 +1,5 @@
 <?php
+namespace Models\Tickets;
 
 /**
  * Represents a Ticket
@@ -92,7 +93,7 @@ class Ticket
     public function AppendCommentUpdate(string $text,int $user = -1, array $files=[])
     {
         $update = TicketUpdate::Create(ticket_id: $this->info->id, user: $user, type: TicketUpdate::TYPE_COMMENT, newtext: $text, files: $files);
-        $this->Updates[]=$update;
+        $this->updates[]=$update;
     }
     
     /**

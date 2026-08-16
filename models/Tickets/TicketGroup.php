@@ -1,4 +1,7 @@
 <?php
+namespace Models\Tickets;
+
+use Common\DBHelper;
 /**
  * Represents a ticket assignment group, linked to a user group.
  *

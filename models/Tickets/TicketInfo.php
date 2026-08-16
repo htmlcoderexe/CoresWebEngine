@@ -1,4 +1,7 @@
 <?php
+namespace Models\Tickets;
+
+use Common\DBHelper;
 
 /**
  * Represents basic ticket information
