@@ -1,4 +1,4 @@
-{#ifeq|{#ifpermission|super#}|true|<a href="/software/new">Add</a><br />#}
+<a href="/software/">Back to index</a><br />
 <table class="sortable" style="width:100%">
     <thead>
     <tr>
@@ -6,10 +6,10 @@
         <th>Short description</th>
     </tr>
     </thead><tbody>
-    {#foreach|{%sw%}|<tr>
-        <td><a href="/software/view/{:id:}">{:title:}</a></td>
+    {#foreach|{%publishers%}|<tr>
+        <td><a href="/software/publishers/{:pid:}">{:name:}</a></td>
         <td>{#ellipsis|{:description:}|50#}</td>
+        <td>{:swcount:}</td>
     </tr>#}
     </tbody>
 </table>
-

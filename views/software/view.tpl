@@ -1,5 +1,6 @@
 <h2>{%title%}</h2>
-{#ifeq|{%publisher_name|%}|||<h3>By <a href="/software/publisher/{%publisher_id|0%}">{%publisher_name|%}</a></h3>#}
+{#ifeq|{%publisher_name|%}|||<h3>By <a href="/software/publishers/{%publisher_id|0%}">{%publisher_name|%}</a></h3>#}
+{#ifeq|{#ifpermission|software.manage#}|true|<a href=\"/software/newrelease/{%id%}\">Add new version</a><br />#}
 <p>{%description%}</p>
 {%album|%}
 {#foreach|{%releases%}|

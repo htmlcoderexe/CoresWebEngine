@@ -1,9 +1,12 @@
 <?php
+namespace Models\Software;
+
+use Common\DBHelper;
 
 /**
  * Describes a downloadable collection of files for a specific release
  */
-class SoftwareRelease
+class Release
 {
 	/**
 	 * Creates an instance of the object.
@@ -13,7 +16,7 @@ class SoftwareRelease
 	 * @param string $description Description, changelog or other information
 	 * @param int $type Release type
 	 * @param int $time Release date
-	 * @param array $files Files attached to the release, as array of SoftwareReleaseFile
+	 * @param array $files Files attached to the release, as array of ReleaseFile
 	 */
 	public function __construct(
 		public int $id,
@@ -44,14 +47,14 @@ class SoftwareRelease
 	];
 	
 	/**
-	 * Creates an instance of SoftwareRelease from associative array (for example, database row)
+	 * Creates an instance of Release from associative array (for example, database row)
 	 * @param array $row Database row or other associative array
-	 * @param array $files Files attached to the release, as array of SoftwareReleaseFile
-	 * @return SoftwareRelease|null The object created from the row.
+	 * @param array $files Files attached to the release, as array of ReleaseFile
+	 * @return Release|null The object created from the row.
 	 */
-	public static function FromRow(array $row, array $files = []) : SoftwareRelease | null
+	public static function FromRow(array $row, array $files = []) : Release | null
 	{
-		$obj = new SoftwareRelease(
+		$obj = new Release(
 			id: $row['id'],
 			software_id: $row['software_id'],
 			version: $row['version'],
@@ -64,18 +67,18 @@ class SoftwareRelease
 	}
 	
 	/**
-	 * Loads a specific SoftwareRelease by ID
+	 * Loads a specific Release by ID
 	 * @param int $id ID to be loaded.
-	 * @returns SoftwareRelease|null The SoftwareRelease instance if found
+	 * @returns Release|null The Release instance if found
 	 */
-	public static function Load(int $id) : SoftwareRelease | null
+	public static function Load(int $id) : Release | null
 	{
 		$row = DBHelper::GetRowById(table: self::TABLE, id: $id, fields: self::FIELDS);
 		if(!$row)
 		{
 			return null;
 		}
-                $files = SoftwareReleaseFile::GetFiles(id: $id);
+                $files = ReleaseFile::GetFiles(id: $id);
 		$obj = self::FromRow($row, $files);
 		return $obj;
 	}
@@ -96,13 +99,13 @@ class SoftwareRelease
 	}
 	
 	/**
-	 * Creates a new SoftwareRelease object and saves it to the database.
+	 * Creates a new Release object and saves it to the database.
 	 * @param int $software_id Software Package ID
 	 * @param string $version elease version
 	 * @param string $description Description, changelog or other information
 	 * @param int $type Release type
 	 * @param int $time Release date
-	 * @returns SoftwareRelease|null The newly created object, if successful.
+	 * @returns Release|null The newly created object, if successful.
 	 */
 	public static function Create(
 		int $software_id,
@@ -115,7 +118,7 @@ class SoftwareRelease
 		$row = [null,$software_id, $version, $description, $type, $time];
 		DBHelper::Insert(table: self::TABLE, values: $row);
 		$id = DBHelper::GetLastId();
-		$obj = new SoftwareRelease(
+		$obj = new Release(
 			id: $id,
 			software_id: $software_id,
 			version: $version,

@@ -1,9 +1,13 @@
 <?php
+namespace Models\Software;
+
+use Common\DBHelper;
+
 
 /**
  * Represents a piece of software
  */
-class SoftwarePackage
+class Package
 {
 	/**
 	 * Creates an instance of the object.
@@ -60,14 +64,14 @@ class SoftwarePackage
 	];
 	
 	/**
-	 * Creates an instance of SoftwarePackage from associative array (for example, database row)
+	 * Creates an instance of Package from associative array (for example, database row)
 	 * @param array $row Database row or other associative array
-         * @param array $releases Array of SoftwareReleases belonging to this package.
-	 * @return SoftwarePackage|null The object created from the row.
+         * @param array $releases Array of Releases belonging to this package.
+	 * @return Package|null The object created from the row.
 	 */
-	public static function FromRow(array $row, array $releases) : SoftwarePackage | null
+	public static function FromRow(array $row, array $releases) : Package | null
 	{
-		$obj = new SoftwarePackage(
+		$obj = new Package(
 			id: $row['id'],
 			title: $row['title'],
 			description: $row['description'],
@@ -84,18 +88,18 @@ class SoftwarePackage
 	}
 	
 	/**
-	 * Loads a specific SoftwarePackage by ID
+	 * Loads a specific Package by ID
 	 * @param int $id ID to be loaded.
-	 * @returns SoftwarePackage|null The SoftwarePackage instance if found
+	 * @returns Package|null The Package instance if found
 	 */
-	public static function Load(int $id) : SoftwarePackage | null
+	public static function Load(int $id) : Package | null
 	{
 		$row = DBHelper::GetRowById(table: self::TABLE, id: $id, fields: self::FIELDS);
 		if(!$row)
 		{
 			return null;
 		}
-                $releases = SoftwareRelease::GetReleases(id: $id);
+                $releases = Release::GetReleases(id: $id);
 		$obj = self::FromRow($row, $releases);
 		return $obj;
 	}
@@ -120,7 +124,7 @@ class SoftwarePackage
 	}
 	
 	/**
-	 * Creates a new SoftwarePackage object and saves it to the database.
+	 * Creates a new Package object and saves it to the database.
 	 * @param string $title Package title
 	 * @param string $description Package description
 	 * @param string $icon A blobid of an icon used to represent the software
@@ -130,7 +134,7 @@ class SoftwarePackage
 	 * @param int $type Software distribution type
 	 * @param int $uid User owning the package
 	 * @param int $gid User group owning the package
-	 * @returns SoftwarePackage|null The newly created object, if successful.
+	 * @returns Package|null The newly created object, if successful.
 	 */
 	public static function Create(
 		string $title,
@@ -147,7 +151,7 @@ class SoftwarePackage
 		$row = [null,$title, $description, $icon, $screenshot_album, $category, $publisher, $type, $uid, $gid];
 		DBHelper::Insert(table: self::TABLE, values: $row);
 		$id = DBHelper::GetLastId();
-		$obj = new SoftwarePackage(
+		$obj = new Package(
 			id: $id,
 			title: $title,
 			description: $description,

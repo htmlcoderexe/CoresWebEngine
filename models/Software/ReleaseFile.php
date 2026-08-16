@@ -1,9 +1,12 @@
 <?php
+namespace Models\Software;
+
+use Common\DBHelper;
 
 /**
  * 
  */
-class SoftwareReleaseFile
+class ReleaseFile
 {
 	/**
 	 * Creates an instance of the object.
@@ -34,13 +37,13 @@ class SoftwareReleaseFile
 	];
 	
 	/**
-	 * Creates an instance of SoftwareReleaseFile from associative array (for example, database row)
+	 * Creates an instance of ReleaseFile from associative array (for example, database row)
 	 * @param array $row Database row or other associative array
-	 * @return SoftwareReleaseFile|null The object created from the row.
+	 * @return ReleaseFile|null The object created from the row.
 	 */
-	public static function FromRow(array $row) : SoftwareReleaseFile | null
+	public static function FromRow(array $row) : ReleaseFile | null
 	{
-		$obj = new SoftwareReleaseFile(
+		$obj = new ReleaseFile(
 			id: $row['id'],
 			release_id: $row['release_id'],
 			blobid: $row['blobid'],
@@ -50,11 +53,11 @@ class SoftwareReleaseFile
 	}
 	
 	/**
-	 * Loads a specific SoftwareReleaseFile by ID
+	 * Loads a specific ReleaseFile by ID
 	 * @param int $id ID to be loaded.
-	 * @returns SoftwareReleaseFile|null The SoftwareReleaseFile instance if found
+	 * @returns ReleaseFile|null The ReleaseFile instance if found
 	 */
-	public static function Load(int $id) : SoftwareReleaseFile | null
+	public static function Load(int $id) : ReleaseFile | null
 	{
 		$row = DBHelper::GetRowById(table: self::TABLE, id: $id, fields: self::FIELDS);
 		if(!$row)
@@ -79,11 +82,11 @@ class SoftwareReleaseFile
 	}
 	
 	/**
-	 * Creates a new SoftwareReleaseFile object and saves it to the database.
+	 * Creates a new ReleaseFile object and saves it to the database.
 	 * @param int $release_id ID of the software release containing the file
 	 * @param string $blobid File ID
 	 * @param string $comment Any additional information with the file
-	 * @returns SoftwareReleaseFile|null The newly created object, if successful.
+	 * @returns ReleaseFile|null The newly created object, if successful.
 	 */
 	public static function Create(
 		int $release_id,
@@ -94,7 +97,7 @@ class SoftwareReleaseFile
 		$row = [null,$release_id, $blobid, $comment];
 		DBHelper::Insert(table: self::TABLE, values: $row);
 		$id = DBHelper::GetLastId();
-		$obj = new SoftwareReleaseFile(
+		$obj = new ReleaseFile(
 			id: $id,
 			release_id: $release_id,
 			blobid: $blobid,

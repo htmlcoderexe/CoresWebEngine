@@ -14,8 +14,9 @@
         }
     }
 </script>
-<form action="/software/save" enctype="multipart/form-data" method="POST">
+<form action="/software/savepackage" enctype="multipart/form-data" method="POST">
     <input type="hidden" name="id" value="{%id|-1%}" />
+    {#CSRF#}
     <table>
         <tr>
             <td>Name:</td>

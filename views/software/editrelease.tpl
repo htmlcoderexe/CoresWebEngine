@@ -1,5 +1,6 @@
 <h2>Adding a new release for {%software_name|ERROR%}</h2>
 <form action="/software/saverelease" method="POST" enctype="multipart/form-data">
+    {#CSRF#}
     <input type="hidden" name="id" value="{%id|-1%}" />
     <input type="hidden" name="software_id" value="{%software_id|-1%}" />
     <table>

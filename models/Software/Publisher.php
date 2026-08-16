@@ -1,9 +1,14 @@
 <?php
 
+namespace Models\Software;
+
+use Common\DBHelper;
+
+
 /**
  * Represents a software publisher or developer.
  */
-class SoftwarePublisher
+class Publisher
 {
 	/**
 	 * Creates an instance of the object.
@@ -34,13 +39,13 @@ class SoftwarePublisher
 	];
 	
 	/**
-	 * Creates an instance of SoftwarePublisher from associative array (for example, database row)
+	 * Creates an instance of Publisher from associative array (for example, database row)
 	 * @param array $row Database row or other associative array
-	 * @return SoftwarePublisher|null The object created from the row.
+	 * @return Publisher|null The object created from the row.
 	 */
-	public static function FromRow(array $row) : SoftwarePublisher | null
+	public static function FromRow(array $row) : Publisher | null
 	{
-		$obj = new SoftwarePublisher(
+		$obj = new Publisher(
 			id: $row['id'],
 			name: $row['name'],
 			description: $row['description'],
@@ -50,11 +55,11 @@ class SoftwarePublisher
 	}
 	
 	/**
-	 * Loads a specific SoftwarePublisher by ID
+	 * Loads a specific Publisher by ID
 	 * @param int $id ID to be loaded.
-	 * @returns SoftwarePublisher|null The SoftwarePublisher instance if found
+	 * @returns Publisher|null The Publisher instance if found
 	 */
-	public static function Load(int $id) : SoftwarePublisher | null
+	public static function Load(int $id) : Publisher | null
 	{
 		$row = DBHelper::GetRowById(table: self::TABLE, id: $id, fields: self::FIELDS);
 		if(!$row)
@@ -79,11 +84,11 @@ class SoftwarePublisher
 	}
 	
 	/**
-	 * Creates a new SoftwarePublisher object and saves it to the database.
+	 * Creates a new Publisher object and saves it to the database.
 	 * @param string $name Publisher name
 	 * @param string $description Publisher description
 	 * @param string $icon Image blobid representing the publisher
-	 * @returns SoftwarePublisher|null The newly created object, if successful.
+	 * @returns Publisher|null The newly created object, if successful.
 	 */
 	public static function Create(
 		string $name,
@@ -94,7 +99,7 @@ class SoftwarePublisher
 		$row = [null,$name, $description, $icon];
 		DBHelper::Insert(table: self::TABLE, values: $row);
 		$id = DBHelper::GetLastId();
-		$obj = new SoftwarePublisher(
+		$obj = new Publisher(
 			id: $id,
 			name: $name,
 			description: $description,
