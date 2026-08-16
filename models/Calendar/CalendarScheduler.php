@@ -1,6 +1,9 @@
 <?php
+namespace Models\Calendar;
 
-class CalendarScheduler
+use Common\DBHelper;
+
+class Scheduler
 {
     public static function CheckDate($y,$m,$d)
     {
@@ -11,12 +14,12 @@ class CalendarScheduler
             "day","month","year",
             "hour","minute", "duration"
             ];
-        $q_events = DBHelper::Select(CalendarEvent::TABLE,$fields,["year"=>$y,"month"=>$m,"day"=>$d, 'active'=>1]);
+        $q_events = DBHelper::Select(Event::TABLE,$fields,["year"=>$y,"month"=>$m,"day"=>$d, 'active'=>1]);
         $events = DBHelper::RunTable($q_events,[$y,$m,$d,1]);
         $output =[];
         foreach($events as $value)
         {
-            $output[]=CalendarEvent::PrepareForDisplay($value, $y, $m, $d);
+            $output[]=Event::PrepareForDisplay($value, $y, $m, $d);
         }
         return  $output;
         
@@ -67,12 +70,12 @@ class CalendarScheduler
             "day","month","year",
             "hour","minute", "duration"
             ];
-        $q_events = DBHelper::Select(CalendarEvent::TABLE,$fields,["year"=>$y,"month"=>$m, 'active'=>1]);
+        $q_events = DBHelper::Select(Event::TABLE,$fields,["year"=>$y,"month"=>$m, 'active'=>1]);
         $events = DBHelper::RunTable($q_events,[$y,$m,1]);
         $output =[];
         foreach($events as $value)
         {
-            $output[]=CalendarEvent::PrepareForDisplay($value, $y, $m, $value['day']);
+            $output[]=Event::PrepareForDisplay($value, $y, $m, $value['day']);
         }
         return  $output;
     }

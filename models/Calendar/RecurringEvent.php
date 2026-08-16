@@ -1,4 +1,9 @@
 <?php
+namespace Models\Calendar;
+
+use Common\DBHelper;
+use Cores\EngineCore;
+use DateTimeImmutable;
 
 /**
  * Description of RecurringEvent
@@ -220,7 +225,7 @@ class RecurringEvent
                 }
                 if(self::CheckDay($date,$start,$value['end'],$value["recur_type"],$value["recur_data"]))
                 {
-                    $output[]=CalendarEvent::PrepareForDisplay($value, $y, $m, $d);
+                    $output[]=Event::PrepareForDisplay($value, $y, $m, $d);
                 }
             }
         }
@@ -265,7 +270,7 @@ class RecurringEvent
             $value['recurId']=$value['id'];
             if(self::CheckDay($date,$start,$value['end'],$value["recur_type"],$value["recur_data"]))
             {
-                $output[]=CalendarEvent::PrepareForDisplay($value, $y, $m, $d);
+                $output[]=Event::PrepareForDisplay($value, $y, $m, $d);
             }
         }
         
@@ -335,15 +340,15 @@ class RecurringEvent
     
     public function AddException($date)
     {
-        list($y,$m,$d) = CalendarEvent::SplitDate($date);
+        list($y,$m,$d) = Event::SplitDate($date);
         $new_row = [null,$this->id,$d,$m,$y];
         DBHelper::Insert("calendar_exceptions",$new_row);
     }
     
     public function CreateOnDate($date)
     {
-        list($y,$m,$d)=CalendarEvent::SplitDate($date);
-        $event = CalendarEvent::Create($this->title,$this->description,$this->category,$y,$m,$d,$this->hour,$this->minute,$this->duration);
+        list($y,$m,$d)=Event::SplitDate($date);
+        $event = Event::Create($this->title,$this->description,$this->category,$y,$m,$d,$this->hour,$this->minute,$this->duration);
         return $event;
     }
     public function Cancel()

@@ -1,5 +1,10 @@
 <?php
-class CalendarEvent
+namespace Models\Calendar;
+
+use Common\DBHelper;
+use Cores\EngineCore;
+
+class Event
 {
     public $id;
     
@@ -99,7 +104,7 @@ class CalendarEvent
         {
             return null;
         }
-        return new CalendarEvent($id,$row['title'],$row['description'],$row['category'],$row['year'],$row['month'],$row['day'],$row['hour'],$row['minute'],$row['duration'],$row['active']==1);
+        return new Event($id,$row['title'],$row['description'],$row['category'],$row['year'],$row['month'],$row['day'],$row['hour'],$row['minute'],$row['duration'],$row['active']==1);
     }
     
     public function Save()
@@ -116,12 +121,12 @@ class CalendarEvent
         "duration"=>$this->duration,
         "active"=>$this->active
         ];
-        DBHelper::Update(CalendarEvent::TABLE, $update, ['id'=>$this->id]);
+        DBHelper::Update(Event::TABLE, $update, ['id'=>$this->id]);
     }
     
     public function Deactivate()
     {
-        DBHelper::Update(CalendarEvent::TABLE,['active'=>0],['id'=>$this->id]);
+        DBHelper::Update(Event::TABLE,['active'=>0],['id'=>$this->id]);
     }
     
     public function ProcessForDisplay()
@@ -139,9 +144,9 @@ class CalendarEvent
             $day,$month,$year,$hour,$minute,$duration,
             $uid,0,1
         ];
-        DBHelper::Insert(CalendarEvent::TABLE,$row);
+        DBHelper::Insert(Event::TABLE,$row);
         $id=DBHelper::GetLastId();
-        return new CalendarEvent($id,$title,$description,$category,$year,$month,$day,$hour,$minute,$duration);
+        return new Event($id,$title,$description,$category,$year,$month,$day,$hour,$minute,$duration);
     }
     
     static function SplitDate($date)
