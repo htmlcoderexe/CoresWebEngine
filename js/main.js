@@ -318,4 +318,40 @@ function setCookie(cname, cvalue, exdays) {
   document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
 }
 
+
+
+function AddToSideBar(contents, title, link = null)
+{
+    let box = document.createElement('div');
+    let boxheader = document.createElement('div');
+    let boxbody = document.createElement('div');
+    box.classList.add('box');
+    boxheader.classList.add('boxheader');
+    boxbody.classList.add('boxbody');
+    if(link)
+    {
+        let a = document.createElement('a');
+        a.href = link;
+        a.innerText = title;
+        boxheader.appendChild(a);
+    }
+    else
+    {
+        boxheader.innerText = title;
+    }
+    contents.forEach((el)=>{
+        boxbody.appendChild(el);
+    });
+    box.appendChild(boxheader);
+    box.appendChild(boxbody);
+    document.addEventListener('DOMContentLoaded',(e)=>
+    {document.getElementById('rightcolumn').appendChild(box);}
+    );
+    
+    return box;
+}
+
+
+
+
 setCookie("timeoffset",-((new Date()).getTimezoneOffset()*60),5);
