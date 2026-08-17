@@ -225,7 +225,10 @@ class RecurringEvent
                 }
                 if(self::CheckDay($date,$start,$value['end'],$value["recur_type"],$value["recur_data"]))
                 {
-                    $output[]=Event::PrepareForDisplay($value, $y, $m, $d);
+                    $value['day'] = $d;
+                    $value['recurrer_id'] = $value['id'];
+                    unset($value['id']);
+                    $output[]=$value;//Event::PrepareForDisplay($value, $y, $m, $d);
                 }
             }
         }

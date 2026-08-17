@@ -75,7 +75,7 @@ class Scheduler
         $output =[];
         foreach($events as $value)
         {
-            $output[]=Event::PrepareForDisplay($value, $y, $m, $value['day']);
+            $output[]=$value;//Event::PrepareForDisplay($value, $y, $m, $value['day']);
         }
         return  $output;
     }
