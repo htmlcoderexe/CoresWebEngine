@@ -305,6 +305,10 @@ class TemplateProcessor
             {
                 return $this->builtin_if($node);
             }
+            if($func_name == "json")
+            {
+                return $this->builtin_json($node);
+            }
             
             
             $params =[];
@@ -323,6 +327,14 @@ class TemplateProcessor
             }
             return $this->wrap_datatype($output);
         }
+        
+        private function builtin_json($node)
+        {
+            $input = $this->process_nodelist($node['params'][0]);
+            $object  = (array)array_pop($this->varstack);
+            return ["type"=>"literal","stringval"=>json_encode($object)];
+        }
+        
         /**
          * Check if a specific variable is set in the template and process the corresponding branch
          * @param array $node input ifset node
