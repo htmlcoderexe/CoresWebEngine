@@ -57,6 +57,9 @@ class EngineCore
      * @var string
      */
     static $MainContent;
+    
+    static $Scripts = [];
+    static $Styles = [];
 
     /**
      * A separate text field that can be written to for debugging purposes,
@@ -145,6 +148,21 @@ class EngineCore
     {
         self::AddPageContent((new TemplateProcessor($template))->process(true));
     }
+    
+    public static function AddScript(string $scriptURL)
+    {
+        if(!in_array($scriptURL, self::$Scripts))
+        {
+            self::$Scripts[]=$scriptURL;
+        }
+    }
+    public static function AddStyle(string $styleURL)
+    {
+        if(!in_array($styleURL, self::$Styles))
+        {
+            self::$Styles[]=$styleURL;
+        }
+    }
 
     /**
      * Enables raw mode, which only outputs the main page content without 
@@ -217,6 +235,8 @@ class EngineCore
             // menu
             $menu = self::LayoutComponent("menu");
             $tpl->tokens['menu'] = $menu->process(true);
+            $tpl->tokens['scripts'] = self::$Scripts;
+            $tpl->tokens['styles'] = self::$Styles;
             self::$Rendered = $tpl->process(true);
         }
         return self::$Rendered;
