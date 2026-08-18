@@ -21,6 +21,8 @@ class CalendarController
     #[Route('calendar/view/month','calendar.view')]
     public static function ShowMonth($year = 0, $month = 0)
     {
+        EngineCore::AddScript('/js/calendar/renderer.js');
+        EngineCore::AddStyle('/css/calendar/main.css');
         EngineCore::StartLap();
         $m = intval($month);
         $y = intval($year);
