@@ -23,10 +23,8 @@ class CalendarController
     {
         EngineCore::AddScript('/js/calendar/renderer.js');
         EngineCore::AddStyle('/css/calendar/main.css');
-        EngineCore::StartLap();
         $m = intval($month);
         $y = intval($year);
-        
         $recurrings= RecurringEvent::CheckMonth($y,$m);
         $all_events = Scheduler::CheckMonth($y,$m);
         
@@ -48,18 +46,11 @@ class CalendarController
         {
             $mapping[$result['id']]=$result;
         }
-        $default=array_keys($mapping)[0];
 
         //END get event type tags and highlights
-
-
-        EngineCore::Lap2Debug("got recurrers and this month's events");
-        EngineCore::Lap2Debug("prep work");
         $e = ['entity_type'=>'calendar/month'];
         $e['month'] = $m;
         $e['year'] = $y;
-        EngineCore::Lap2Debug("got all events");
-        EngineCore::Lap2Debug("got all prev events");
         $events_by_day = [];
         foreach($all_events as $id=>$event)
         {
@@ -71,7 +62,6 @@ class CalendarController
            $events_by_day[$c_d][]=$event;
            
         }
-        EngineCore::Lap2Debug("done processing month events");
         foreach($recurrings as $event)
         {
            $c_d = (int) $event['day'];
@@ -81,13 +71,35 @@ class CalendarController
            }
            $events_by_day[$c_d][]=$event;
         }
-        EngineCore::Lap2Debug("done processing recurrings");
-        
-        EngineCore::Lap2Debug("filled upcoming");
         $e['events'] = $events_by_day;
         $e['markers'] = $mapping;
         $e['next_month'] = $next_month_events;
         return $e;
         
+    }
+    #[Route('calendar/view/week','calendar.view')]
+    public static function ShowWeek($year = 0, $week = 0)
+    {
+        EngineCore::AddScript('/js/calendar/renderer.js');
+        EngineCore::AddStyle('/css/calendar/main.css');
+        $events_per_day =[];
+        $e = ['entity_type'=>'calendar/week',
+            'styles' => Event::GetEventTypes(),
+            'year' => $year,
+            'week'=>$week
+        ];
+    
+        for($i =1;$i<8;$i++)
+        {
+            $date = strtotime($year."W".sprintf("%02u", $week).$i);
+
+
+            $eventsThisDay = Scheduler::CheckDate(date("Y",$date),date("n",$date),date("j",$date));
+            $recurs = RecurringEvent::CheckDate(date("Y-m-d",$date));
+            $events_per_day[$i] = array_merge($recurs,$eventsThisDay);
+        }
+        $e['events'] = $events_per_day;
+        
+        return $e;
     }
 }
