@@ -133,7 +133,7 @@ function emitWeekCell(n,y,w)
     b.classList.add('cal-next');
     b.classList.add('center_because_css_sucks');
     b.innerText = n;
-    b.href="/calender/view/week/"+y+"/"+w+"";
+    b.href="/calendar/view/week/"+y+"/"+w+"";
     a.appendChild(b);
     return a;
 }
