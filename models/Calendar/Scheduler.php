@@ -19,7 +19,7 @@ class Scheduler
         $output =[];
         foreach($events as $value)
         {
-            $output[]=Event::PrepareForDisplay($value, $y, $m, $d);
+            $output[]=$value;//Event::PrepareForDisplay($value, $y, $m, $d);
         }
         return  $output;
         

@@ -240,7 +240,10 @@ class RecurringEvent
     
     public static function CheckDate($datestring)
     {
-        list($y,$m,$d) = explode("-",$datestring);
+        list($sy,$sm,$sd) = explode("-",$datestring);
+        $y = intval($sy);
+        $m = intval($sm);
+        $d = intval($sd);
         $output = [];
         $selector = [
             "id",
@@ -275,7 +278,10 @@ class RecurringEvent
             $value['recurId']=$value['id'];
             if(self::CheckDay($date,$start,$value['end'],$value["recur_type"],$value["recur_data"]))
             {
-                $output[]=Event::PrepareForDisplay($value, $y, $m, $d);
+                $value['year'] = $y;
+                $value['month'] = $m;
+                $value['day'] = $d;
+                $output[]=$value;//Event::PrepareForDisplay($value, $y, $m, $d);
             }
         }
         
