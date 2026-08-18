@@ -20,6 +20,7 @@
     let y = {%year%};
     let m = {%month%};
     let container = document.getElementById('calendar');
+    let header = document.querySelector('.cal-header');
 
-    RenderMonthCalendar(events, upcoming, markers, y, m, container);
+    RenderMonthCalendar(events, upcoming, markers, y, m, container, header);
 </script>

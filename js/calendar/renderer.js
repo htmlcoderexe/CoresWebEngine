@@ -34,6 +34,17 @@ function getISOWeek(date) {
     )+1;
 }
 
+function lp(num,length=2,chr = "0")
+{
+    let strnum = ""+num;
+    let diff = length - strnum.length;
+    if(diff>0)
+    {
+        return chr.repeat(diff)+strnum;
+    }
+    return strnum;
+}
+
 function hhmmadd(hh1,mm1,hh2,mm2)
 {
     hh1 = Number(hh1);
@@ -58,7 +69,7 @@ function injectSidebarEvent(el, event)
     if(event.duration != 0)
     {
         let endtime = hhmmadd(event.hour, event.minute, 0, event.duration);
-        timestring = " ⌚"+event.hour + ":" + event.minute + " - " + endtime.hh + ":" + endtime.mm;
+        timestring = " ⌚"+lp(event.hour) + ":" + lp(event.minute) + " - " + endtime.hh + ":" + endtime.mm;
     }
     let when_t = document.createTextNode(timestring);
     when_d.innerText = event.day + "." + event.month;
@@ -127,7 +138,7 @@ function emitWeekCell(n,y,w)
     return a;
 }
     
-function RenderMonthCalendar(events, future_events, markers, y, m, container)
+function RenderMonthCalendar(events, future_events, markers, y, m, container, headercontainer)
 {
 
     let weeks = container.querySelector('.cal-weeks');
@@ -234,14 +245,15 @@ function RenderMonthCalendar(events, future_events, markers, y, m, container)
     let numweeks = Math.round(cellcount/7);
     // weeks
     let firstweek = getISOWeek(today);
+    let cellyear = y;
     for(let i = 0; i<numweeks;i++)
     {
-        weeks.appendChild(emitWeekCell(firstweek,y,firstweek));
+        weeks.appendChild(emitWeekCell(firstweek,cellyear,firstweek));
         firstweek++;
         if(firstweek>52)
         {
             firstweek = 1;
-            y++;
+            cellyear++;
         }
     }
     
@@ -260,6 +272,28 @@ function RenderMonthCalendar(events, future_events, markers, y, m, container)
         let box = AddToSideBar([], "Events").querySelector('.boxbody');
         upcoming.forEach((e)=>{injectSidebarEvent(box,e);});
     }
+    
+    let prev = document.createElement('a');
+    let cur = document.createElement('span');
+    let next = document.createElement('a');
+    let opts = {month: 'long',year: 'numeric'};
+    let fmt = new Intl.DateTimeFormat(undefined, opts);
+    
+    let py = m == 1 ? y-1 : y;
+    let pm = m == 1 ? 11 : m-2;
+    let ny = m == 12 ? y+1 : y;
+    let nm = m == 12 ? 0 : m;
+    let pdate = new Date(py, pm, 1);
+    let cdate = new Date(y, m-1, 1);
+    let ndate = new Date(ny, nm, 1);
+    prev.innerText = fmt.format(pdate);
+    prev.href="/calendar/view/month/"+py+"/"+(pm+1);
+    cur.innerText = fmt.format(cdate);
+    next.innerText = fmt.format(ndate);
+    next.href="/calendar/view/month/"+ny+"/"+(nm+1);
+    headercontainer.appendChild(prev);
+    headercontainer.appendChild(cur);
+    headercontainer.appendChild(next);
 }
     
     
