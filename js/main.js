@@ -1,3 +1,25 @@
+
+function $(n)
+{
+    return document.createElement(n);
+}
+
+function $id(id)
+{
+    return document.getElementById(id);
+}
+
+function $q(s)
+{
+    return document.querySelector(s);
+}
+function $qa(s)
+{
+    return document.querySelectorAll(s);
+}
+
+
+
 function PingPongTheDingDong(element)
 {
 	var ajax=new XMLHttpRequest();
