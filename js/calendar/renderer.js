@@ -60,17 +60,23 @@ function hhmmadd(hh1,mm1,hh2,mm2)
     return {hh, mm};
 }
 
-function injectSidebarEvent(el, event)
+function GetTimeString(event)
 {
-    let title = document.createElement('h4');
-    let when = document.createElement('span');
-    let when_d = document.createElement('strong');
     let timestring = " ⌚All day";
     if(event.duration != 0)
     {
         let endtime = hhmmadd(event.hour, event.minute, 0, event.duration);
         timestring = " ⌚"+lp(event.hour) + ":" + lp(event.minute) + " - " + endtime.hh + ":" + endtime.mm;
     }
+    return timestring;
+}
+
+function injectSidebarEvent(el, event)
+{
+    let title = document.createElement('h4');
+    let when = document.createElement('span');
+    let when_d = document.createElement('strong');
+    let timestring = GetTimeString(event);
     let when_t = document.createTextNode(timestring);
     when_d.innerText = event.day + "." + event.month;
     when.appendChild(when_d);
@@ -574,3 +580,45 @@ function RenderWeekCalendar(week,year,events,styles,agenda,topheader)
 }
     
     
+function RenderEvent(event, container, tpl, showdate = true)
+{
+    let date = new Date(event.year, event.month-1, event.day);
+    let opts = {day: 'numeric', month: 'long',year: 'numeric'};
+    let fmt = new Intl.DateTimeFormat(undefined, opts);
+    
+    
+    $q('.cal-display-event-title',tpl).innerText = event.title ?? "<Untitled>";
+    
+    if(showdate)
+    {
+        $q('.cal-display-event-date',tpl).innerText = fmt.format(date);
+    }
+    
+    if(!event.recurring)
+    {
+        $q('.cal-display-event-is-recurring',tpl).style.display = 'none';
+    }
+    
+    $q('.cal-description',tpl).innerText = event.description ?? "(no description)";
+    
+    $q('.cal-display-event-duration',tpl).innerText = GetTimeString(event);
+    
+    if(event.recurId)
+    {
+        $q('.cal-display-event-exceptionForm',tpl).action="/calendar/except/"+event.recurId;
+        $q('.cal-display-event-recurEdit',tpl).href="/calendar/recurring/"+event.recurId;
+        $q("input[name='date']",tpl).value=event.year+"-"+event.month+"-"+event.day;
+        
+        $q('.cal-display-event-edit',tpl).style.display = 'none';
+        $q('.cal-display-event-delete',tpl).style.display = 'none';
+    }
+    else
+    {
+        $q('.cal-display-event-exceptionForm',tpl).style.display = 'none';
+        $q('.cal-display-event-recurEdit',tpl).style.display = 'none';
+        
+        $q('.cal-display-event-edit',tpl).href="/calendar/edit/"+event.id;
+        $q("input[name='id_to_delete']",tpl).value = event.id;
+    }
+    container.appendChild(tpl);
+}

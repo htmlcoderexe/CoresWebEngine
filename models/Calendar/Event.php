@@ -25,6 +25,8 @@ class Event
     
     public $isValid=true;
     public $allDay;
+    
+    public $active;
 
     public const TABLE = 'calendar_events';
     public const SCHEMA = [

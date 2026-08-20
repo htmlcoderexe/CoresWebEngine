@@ -77,6 +77,7 @@ class CalendarController
         return $e;
         
     }
+    
     #[Route('calendar/view/week','calendar.view')]
     public static function ShowWeek($year = 0, $week = 0)
     {
@@ -102,4 +103,40 @@ class CalendarController
         
         return $e;
     }
+    
+    #[Route('calendar/view/date','calendar.view')]
+    public static function ShowDay($year = 0, $month = 0, $day = 0)
+    {
+        EngineCore::AddScript('/js/calendar/renderer.js');
+        EngineCore::AddStyle('/css/calendar/main.css');
+        $y = intval($year);
+        $m = intval($month);
+        $d = intval($day);
+        $events= Scheduler::CheckDate($y,$m,$d);
+        $datestring = sprintf("%04d-%02d-%02d",$y,$m,$d);
+        $recurs = RecurringEvent::CheckDate($datestring);
+        $events = array_merge($events,$recurs);
+        $e =['entity_type'=> 'calendar/date',
+            'events'=>$events];
+        return $e;
+    }
+    
+    #[Route('calendar/view/event','calendar.view')]
+    public static function ShowEvent($id = 0)
+    {EngineCore::AddScript('/js/calendar/renderer.js');
+        EngineCore::AddStyle('/css/calendar/main.css');
+       
+        $e = Event::Load(intval($id));
+        if(!$e)
+        {
+            return EngineCore::Error(404, "Event not found");
+        }
+        
+        EngineCore::SetPageTitle("Event on {$e->day}-{$e->month}-{$e->year}");
+        $e = (array)$e;
+        $e['entity_type'] = 'calendar/event';
+        $e['event'] = $e;
+        return $e;
+    }
+    
 }

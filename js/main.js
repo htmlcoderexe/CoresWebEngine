@@ -4,18 +4,18 @@ function $(n)
     return document.createElement(n);
 }
 
-function $id(id)
+function $id(id, node = null)
 {
-    return document.getElementById(id);
+    return (node ?? document).getElementById(id);
 }
 
-function $q(s)
+function $q(s, node = null)
 {
-    return document.querySelector(s);
+    return (node ?? document).querySelector(s);
 }
-function $qa(s)
+function $qa(s, node = null)
 {
-    return document.querySelectorAll(s);
+    return (node ?? document).querySelectorAll(s);
 }
 
 
