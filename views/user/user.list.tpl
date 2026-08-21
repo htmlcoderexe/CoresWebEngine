@@ -2,7 +2,7 @@
 <p>
     <a href="/cpanel/">🔙 Go Back</a>
 </p>
-{#if|{#ifpermission|user.create#}|<form action="/cpanel/users/create/" method="POST">
+{#if|{#ifpermission|user.create#}|<form action="/cpanel/users/create/" method="POST">{#CSRF#}
 Username:<input name="username" id="username" />Password:<input name="password" id="password" type="password" />
 <button type="submit">➕</button>
 </form>#}
@@ -17,7 +17,7 @@ Username:<input name="username" id="username" />Password:<input name="password" 
     <tbody>
     {#foreach|{%users%}|
 <tr>
-    <td><a href="/cpanel/user/view/{:id:}">{:username:}</a></td>
+    <td><a href="/user/view/{:id:}">{:username:}</a></td>
     <td>{:nickname:}</td>
     <td>{:disabled:}</td>
 </tr>
