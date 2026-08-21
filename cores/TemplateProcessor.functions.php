@@ -176,6 +176,12 @@ function TemplateProcessorBuiltin_ellipsis($text, $length, $ellipsis = "...")
     return substr($text, 0, $length - strlen($ellipsis)).$ellipsis;
 }
 
+function TemplateProcessorBuiltin_sprintf(...$args)
+{
+    $fmt = array_shift($args);
+    return sprintf($fmt,...$args);
+}
+
 function TemplateProcessorBuiltin_urlencode($text)
 {
     return urlencode($text);
