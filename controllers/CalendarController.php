@@ -4,12 +4,10 @@ namespace Controllers;
 
 use Common\DBHelper;
 use Cores\EngineCore;
-use Cores\TemplateProcessor;
-use DateInterval;
-use DateTime;
 use Models\Calendar\Event;
 use Models\Calendar\RecurringEvent;
 use Models\Calendar\Scheduler;
+use PostRoute;
 use Route;
 
 /**
@@ -123,7 +121,8 @@ class CalendarController
     
     #[Route('calendar/view/event','calendar.view')]
     public static function ShowEvent($id = 0)
-    {EngineCore::AddScript('/js/calendar/renderer.js');
+    {
+        EngineCore::AddScript('/js/calendar/renderer.js');
         EngineCore::AddStyle('/css/calendar/main.css');
        
         $e = Event::Load(intval($id));
@@ -138,5 +137,106 @@ class CalendarController
         $e['event'] = $e;
         return $e;
     }
+    
+    #[Route('calendar/edit','calendar.edit')]
+    public static function ShowEventEditor($id = 0)
+    {
+        EngineCore::AddScript('/js/calendar/renderer.js');
+        EngineCore::AddStyle('/css/calendar/main.css');
+        $e = Event::Load(intval($id));
+        if(!$e)
+        {
+            return EngineCore::Error(404, "Event not found");
+        }
+        $e = (array)$e;
+        $e['entity_type'] = 'calendar/editevent';
+        $e['types'] = Event::GetEventTypes(true);
+        $e['verb']='save';
+        return $e;
+    }
+    #[Route('calendar/create','calendar.edit')]
+    public static function CreateOn($year=1970, $month=01, $day=01)
+    {
+        EngineCore::AddScript('/js/calendar/renderer.js');
+        EngineCore::AddStyle('/css/calendar/main.css');
+        return ['entity_type'=>'calendar/editevent',
+            'year'=>intval($year),
+            'month'=>intval($month),
+            'day'=>intval($day),
+            'types'=>Event::GetEventTypes(true),
+            'verb'=>'save'
+            ];
+    }
+    #[PostRoute('calendar/save','calendar.edit')]
+    public static function CreateOrUpdateEvent()
+    {        
+        $title = EngineCore::POST("title","<untitled>");
+        $date = EngineCore::POST("date","1970-01-01");
+        $time = EngineCore::POST("time","00:00");
+        $sduration = EngineCore::POST("timeD","01:00");
+        $description = EngineCore::POST("description","");
+        $eventId=intval(EngineCore::POST("EventID"));
+        $type=EngineCore::Post("type","");
+        list($y,$m,$d) = explode("-",$date);
+        list($h,$min) = explode(":", $time);
+        list($dh, $dm) = explode(":", $sduration);
+        $duration = $dh*60+$dm;
+        
+        if($eventId == -1)
+        {
+            // create
+            $event = Event::Create(
+                    year:  $y,
+                    month:  $m,
+                    day:  $d,
+                    hour:  $h,
+                    minute:  $min,
+                    title:  $title,
+                    description:  $description,
+                    category:  $type,
+                    duration:  $duration
+            );
+        }
+        else
+        {
+            // update
+            $event = Event::Load($eventId);
+            if(!$event)
+            {
+                return EngineCore::Error(404, "Event does not exist.");
+            }
+            $event->title = $title;
+            $event->hour = $h;
+            $event->minute = $min;
+            $event->duration = $duration;
+            $event->year=$y;
+            $event->month = $m;
+            $event->day = $d;
+            $event->description = $description;
+            $event->type = $type;
+            $event->Save();
+        }
+        EngineCore::GTFO("/calendar/view/event/".$event->id);
+    }
+    
+    #[PostRoute('calendar/delete','calendar.edit')]
+    public static function RemoveEvent()
+    {
+        $id=EngineCore::POST("id_to_delete","-1");
+        $e = CalendarEvent::Load($id);
+        if($e)
+        {
+            $e->Deactivate();
+        }
+        $returnTo="";
+        if(isset($_SESSION['returnTo']))
+        {
+            $returnTo=$_SESSION['returnTo'];
+            $_SESSION['returnTo']="";
+        }
+        EngineCore::GTFO("/calendar".$returnTo);
+    }
+    
+    
     
 }

@@ -6,17 +6,19 @@
     <span class="cal-description"></span><br />
     <h4 class="cal-display-event-duration"></h4>
 <form action="" method="POST" class="cal-display-event-exceptionForm">
+    {#CSRF#}
     <input type="hidden" value="" name="date" />
     <button type="submit" value="delete" name="action">Cancel today</button>
     <button type="submit" value="create" name="action">Edit today</button>
 </form>
-<a class="action_button cal-display-event-recurEdit" href="/calender/recurring/">Edit</a>
+<a class="action_button cal-display-event-recurEdit" href="/calendar/recurring/">Edit</a>
 
-<form action="/calender/delete" method="POST" class="cal-display-event-delete">
+<form action="/calendar/delete" method="POST" class="cal-display-event-delete">
+    {#CSRF#}
     <input type="hidden" value="" name="id_to_delete" />
     <button type="submit">Delete</button>
 </form>
-<a class="action_button cal-display-event-edit" href="/calender/edit/">Edit</a>
+<a class="action_button cal-display-event-edit" href="/calendar/edit/">Edit</a>
 </div>
 </template>
 <div id="eventcontainer">

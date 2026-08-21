@@ -605,8 +605,8 @@ function RenderEvent(event, container, tpl, showdate = true)
     
     if(event.recurId)
     {
-        $q('.cal-display-event-exceptionForm',tpl).action="/calendar/except/"+event.recurId;
-        $q('.cal-display-event-recurEdit',tpl).href="/calendar/recurring/"+event.recurId;
+        $q('.cal-display-event-exceptionForm',tpl).action="/calendar/recurring/except/"+event.recurId;
+        $q('.cal-display-event-recurEdit',tpl).href="/calendar/recurring/edit/"+event.recurId;
         $q("input[name='date']",tpl).value=event.year+"-"+event.month+"-"+event.day;
         
         $q('.cal-display-event-edit',tpl).style.display = 'none';

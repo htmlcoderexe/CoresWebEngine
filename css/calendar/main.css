@@ -290,3 +290,8 @@ TODO: MOVE TO OTHER CSS DUH
     font-size:0.9em;
     font-family:monospace;
 }
+
+input[type=date]:disabled
+{
+    display:none;
+}
