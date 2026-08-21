@@ -47,10 +47,14 @@ class User
 
     public static function GetUsername($userid)
     {
+        if($userid===-1)
+        {
+            return "Guest";
+        }
         $user = DBHelper::RunScalar("SELECT username FROM users WHERE id = ?",[$userid],0);
         if($user === false)
         {
-            return "Guest";
+            return false;
         }
         return $user;
     }

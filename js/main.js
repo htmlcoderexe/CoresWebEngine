@@ -20,7 +20,7 @@ function $qa(s, node = null)
 
 
 
-function PingPongTheDingDong(element)
+function PingPongTheDingDong(element, token)
 {
 	var ajax=new XMLHttpRequest();
 	var target=element;
@@ -38,7 +38,7 @@ function PingPongTheDingDong(element)
 	ajax.open("POST","/userpanel/property",true);
 	ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 	ajax.setRequestHeader("Accept", "application/json");
-	ajax.send("property="+encodeURIComponent(element.name)+"&value="+encodeURIComponent(element.value));
+	ajax.send("property="+encodeURIComponent(element.name)+"&value="+encodeURIComponent(element.value)+"&CSRF="+token);
 	
 	//alert(""); 
 }

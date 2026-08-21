@@ -3,7 +3,7 @@
 
 
 Nickname: {{ajaxfield|param=nickname}}<br />
-First name: {{ajaxfield|param=firstname}}<br />
+First name: {{ajaxfield|param=firsname}}<br />
 Last name: {{ajaxfield|param=lastname}}<br />
 About: <br />{{ajaxbox|param=description}}<br />
 

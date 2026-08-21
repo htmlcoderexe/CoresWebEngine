@@ -1,1 +1,1 @@
-<input name="{%param|%}" class="profile" readonly="readonly" onfocus="this.readOnly=false;" onclick="this.readOnly=false;" onblur="this.readOnly='readonly';PingPongTheDingDong(this);"  value="{#userinfo|{%param|%}#}"/><img src="/images-site/null.png">
+<input name="{%param|%}" class="profile" readonly="readonly" onfocus="this.readOnly=false;" onclick="this.readOnly=false;" onblur="this.readOnly='readonly';PingPongTheDingDong(this,'{#CSRF_TOKEN#}');"  value="{#userinfo|{%param|%}#}"/><img src="/images-site/null.png">
