@@ -89,7 +89,7 @@ class RecurringEvent
         $this->end_date = $enddate; 
         $this->recur_type = $recur_type;
         $this->recur_data = $recur_data;
-                
+        $this->active = true;
     }
     
     public static function Load($id)
