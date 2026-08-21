@@ -25,7 +25,7 @@
 </form>{#ifeq|{%id|-1%}|-1||
 <form action="/calendar/recurring/from/{%id%}" method="POST">
     {#CSRF#}
-    {{calender/recurpickercontrol|calendar.recurring.data=7|calendar.recurring.type=day}}
+    {{calendar/recurpickercontrol|calendar.recurring.data=7|calendar.recurring.type=day}}
     <input type="hidden" value="{%id%}" name="eventId" />
     <button type="submit">Make recurring</button>
 </form>

@@ -31,7 +31,7 @@
     <input name ="create" type="hidden" value ="true" /><br />
     <input name ="EventID" type ="hidden" value ="{%id|-1%}" />
     <h3>Recurrence options:</h3>
-    {{calender/recurpickercontrol|calendar.recurring.data={%recur_data|7%}|calendar.recurring.type={%recur_type|day%}}}
+    {{calendar/recurpickercontrol|calendar.recurring.data={%recur_data|7%}|calendar.recurring.type={%recur_type|day%}}}
     <button type="submit">Save</button>
 </form>
 <script>

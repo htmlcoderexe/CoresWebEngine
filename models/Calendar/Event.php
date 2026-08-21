@@ -131,11 +131,6 @@ class Event
         DBHelper::Update(Event::TABLE,['active'=>0],['id'=>$this->id]);
     }
     
-    public function ProcessForDisplay()
-    {
-        return self::PrepareForDisplay((array)$this,$this->year,$this->month,$this->day);
-    }
-
     static function Create($title, $description, $category,$year,$month,$day, $hour,$minute, $duration)
     {
         $uid=EngineCore::$CurrentUser->userid;
@@ -150,63 +145,7 @@ class Event
         $id=DBHelper::GetLastId();
         return new Event($id,$title,$description,$category,$year,$month,$day,$hour,$minute,$duration);
     }
-    
-    static function SplitDate($date)
-    {
-        return explode("-",$date);
-    }
-    static function JoinDate($y,$m,$d)
-    {
-        return $y."-".str_pad($m,2,"0", STR_PAD_LEFT)."-".str_pad($d,2,"0", STR_PAD_LEFT);
-    }
-    static function SplitHHMM($time)
-    {
-        return explode(":",$time);
-    }
-    static function JoinHHMM($hh,$mm)
-    {
-        return str_pad($hh,2,"0", STR_PAD_LEFT).":".str_pad($mm,2,"0", STR_PAD_LEFT);
-    }
-    static function MinutesToArray($minutes)
-    {
-        return [
-            str_pad(
-                    floor($minutes / 60),2,"0", STR_PAD_LEFT),
-            str_pad(
-                    $minutes % 60,2,"0", STR_PAD_LEFT)
-            ];
-    }
-    static function HHMMFromMinutes($minutes)
-    {
-        list($hh,$mm)=self::MinutesToArray($minutes);
-        return $hh.":".$mm;
-    }
-    static function MinutesFromHHMM($time)
-    {
-        list($hh,$mm)=self::SplitHHMM($time);
-        return $hh*60+$mm;
-    }
-    
-    public static function PrepareForDisplay($value,$y,$m,$d)
-    {
-        $value['day']=str_pad($d,2,"0", STR_PAD_LEFT);
-        $value['month']=str_pad($m,2,"0", STR_PAD_LEFT);
-        $dayminute = $value['hour']*60+$value['minute'];
-        $doneminute =$dayminute+$value['duration'];
-        $value['dayminute']=$dayminute;
-        $value['doneminute']=$doneminute;
 
-        $value['hour']=str_pad($value['hour'],2,"0", STR_PAD_LEFT);
-        $value['minute']=str_pad($value['minute'],2,"0", STR_PAD_LEFT);
-        $value['year']=$y;
-        $value['recurrer'] = $value['id'];
-        $value['duration_minutes'] = str_pad($value['duration'] % 60,2,"0", STR_PAD_LEFT);
-        $value['duration_hours'] = str_pad(floor($value['duration'] / 60),2,"0", STR_PAD_LEFT);
-        $value['done_minutes'] = str_pad($value['doneminute'] % 60,2,"0", STR_PAD_LEFT);
-        $value['done_hours'] = str_pad(floor($value['doneminute'] / 60),2,"0", STR_PAD_LEFT);
-        return $value;
-    }
-    
     public static function GetEventTypes($flat=false)
     {
         $q_mapping = DBHelper::Select(self::TABLE_TYPES,self::FIELDS_TYPES,[]);

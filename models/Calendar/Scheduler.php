@@ -27,40 +27,7 @@ class Scheduler
         
     }
     
-    public static function SortByDateTime($items)
-    {
-        $sorter = function($a, $b)
-        {
-            $props = [
-                'year',
-                'month',
-                'day',
-                'hour',
-                'minute'
-            ];
-            foreach($props as $prop)
-            {
-                if($a[$prop]==$b[$prop])
-                    continue;
-                return $a[$prop]<$b[$prop]?-1:1;
-            }
-            return 0;
-        };
-        usort($items,$sorter);
-        return $items;
-    }
-    
-    public static function HHMM2Minutes($hhmm)
-    {
-        $hh=intval(substr($hhmm,0,2));
-        $mm=intval(substr($hhmm,3,2));
-        return $hh*60+$mm;
-    }
-    
-    public static function TestOverlap($a,$b)
-    {
-        return ($a['dayminute'] < $b['doneminute'] && $a['doneminute'] > $b['dayminute']);
-    }
+
     
     public static function CheckMonth($y, $m)
     {
@@ -80,10 +47,4 @@ class Scheduler
         return  $output;
     }
     
-    
-    
-    public static function CheckRecurrers($y,$m,$d)
-    {
-        
-    }
 }

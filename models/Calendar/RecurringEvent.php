@@ -351,14 +351,14 @@ class RecurringEvent
     
     public function AddException($date)
     {
-        list($y,$m,$d) = Event::SplitDate($date);
+        list($y,$m,$d) = explode("-",$date);
         $new_row = [null,$this->id,$d,$m,$y];
         DBHelper::Insert("calendar_exceptions",$new_row);
     }
     
     public function CreateOnDate($date)
     {
-        list($y,$m,$d)=Event::SplitDate($date);
+        list($y,$m,$d)=explode("-",$date);
         $event = Event::Create($this->title,$this->description,$this->category,$y,$m,$d,$this->hour,$this->minute,$this->duration);
         return $event;
     }
