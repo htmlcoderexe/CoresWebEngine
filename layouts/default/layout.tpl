@@ -9,6 +9,8 @@
         <link rel="stylesheet" href="/css/main.css" />
         <link rel="stylesheet" href="/css/sorTable.css" />
         {#foreach|{%styles%}|<link rel="stylesheet" href="{:*:}" />#}
+        <script>window.CSRF_TOKEN = '{#CSRF_TOKEN#}';
+            window.CSRF_FIELD = '{#CSRF_FIELD#}';</script>
         {#foreach|{%scripts%}|<script src="{:*:}"></script>#}
         <script type="text/javascript" src="/js/main.js"></script>
         <script type="text/javascript" src="/js/sorTable.js"></script>
