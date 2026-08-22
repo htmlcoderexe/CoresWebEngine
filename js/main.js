@@ -82,35 +82,11 @@ function DoPostUpdate()
                 try
                 {
                     var result = JSON.parse(ajax.responseText);
-                    var responseCode = result.responseCode;
-                    var value = result.responseValue;
-                    switch(responseCode)
-                    {
-                        case "OK":
-                        {
-                            target.dataset.postState="ready";
-                            SetValue(target,value);
-                            SaveValue(target);
-                            break;
-                        }
-                        case "Denied":
-                        {
-                            target.dataset.postState="error-access";
-                            ResetValue(target);
-                            break;
-                        }
-                        case "NotFound":
-                        {
-                            target.dataset.postState="error-input";
-                            ResetValue(target);
-                            break;
-                        }
-                        default:
-                        {
-                            target.dataset.postState="error-input";
-                            break;
-                        }
-                    }
+                    var value = result.value;
+                    target.dataset.postState="ready";
+                    SetValue(target,value);
+                    SaveValue(target);
+                    
                 }
                 catch(error)
                 {
@@ -127,7 +103,7 @@ function DoPostUpdate()
     ajax.open("POST",TargetEndpoint,true);
     ajax.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 	ajax.setRequestHeader("Accept", "application/json");
-    ajax.send("property="+encodeURIComponent(TargetProperty)+"&value="+encodeURIComponent(value));
+    ajax.send("property="+encodeURIComponent(TargetProperty)+"&value="+encodeURIComponent(value)+"&"+window.CSRF_FIELD+"="+window.CSRF_TOKEN);
 }
 
 
