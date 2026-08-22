@@ -1,5 +1,5 @@
-<a href="/cpanel/group/list">Back to group list</a><br />
-<form action="/cpanel/group/{%verb|create%}" method="POST">
+<a href="/cpanel/groups/list">Back to group list</a><br />
+<form action="/cpanel/groups/save" method="POST">{#CSRF#}
     <label for="gname">Group name: </label><br /><input name="gname" id="gname" value="{%name|%}"/><br />
     <label for="gtype">Group type: </label><br /><select name="gtype" id="gtype">
         {#foreach|{%types%}|<option value="{:code:}" {#ifeq|{:code:}|{%type|0%}|selected="selected"#}>{:name:}</option>#}
@@ -14,7 +14,7 @@
 </form>
     {#foreach|{#errors#}|{:*:}#}
     {#ifset|members|<h3>Members</h3>#}
-{#ifset|adduser|<form action="/cpanel/group/adduser" method="POST"><input name="gid" type="hidden" value="{%gid%}" /><input name="username" /><button type="submit">➕</button></form>#}
-{#ifset|members|{#foreach|{%members%}|<form action ="/cpanel/group/removeuser" method="POST">
-<a href="/cpanel/user/view/{:uid:}">{:username:}</a><input name="gid" type="hidden" value="{%gid%}" /><input name="uid" type="hidden" value="{:uid:}" /><button type="submit">❌</button>
+{#ifset|adduser|<form action="/cpanel/groups/adduser" method="POST">{#CSRF#}<input name="gid" type="hidden" value="{%gid%}" /><input name="username" /><button type="submit">➕</button></form>#}
+{#ifset|members|{#foreach|{%members%}|<form action ="/cpanel/groups/removeuser" method="POST">{#CSRF#}
+<a href="/user/view/{:uid:}">{:username:}</a><input name="gid" type="hidden" value="{%gid%}" /><input name="username" type="hidden" value="{:username:}" /><button type="submit">❌</button>
 </form>#}|#}
