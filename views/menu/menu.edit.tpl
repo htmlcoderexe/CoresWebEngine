@@ -16,14 +16,14 @@
             <td>{:id:}</td>
             <td><input data-endpoint="/cpanel/menu/update/{:id:}" name="text" value="{:text:}" /><span></span></td>
             <td><input data-endpoint="/cpanel/menu/update/{:id:}" name="link" value="{:link:}" /><span></span></td>
-            <td><form action="/cpanel/menu/delete/" method="POST"><input name="id" value="{:id:}" type="hidden" /><button>&#x274C;</button></form></td>
+            <td><form action="/cpanel/menu/delete/" method="POST">{#CSRF#}<input name="id" value="{:id:}" type="hidden" /><button>&#x274C;</button></form></td>
         </tr>
 #}
     </tbody>
     <tbody>
         <tr>
             <td colspan="3">
-                <form action="/cpanel/menu/create" method="POST">
+                <form action="/cpanel/menu/create" method="POST">{#CSRF#}
                     <input name="text" placeholder="link text" /><input name="link" placeholder="link target"/><button>Create</button>
                 </form>
             </td>
